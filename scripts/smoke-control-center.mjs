@@ -15,6 +15,10 @@ async function assertVisible(page, selector) {
   await page.locator(selector).waitFor({ state: 'visible', timeout: 15000 });
 }
 
+async function assertAnyVisible(page, selector) {
+  await page.locator(selector).first().waitFor({ state: 'visible', timeout: 15000 });
+}
+
 async function selectTab(page, tabId, panelSelector) {
   const tab = page.locator(`button[data-tab="${tabId}"]`);
   await tab.waitFor({ state: 'visible', timeout: 15000 });
@@ -31,7 +35,7 @@ async function selectTab(page, tabId, panelSelector) {
 
 async function completeApprovalFlow(page) {
   await assertVisible(page, '#approval-overlay');
-  await assertVisible(page, '.approval-section-card');
+  await assertAnyVisible(page, '.approval-section-card');
   await assertVisible(page, 'text=Available decisions');
   await assertVisible(page, 'text=Network policy amendments');
   await assertVisible(page, 'text=registry.npmjs.org');
@@ -94,3 +98,4 @@ main().catch((error) => {
   logger.error('Smoke test failed', error);
   process.exitCode = 1;
 });
+
