@@ -38,7 +38,7 @@ async function completeApprovalFlow(page) {
   await assertAnyVisible(page, '.approval-section-card');
   await assertVisible(page, 'text=Available decisions');
   await assertVisible(page, 'text=Network policy amendments');
-  await assertVisible(page, 'text=registry.npmjs.org');
+  await assertAnyVisible(page, 'text=registry.npmjs.org');
   await page.screenshot({ path: artifactPath('desktop-approval-overlay.png'), fullPage: true });
 
   await page.locator('#approval-btns .btn-approve').click();
