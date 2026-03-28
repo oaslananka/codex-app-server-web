@@ -83,5 +83,3 @@ This repository is intended to be open source and community-friendly.
 - Run `pnpm typecheck`, `pnpm test`, and `pnpm build` before proposing changes.
 - If you touch runtime behavior, add or update tests under `tests/unit`.
 - If you change protocol metadata, validate it with `pnpm protocol:manifest:check`.
-
-
