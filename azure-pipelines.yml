@@ -1,3 +1,11 @@
+resources:
+  repositories:
+    - repository: githubMirror
+      type: github
+      name: oaslananka/codex-app-server-web
+      endpoint: github
+      ref: refs/heads/main
+
 trigger:
   branches:
     include:
@@ -15,10 +23,20 @@ variables:
   NODE_VERSION: "22"
   PNPM_VERSION: "10.33.0"
   CODEX_PORT: "41000"
+  GITHUB_MIRROR_PATH: github-mirror
 
 steps:
   - checkout: self
     clean: true
+    fetchDepth: 0
+    persistCredentials: true
+
+  - checkout: githubMirror
+    clean: true
+    fetchDepth: 0
+    persistCredentials: true
+    path: $(GITHUB_MIRROR_PATH)
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
 
   - task: NodeTool@0
     displayName: Use Node.js $(NODE_VERSION)
@@ -77,3 +95,22 @@ steps:
     displayName: Stop background services
     condition: always()
 
+  - script: |
+      set -euo pipefail
+      MIRROR_REPO="$(Pipeline.Workspace)/$(GITHUB_MIRROR_PATH)"
+      SOURCE_REPO="$(Build.SourcesDirectory)"
+
+      git -C "$MIRROR_REPO" config user.name "azure-pipelines[bot]"
+      git -C "$MIRROR_REPO" config user.email "azure-pipelines[bot]@users.noreply.github.com"
+
+      if git -C "$MIRROR_REPO" remote get-url azure >/dev/null 2>&1; then
+        git -C "$MIRROR_REPO" remote set-url azure "$SOURCE_REPO"
+      else
+        git -C "$MIRROR_REPO" remote add azure "$SOURCE_REPO"
+      fi
+
+      git -C "$MIRROR_REPO" fetch azure "+refs/heads/main:refs/remotes/azure/main"
+      git -C "$MIRROR_REPO" checkout -B main refs/remotes/azure/main
+      git -C "$MIRROR_REPO" push origin refs/heads/main:refs/heads/main --force-with-lease
+    displayName: Mirror main to GitHub
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))

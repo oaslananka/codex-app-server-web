@@ -32,10 +32,6 @@ export class TurnService {
   async sendMessage() {
     const state = this.store.getState();
     const selectedThreadId = state.activeThread?.id ?? null;
-    if (!selectedThreadId) {
-      this.deps.toast('Select a thread first', 'info');
-      return;
-    }
 
     const text = state.messageDraft.trim();
     const attachments = state.pendingAttachments.filter(
@@ -261,3 +257,4 @@ export class TurnService {
     });
   }
 }
+

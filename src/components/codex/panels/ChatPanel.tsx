@@ -456,7 +456,8 @@ export function ChatPanel() {
   const activeThread = state.thread.activeThread;
   const hasBackendThreadId = Boolean(sanitizeBackendThreadId(activeThread?.id));
   const isLocalOnlyThread = Boolean(activeThread && !hasBackendThreadId);
-  const statusCopy = getThreadStatusCopy(state.thread.activeThreadStatus, state.shell.turnActive);
+  const hasInterruptibleTurn = Boolean(activeThread && state.shell.turnActive);
+  const statusCopy = getThreadStatusCopy(state.thread.activeThreadStatus, hasInterruptibleTurn);
   const messagesRef = useRef<HTMLDivElement | null>(null);
   const effortOptions = useMemo(
     () => getReasoningEffortsForModel(state.chat.models, state.chat.selectedModel),
@@ -607,7 +608,7 @@ export function ChatPanel() {
           <div className="empty-state">
             <div className="empty-icon">⟡</div>
             <div className="empty-title">Start a new session</div>
-            <div className="empty-text">Select a thread or create a new one to begin.</div>
+            <div className="empty-text">Write a message below to start a new thread, or pick one from the sidebar.</div>
           </div>
         ) : visibleEntries.length === 0 ? (
           <div className="empty-state">
@@ -915,7 +916,7 @@ export function ChatPanel() {
               aria-label="Add image"
               disabled={
                 !state.thread.activeThread ||
-                state.shell.turnActive ||
+                hasInterruptibleTurn ||
                 state.chat.attachmentUploadInProgress
               }
               onClick={actions.chat.openAttachmentPicker}
@@ -932,10 +933,10 @@ export function ChatPanel() {
                   ? isLocalOnlyThread
                     ? 'Write your message. A new backend thread will be created automatically.'
                     : 'Write your message. Shift+Enter adds a new line.'
-                  : 'Select a thread or create a new one first'
+                  : 'Write your message. A new thread will be created automatically.'
               }
               rows={1}
-              disabled={!state.thread.activeThread}
+              disabled={false}
               autoComplete="off"
               autoCorrect="off"
               autoCapitalize="off"
@@ -946,7 +947,7 @@ export function ChatPanel() {
               onKeyDown={(event) => {
                 if (event.key === 'Enter' && !event.shiftKey) {
                   event.preventDefault();
-                  if (state.shell.turnActive) {
+                  if (hasInterruptibleTurn) {
                     void actions.chat.steerTurn();
                     return;
                   }
@@ -958,20 +959,19 @@ export function ChatPanel() {
               type="button"
               className="btn-send"
               id="btn-send"
-              title={state.shell.turnActive ? 'Steer current turn' : 'Send message'}
-              aria-label={state.shell.turnActive ? 'Steer current turn' : 'Send message'}
+              title={hasInterruptibleTurn ? 'Steer current turn' : 'Send message'}
+              aria-label={hasInterruptibleTurn ? 'Steer current turn' : 'Send message'}
               disabled={
-                !state.thread.activeThread ||
                 state.chat.attachmentUploadInProgress
               }
               onClick={() =>
-                state.shell.turnActive ? actions.chat.steerTurn() : actions.chat.sendMessage()
+                hasInterruptibleTurn ? actions.chat.steerTurn() : actions.chat.sendMessage()
               }
             >
-              {state.shell.turnActive ? '⇢' : '➤'}
+              {hasInterruptibleTurn ? '⇢' : '➤'}
             </button>
           </div>
-          {state.shell.turnActive ? (
+          {hasInterruptibleTurn ? (
             <div className="composer-secondary-actions">
               <button
                 type="button"
@@ -1003,3 +1003,6 @@ export function ChatPanel() {
     </div>
   );
 }
+
+
+

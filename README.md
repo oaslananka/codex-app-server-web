@@ -4,11 +4,21 @@
 
 ## Repositories
 
-- Primary repository: `git@ssh.dev.azure.com:v3/oaslananka/open-source/codex-app-server-web`
-- Public mirror: `https://github.com/oaslananka/codex-app-server-web.git`
-- GitHub profile: `https://github.com/oaslananka`
+- GitHub: `https://github.com/oaslananka/codex-app-server-web.git`
 
 Azure DevOps is the source of truth for CI/CD, build validation, and release flow. GitHub is maintained as the public open source mirror for discoverability, issue visibility, and community collaboration.
+
+## Screenshots
+
+<p align="center">
+  <img src="./aseets/screenshots/dektop-web.jpg" alt="codex-app-server-web desktop interface" width="900" />
+</p>
+<p align="center"><em>Desktop web experience</em></p>
+
+<p align="center">
+  <img src="./aseets/screenshots/mobil-web.jpeg" alt="codex-app-server-web mobile interface" width="340" />
+</p>
+<p align="center"><em>Mobile web experience</em></p>
 
 ## Stack
 
@@ -56,6 +66,7 @@ Recommended local remote layout for this project:
 
 - Azure DevOps handles the main CI/CD pipeline for this project.
 - An Azure pipeline definition is included in [azure-pipelines.yml](./azure-pipelines.yml).
+- Successful `main` branch runs also mirror the validated `main` branch state to the public GitHub repository through the Azure DevOps GitHub service connection.
 - GitHub Actions is intentionally reduced to manual dispatch so the GitHub mirror does not act as the primary automation system.
 
 ## Open source collaboration
@@ -72,3 +83,5 @@ This repository is intended to be open source and community-friendly.
 - Run `pnpm typecheck`, `pnpm test`, and `pnpm build` before proposing changes.
 - If you touch runtime behavior, add or update tests under `tests/unit`.
 - If you change protocol metadata, validate it with `pnpm protocol:manifest:check`.
+
+
