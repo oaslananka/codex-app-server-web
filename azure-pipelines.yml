@@ -33,6 +33,9 @@ steps:
   - script: pnpm install --frozen-lockfile
     displayName: Install dependencies
 
+  - script: pnpm exec playwright install --with-deps chromium
+    displayName: Install Playwright browsers
+
   - script: pnpm protocol:manifest:check
     displayName: Validate official manifest
 
@@ -73,3 +76,4 @@ steps:
       if [ -f ci-mock.pid ]; then kill $(cat ci-mock.pid) || true; fi
     displayName: Stop background services
     condition: always()
+
