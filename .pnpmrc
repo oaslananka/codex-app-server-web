@@ -1,0 +1,3 @@
+# pnpm configuration for codex-web-ui
+# Prevent module resolution from looking above project root
+shamefully-hoist=true

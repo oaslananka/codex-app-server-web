@@ -1,0 +1,60 @@
+name: GitHub Mirror Validation
+
+on:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate official manifest
+        run: pnpm protocol:manifest:check
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Start mock Codex backend
+        run: |
+          MOCK_CODEX_PORT=41000 MOCK_SEND_APPROVAL=1 node scripts/mock-codex-app-server.mjs > ci-mock.log 2>&1 &
+          sleep 2
+
+      - name: Start UI server
+        run: |
+          CODEX_PORT=41000 pnpm start:ui > ci-ui.log 2>&1 &
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:1989 >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          cat ci-ui.log
+          cat ci-mock.log
+          exit 1
+
+      - name: Browser smoke
+        run: SMOKE_APPROVAL=1 pnpm smoke

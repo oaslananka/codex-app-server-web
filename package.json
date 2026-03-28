@@ -1,0 +1,61 @@
+{
+  "name": "codex-app-server-web",
+  "version": "1.0.0",
+  "description": "Professional web interface for OpenAI Codex app server",
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "main": "server.cjs",
+  "scripts": {
+    "typecheck": "pnpm exec tsc --noEmit",
+    "protocol:manifest:generate": "node scripts/generate-codex-manifest.mjs",
+    "protocol:manifest:check": "node scripts/generate-codex-manifest.mjs --check",
+    "sync:vendor": "node scripts/sync-public-vendor-assets.mjs",
+    "postinstall": "node scripts/sync-public-vendor-assets.mjs",
+    "start": "node scripts/sync-public-vendor-assets.mjs && cross-env NODE_ENV=production PORT=1989 PORT_FALLBACK=1990 SHOW_LAN_URLS=1 UI_COMMAND=\"node server.cjs\" node start-all.cjs",
+    "start:reuse": "node scripts/sync-public-vendor-assets.mjs && cross-env NODE_ENV=production PORT=1989 PORT_FALLBACK=1990 SHOW_LAN_URLS=1 CODEX_REUSE_EXISTING=1 UI_COMMAND=\"node server.cjs\" node start-all.cjs",
+    "start:ui": "node scripts/sync-public-vendor-assets.mjs && node server.cjs",
+    "start:codex": "codex app-server --listen ws://0.0.0.0:40000",
+    "start:mock-codex": "node scripts/mock-codex-app-server.mjs",
+    "start:prod": "pnpm build && cross-env NODE_ENV=production PORT=1989 PORT_FALLBACK=1990 SHOW_LAN_URLS=1 node server.cjs",
+    "dev": "node scripts/sync-public-vendor-assets.mjs && cross-env NODE_ENV=development PORT=1989 PORT_FALLBACK=1990 UI_COMMAND=\"node server.cjs\" node start-all.cjs",
+    "dev:reuse": "node scripts/sync-public-vendor-assets.mjs && cross-env NODE_ENV=development PORT=1989 PORT_FALLBACK=1990 CODEX_REUSE_EXISTING=1 UI_COMMAND=\"node server.cjs\" node start-all.cjs",
+    "dev:lan": "node scripts/sync-public-vendor-assets.mjs && cross-env NODE_ENV=development PORT=1989 PORT_FALLBACK=1990 SHOW_LAN_URLS=1 UI_COMMAND=\"node server.cjs\" node start-all.cjs",
+    "dev:ui": "node scripts/sync-public-vendor-assets.mjs && cross-env NODE_ENV=development PORT=1989 PORT_FALLBACK=1990 node server.cjs",
+    "build": "node scripts/sync-public-vendor-assets.mjs && next build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "smoke": "node scripts/sync-public-vendor-assets.mjs && cross-env BASE_URL=http://127.0.0.1:1989 node scripts/smoke-control-center.mjs"
+  },
+  "dependencies": {
+    "@fastify/helmet": "^13.0.2",
+    "@fastify/rate-limit": "^10.3.0",
+    "@highlightjs/cdn-assets": "11.11.1",
+    "dompurify": "3.3.3",
+    "fastify": "^5.8.4",
+    "highlight.js": "11.11.1",
+    "marked": "17.0.5",
+    "next": "^16.2.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "ws": "^8.20.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.2",
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitest/coverage-v8": "^4.1.2",
+    "autoprefixer": "^10.4.27",
+    "cross-env": "^10.1.0",
+    "playwright": "^1.56.1",
+    "postcss": "^8.5.8",
+    "prettier": "^3.8.1",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  }
+}
