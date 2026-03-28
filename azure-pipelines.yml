@@ -23,6 +23,7 @@ variables:
   NODE_VERSION: "22"
   PNPM_VERSION: "10.33.0"
   CODEX_PORT: "41000"
+  REPO_ROOT: $(Pipeline.Workspace)/self
   GITHUB_MIRROR_PATH: github-mirror
 
 steps:
@@ -30,6 +31,7 @@ steps:
     clean: true
     fetchDepth: 0
     persistCredentials: true
+    path: self
 
   - checkout: githubMirror
     clean: true
@@ -47,30 +49,38 @@ steps:
       corepack enable
       corepack prepare pnpm@$(PNPM_VERSION) --activate
     displayName: Enable pnpm
+    workingDirectory: $(REPO_ROOT)
 
   - script: pnpm install --frozen-lockfile
     displayName: Install dependencies
+    workingDirectory: $(REPO_ROOT)
 
   - script: pnpm exec playwright install --with-deps chromium
     displayName: Install Playwright browsers
+    workingDirectory: $(REPO_ROOT)
 
   - script: pnpm protocol:manifest:check
     displayName: Validate official manifest
+    workingDirectory: $(REPO_ROOT)
 
   - script: pnpm typecheck
     displayName: Typecheck
+    workingDirectory: $(REPO_ROOT)
 
   - script: pnpm test
     displayName: Unit tests
+    workingDirectory: $(REPO_ROOT)
 
   - script: pnpm build
     displayName: Build
+    workingDirectory: $(REPO_ROOT)
 
   - script: |
       MOCK_CODEX_PORT=$(CODEX_PORT) MOCK_SEND_APPROVAL=1 node scripts/mock-codex-app-server.mjs > ci-mock.log 2>&1 &
       echo $! > ci-mock.pid
       sleep 2
     displayName: Start mock Codex backend
+    workingDirectory: $(REPO_ROOT)
 
   - script: |
       PORT=1989 PORT_FALLBACK=1990 CODEX_PORT=$(CODEX_PORT) pnpm start:ui > ci-ui.log 2>&1 &
@@ -85,20 +95,23 @@ steps:
       cat ci-mock.log
       exit 1
     displayName: Start UI server
+    workingDirectory: $(REPO_ROOT)
 
   - script: SMOKE_APPROVAL=1 pnpm smoke
     displayName: Browser smoke
+    workingDirectory: $(REPO_ROOT)
 
   - script: |
       if [ -f ci-ui.pid ]; then kill $(cat ci-ui.pid) || true; fi
       if [ -f ci-mock.pid ]; then kill $(cat ci-mock.pid) || true; fi
     displayName: Stop background services
     condition: always()
+    workingDirectory: $(REPO_ROOT)
 
   - script: |
       set -euo pipefail
       MIRROR_REPO="$(Pipeline.Workspace)/$(GITHUB_MIRROR_PATH)"
-      SOURCE_REPO="$(Build.SourcesDirectory)"
+      SOURCE_REPO="$(REPO_ROOT)"
 
       git -C "$MIRROR_REPO" config user.name "azure-pipelines[bot]"
       git -C "$MIRROR_REPO" config user.email "azure-pipelines[bot]@users.noreply.github.com"
