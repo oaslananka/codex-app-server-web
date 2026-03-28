@@ -12,9 +12,9 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  NODE_VERSION: '22'
-  PNPM_VERSION: '10.33.0'
-  CODEX_PORT: '41000'
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10.33.0"
+  CODEX_PORT: "41000"
 
 steps:
   - checkout: self
