@@ -138,13 +138,14 @@ export function CodexControlCenter() {
   }, [runtime, shell.activeTab]);
 
   useEffect(() => {
-    const { closeInput, closeSettings } = resolveOverlayDismissals({
+    const { closeInput, closeSettings, closeSidebar } = resolveOverlayDismissals({
       approvalOpen: Boolean(snapshot.activeApprovalRequest),
       inputOpen: Boolean(inputModal?.isOpen),
+      sidebarOpen: shell.isSidebarOpen,
       settingsOpen: shell.settingsOpen,
     });
 
-    if (!closeInput && !closeSettings) {
+    if (!closeInput && !closeSettings && !closeSidebar) {
       return;
     }
 
@@ -155,9 +156,15 @@ export function CodexControlCenter() {
     if (closeInput) {
       setInputModal(null);
     }
+
+    if (closeSidebar) {
+      shell.setSidebarOpen(false);
+    }
   }, [
     inputModal?.isOpen,
     shell.closeSettings,
+    shell.isSidebarOpen,
+    shell.setSidebarOpen,
     shell.settingsOpen,
     snapshot.activeApprovalRequest,
   ]);

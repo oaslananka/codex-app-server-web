@@ -130,7 +130,7 @@ export class WebsocketRpcClient {
 
   async request(method: string, params: unknown = undefined) {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      throw new Error('WebSocket is not connected');
+      throw new TransportDisconnectedError('WebSocket transport is not connected');
     }
 
     const id = this.rpcId++;
@@ -138,7 +138,12 @@ export class WebsocketRpcClient {
     logger.trace('Sending rpc request', { id, method, params });
     return await new Promise<unknown>((resolve, reject) => {
       this.pending.set(id, { method, resolve, reject });
-      this.sendRaw(payload);
+      if (this.sendRaw(payload)) {
+        return;
+      }
+
+      this.pending.delete(id);
+      reject(new TransportDisconnectedError('WebSocket transport is not connected'));
     });
   }
 
@@ -244,8 +249,9 @@ export class WebsocketRpcClient {
   }
 
   private sendRaw(payload: unknown) {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return false;
     this.ws.send(JSON.stringify(payload));
+    return true;
   }
 
   private failPendingRequests(error: Error) {

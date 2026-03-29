@@ -1,6 +1,6 @@
 'use client';
 
-import { useControlCenterState } from '../ControlCenterContext';
+import { useAccountState, useShellState } from '../ControlCenterContext';
 import { AccountLoginBanner, ChatPanel, ContentTabs, ThreadHeader } from './ChatPanel';
 import { ConfigPanel } from './ConfigPanel';
 import { FilesPanel } from './FilesPanel';
@@ -8,16 +8,17 @@ import { InfoPanel } from './InfoPanel';
 import { TerminalPanel } from './TerminalPanel';
 
 export function MainPanels() {
-  const state = useControlCenterState();
+  const account = useAccountState();
+  const shell = useShellState();
   let activePanel = <ChatPanel />;
 
-  if (state.shell.activeTab === 'terminal') {
+  if (shell.activeTab === 'terminal') {
     activePanel = <TerminalPanel />;
-  } else if (state.shell.activeTab === 'files') {
+  } else if (shell.activeTab === 'files') {
     activePanel = <FilesPanel />;
-  } else if (state.shell.activeTab === 'config') {
+  } else if (shell.activeTab === 'config') {
     activePanel = <ConfigPanel />;
-  } else if (state.shell.activeTab === 'info') {
+  } else if (shell.activeTab === 'info') {
     activePanel = <InfoPanel />;
   }
 
@@ -25,8 +26,8 @@ export function MainPanels() {
     <main id="main">
       <ThreadHeader />
       <AccountLoginBanner
-        loggedIn={state.account.loggedIn}
-        loginInProgress={state.account.loginInProgress}
+        loggedIn={account.loggedIn}
+        loginInProgress={account.loginInProgress}
       />
       <ContentTabs />
       <div id="content-area">{activePanel}</div>

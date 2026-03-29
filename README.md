@@ -1,85 +1,104 @@
 # codex-app-server-web
 
-`codex-app-server-web` is an open source web interface for the OpenAI Codex app-server protocol. It provides a browser-based control center for threads, chat, terminal access, files, configuration, approvals, MCP visibility, and runtime diagnostics while preserving protocol compatibility with Codex app-server backends.
+`codex-app-server-web` is an independent, open-source web interface for Codex app-server workflows. It provides a browser-based control center for working with threads, chat, terminal sessions, files, configuration, approvals, MCP visibility, and runtime diagnostics while staying compatible with existing app-server backends.
 
-## Repositories
+This project is independent and community-maintained. It is not affiliated with, endorsed by, or maintained by OpenAI.
 
-- GitHub: `https://github.com/oaslananka/codex-app-server-web.git`
+**Overview**
 
-Azure DevOps is the source of truth for CI/CD, build validation, and release flow. GitHub is maintained as the public open source mirror for discoverability, issue visibility, and community collaboration.
+The goal of this repository is to make Codex app-server workflows easier to inspect and operate from the browser without changing the backend protocol. It is designed for developer-facing use cases where you want a practical UI for session management, approvals, diagnostics, and workspace interaction, while keeping protocol compatibility and schema-driven behavior intact.
 
-## Screenshots
+Azure DevOps is the source of truth for CI/CD, release validation, and the primary delivery workflow. GitHub is maintained as the public open-source mirror for discoverability, issue tracking, and community contributions.
 
-<p align="center">
-  <img src="./aseets/screenshots/dektop-web.jpg" alt="codex-app-server-web desktop interface" width="900" />
-</p>
-<p align="center"><em>Desktop web experience</em></p>
+**Core Capabilities**
 
-<p align="center">
-  <img src="./aseets/screenshots/mobil-web.jpeg" alt="codex-app-server-web mobile interface" width="340" />
-</p>
-<p align="center"><em>Mobile web experience</em></p>
+- Browser-based access to conversation threads and live chat activity
+- Terminal execution with streamed output and interactive stdin
+- File browsing, editing, copy/remove actions, and path-aware navigation
+- Schema-driven config editing with generic fallback support for unknown fields
+- Approval flows for commands, file changes, permissions, user input, and auth refreshes
+- MCP server visibility, plugin inspection, external agent import, and runtime diagnostics
+- Workspace utilities such as fuzzy file search, git diff visibility, and review-thread entry points
 
-## Stack
+**Stack**
 
 - Next.js App Router
-- React
+- React 19
 - Fastify
-- WebSocket proxying with `ws`
+- WebSocket transport with `ws`
 - TypeScript
 - pnpm
-- Node.js 20+ with CI validated on Node 22
+- Node.js 20+
 
-## What it does
+**Project Structure**
 
-- Connects to a Codex app-server over WebSocket
-- Renders thread/chat/terminal/files/config/info surfaces in the browser
-- Supports approval flows, including richer approval rendering for advanced payloads
-- Exposes schema-driven config editing with generic fallback behavior
-- Includes smoke and unit testing for protocol-facing runtime behavior
+- [app](/Users/Admin/Desktop/PROJECTS/AZURE_PROJECTS/codex-app-server-web/app): Next.js app shell, layout, and entry routes
+- [src/components](/Users/Admin/Desktop/PROJECTS/AZURE_PROJECTS/codex-app-server-web/src/components): Codex control center UI, overlays, panels, and shared UI primitives
+- [src/lib](/Users/Admin/Desktop/PROJECTS/AZURE_PROJECTS/codex-app-server-web/src/lib): Runtime, transport, protocol-facing logic, and supporting utilities
+- [src/styles](/Users/Admin/Desktop/PROJECTS/AZURE_PROJECTS/codex-app-server-web/src/styles): Control center styling, responsive behavior, and overlay/panel presentation
+- [scripts](/Users/Admin/Desktop/PROJECTS/AZURE_PROJECTS/codex-app-server-web/scripts): Manifest generation, smoke tooling, vendor sync, and local backend helpers
+- [tests/unit](/Users/Admin/Desktop/PROJECTS/AZURE_PROJECTS/codex-app-server-web/tests/unit): Unit coverage for runtime behavior, protocol handling, overlays, and panel utilities
+- [azure-pipelines.yml](/Users/Admin/Desktop/PROJECTS/AZURE_PROJECTS/codex-app-server-web/azure-pipelines.yml): Primary CI/CD pipeline definition
+- [TECH_DEBT.md](/Users/Admin/Desktop/PROJECTS/AZURE_PROJECTS/codex-app-server-web/TECH_DEBT.md): Explicitly accepted debt and known boundaries
 
-## Local development
+**Local Development**
+
+Install dependencies and start the app with a local Codex backend:
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-Useful commands:
+If you want a local backend stub for UI work, start the mock app-server in a second terminal:
 
 ```bash
-pnpm typecheck
-pnpm test
-pnpm build
-pnpm smoke
 pnpm start:mock-codex
 ```
 
-## Git remotes
+The UI server can also be started directly without the helper wrapper:
 
-Recommended local remote layout for this project:
+```bash
+pnpm start:ui
+```
 
-- `origin` -> Azure DevOps primary repository
-- `github` -> public GitHub mirror
+**Useful Commands**
 
-## CI/CD
+```bash
+pnpm dev
+pnpm start
+pnpm start:prod
+pnpm start:mock-codex
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm protocol:manifest:check
+pnpm smoke
+```
 
-- Azure DevOps handles the main CI/CD pipeline for this project.
-- An Azure pipeline definition is included in [azure-pipelines.yml](./azure-pipelines.yml).
-- Successful `main` branch runs also mirror the validated `main` branch state to the public GitHub repository through the Azure DevOps GitHub service connection.
-- GitHub Actions is intentionally reduced to manual dispatch so the GitHub mirror does not act as the primary automation system.
+**CI/CD**
 
-## Open source collaboration
+- Azure DevOps is the authoritative pipeline and release path for this project.
+- [azure-pipelines.yml](/Users/Admin/Desktop/PROJECTS/AZURE_PROJECTS/codex-app-server-web/azure-pipelines.yml) defines the primary validation and delivery flow.
+- The GitHub mirror is intentionally secondary and does not replace Azure DevOps as the release source of truth.
+- Protocol metadata can be validated locally with `pnpm protocol:manifest:check` before opening a change.
 
-This repository is intended to be open source and community-friendly.
+**Contribution Guidance**
 
-- Contributions should prefer incremental, protocol-safe improvements.
-- Backward compatibility with the Codex app-server contract should be preserved.
-- Schema-backed configuration behavior should not be regressed.
-- Issues, pull requests, and documentation improvements are welcome through the public GitHub mirror.
+- Prefer incremental, protocol-safe improvements over large speculative rewrites.
+- Preserve compatibility with existing Codex app-server backends unless a change is intentionally versioned.
+- Keep schema-driven config behavior generic enough to handle unknown or forward-compatible fields.
+- Add or update focused tests when runtime behavior, transport behavior, or UI state coordination changes.
+- Run `pnpm typecheck`, `pnpm test`, and `pnpm build` before proposing a change.
+- If you touch protocol-facing metadata, also run `pnpm protocol:manifest:check`.
 
-## Notes for contributors
+**Compatibility Goals**
 
-- Run `pnpm typecheck`, `pnpm test`, and `pnpm build` before proposing changes.
-- If you touch runtime behavior, add or update tests under `tests/unit`.
-- If you change protocol metadata, validate it with `pnpm protocol:manifest:check`.
+- Remain compatible with Codex app-server workflows and the surrounding Codex / OpenAI ecosystem at the protocol level
+- Avoid backend-specific UI assumptions that would break existing app-server integrations
+- Preserve approval handling, config schema fallback behavior, and transport semantics where possible
+- Improve presentation and operator ergonomics without rebranding the project as an official vendor product
+
+**License**
+
+This project is available under the MIT License. See [LICENSE](/Users/Admin/Desktop/PROJECTS/AZURE_PROJECTS/codex-app-server-web/LICENSE).

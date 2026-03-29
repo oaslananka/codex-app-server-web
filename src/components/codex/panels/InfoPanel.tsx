@@ -9,7 +9,14 @@ import {
 } from '../../../lib/logging/browser-logger';
 import { LOG_LEVEL_PRIORITY, type LogLevel } from '../../../lib/logging/shared';
 import { Skeleton } from '../../ui';
-import { useControlCenterActions, useControlCenterState } from '../ControlCenterContext';
+import {
+  useAccountState,
+  useChatState,
+  useControlCenterActions,
+  useInfoState,
+  useShellState,
+  useThreadState,
+} from '../ControlCenterContext';
 import type { ActiveInfoCategory, ActiveInfoTab } from './types';
 import {
   getExperimentalFeatureDisplayName,
@@ -24,13 +31,17 @@ function getMcpStatusClass(status?: string) {
 }
 
 export function InfoPanel() {
-  const state = useControlCenterState();
+  const account = useAccountState();
   const actions = useControlCenterActions();
-  const integrationWarnings = state.info.integrationWarnings.filter(
+  const chat = useChatState();
+  const info = useInfoState();
+  const shell = useShellState();
+  const thread = useThreadState();
+  const integrationWarnings = info.integrationWarnings.filter(
     (warning) => warning.context === 'info',
   );
   const isInitialInfoLoading =
-    state.shell.activeTab === 'info' && !state.info.infoHydrated && !state.info.infoError;
+    shell.activeTab === 'info' && !info.infoHydrated && !info.infoError;
   const [searchQuery, setSearchQuery] = useState('');
   const [browserLogs, setBrowserLogs] = useState<BrowserLogEntry[]>(getRecentBrowserLogs);
   const [logFilter, setLogFilter] = useState<LogLevel>('trace');
@@ -55,11 +66,11 @@ export function InfoPanel() {
   }, []);
 
   useEffect(() => {
-    setLogFilter(state.shell.logSettings.level === 'silent' ? 'error' : state.shell.logSettings.level);
-  }, [state.shell.logSettings.level]);
+    setLogFilter(shell.logSettings.level === 'silent' ? 'error' : shell.logSettings.level);
+  }, [shell.logSettings.level]);
 
   useEffect(() => {
-    if (state.shell.activeTab !== 'info') return;
+    if (shell.activeTab !== 'info') return;
 
     const refs: Record<ActiveInfoTab, RefObject<HTMLDivElement | null>> = {
       models: modelsRef,
@@ -68,14 +79,14 @@ export function InfoPanel() {
       apps: appsRef,
       skills: skillsRef,
     };
-    const node = refs[state.shell.activeInfoTab].current;
+    const node = refs[shell.activeInfoTab].current;
     if (!node) return;
 
     requestAnimationFrame(() => {
       node.scrollIntoView({ block: 'start', behavior: 'smooth' });
       node.focus({ preventScroll: true });
     });
-  }, [state.shell.activeInfoTab, state.shell.activeTab]);
+  }, [shell.activeInfoTab, shell.activeTab]);
 
   const infoCategories: Array<{ id: ActiveInfoCategory; label: string }> = [
     { id: 'session', label: 'Session' },
@@ -84,14 +95,14 @@ export function InfoPanel() {
     { id: 'settings', label: 'Settings' },
   ];
   const { documented: documentedExperimentalFeatures, backendOnly: backendOnlyExperimentalFeatures } =
-    splitExperimentalFeatures(state.info.experimentalFeatures);
+    splitExperimentalFeatures(info.experimentalFeatures);
   const filteredLogs = browserLogs
     .filter((entry) => LOG_LEVEL_PRIORITY[entry.level] >= LOG_LEVEL_PRIORITY[logFilter])
     .slice(-120)
     .reverse();
 
   return (
-    <div className={`panel${state.shell.activeTab === 'info' ? ' active' : ''}`} id="panel-info">
+    <div className={`panel${shell.activeTab === 'info' ? ' active' : ''}`} id="panel-info">
       <div id="info-panel">
         <div className="info-nav" role="tablist" aria-label="Info sections">
           {infoCategories.map((category) => (
@@ -99,21 +110,21 @@ export function InfoPanel() {
               key={category.id}
               type="button"
               role="tab"
-              className={`info-nav-tab${state.shell.activeInfoCategory === category.id ? ' active' : ''}`}
-              aria-selected={state.shell.activeInfoCategory === category.id}
+              className={`info-nav-tab${shell.activeInfoCategory === category.id ? ' active' : ''}`}
+              aria-selected={shell.activeInfoCategory === category.id}
               onClick={() => actions.shell.openInfoTab(defaultInfoTabByCategory[category.id])}
             >
               {category.label}
             </button>
           ))}
         </div>
-        {state.info.infoLoading || isInitialInfoLoading ? (
+        {info.infoLoading || isInitialInfoLoading ? (
           <div className="loading">
             <Skeleton lines={5} />
             <div>Loading info…</div>
           </div>
-        ) : state.info.infoError ? (
-          <div className="panel-error">Could not load info: {state.info.infoError}</div>
+        ) : info.infoError ? (
+          <div className="panel-error">Could not load info: {info.infoError}</div>
         ) : (
           <>
             {integrationWarnings.length ? (
@@ -130,22 +141,22 @@ export function InfoPanel() {
                 </div>
               </div>
             ) : null}
-            {state.shell.activeInfoCategory === 'session' ? (
+            {shell.activeInfoCategory === 'session' ? (
               <>
                 <div className="info-grid">
                   <div className="info-section">
                     <div className="info-section-title">Account</div>
                     <div className="account-info">
-                      <div className="account-email">{state.account.accountEmail}</div>
-                      {state.account.accountPlan ? (
-                        <div className="account-plan">{state.account.accountPlan}</div>
+                      <div className="account-email">{account.accountEmail}</div>
+                      {account.accountPlan ? (
+                        <div className="account-plan">{account.accountPlan}</div>
                       ) : null}
                       <div className="config-help">
                         Commentary is currently{' '}
-                        <strong>{state.shell.showCommentary ? 'visible' : 'hidden'}</strong>.
+                        <strong>{shell.showCommentary ? 'visible' : 'hidden'}</strong>.
                       </div>
                     </div>
-                    {state.account.loggedIn ? (
+                    {account.loggedIn ? (
                       <button
                         type="button"
                         className="btn-sm btn-outline"
@@ -172,14 +183,14 @@ export function InfoPanel() {
                     >
                       Auth Status
                     </button>
-                    {state.account.authStatus.loading ? (
+                    {account.authStatus.loading ? (
                       <div className="config-help">Loading auth status…</div>
                     ) : null}
-                    {state.account.authStatus.error ? (
-                      <div className="config-help">{state.account.authStatus.error}</div>
+                    {account.authStatus.error ? (
+                      <div className="config-help">{account.authStatus.error}</div>
                     ) : null}
-                    {state.account.authStatus.content ? (
-                      <pre className="info-code-block">{state.account.authStatus.content}</pre>
+                    {account.authStatus.content ? (
+                      <pre className="info-code-block">{account.authStatus.content}</pre>
                     ) : null}
                   </div>
 
@@ -190,10 +201,10 @@ export function InfoPanel() {
                     tabIndex={-1}
                   >
                     <div className="info-section-title">Models</div>
-                    {state.chat.models.length === 0 ? (
+                    {chat.models.length === 0 ? (
                       <div className="empty-inline">No models are available.</div>
                     ) : (
-                      state.chat.models.map((model, index) => (
+                      chat.models.map((model, index) => (
                         <div
                           key={model.id || model.displayName || `model-${index}`}
                           className="info-card"
@@ -217,7 +228,7 @@ export function InfoPanel() {
               </>
             ) : null}
 
-            {state.shell.activeInfoCategory === 'workspace' ? (
+            {shell.activeInfoCategory === 'workspace' ? (
               <>
                 <div className="info-grid">
                   <div className="info-section">
@@ -245,40 +256,40 @@ export function InfoPanel() {
                         Start Review
                       </button>
                     </div>
-                    {state.info.workspaceSummary.loading ? (
+                    {info.workspaceSummary.loading ? (
                       <div className="config-help">Building summary…</div>
                     ) : null}
-                    {state.info.workspaceSummary.error ? (
-                      <div className="config-help">{state.info.workspaceSummary.error}</div>
+                    {info.workspaceSummary.error ? (
+                      <div className="config-help">{info.workspaceSummary.error}</div>
                     ) : null}
-                    {state.info.workspaceSummary.content ? (
-                      <pre className="info-code-block">{state.info.workspaceSummary.content}</pre>
+                    {info.workspaceSummary.content ? (
+                      <pre className="info-code-block">{info.workspaceSummary.content}</pre>
                     ) : null}
-                    {state.info.gitDiff.loading ? (
+                    {info.gitDiff.loading ? (
                       <div className="config-help">Loading git diff…</div>
                     ) : null}
-                    {state.info.gitDiff.error ? (
-                      <div className="config-help">{state.info.gitDiff.error}</div>
+                    {info.gitDiff.error ? (
+                      <div className="config-help">{info.gitDiff.error}</div>
                     ) : null}
-                    {state.info.gitDiff.content ? (
-                      <pre className="info-code-block">{state.info.gitDiff.content}</pre>
+                    {info.gitDiff.content ? (
+                      <pre className="info-code-block">{info.gitDiff.content}</pre>
                     ) : null}
-                    {state.thread.review.reviewThreadId ? (
+                    {thread.review.reviewThreadId ? (
                       <div className="info-tag active">
-                        Review thread: {state.thread.review.reviewThreadId}
+                        Review thread: {thread.review.reviewThreadId}
                       </div>
                     ) : null}
-                    {state.thread.review.error ? (
-                      <div className="config-help">{state.thread.review.error}</div>
+                    {thread.review.error ? (
+                      <div className="config-help">{thread.review.error}</div>
                     ) : null}
                   </div>
 
                   <div className="info-section" id="info-section-apps" ref={appsRef} tabIndex={-1}>
                     <div className="info-section-title">Apps</div>
-                    {state.info.apps.length === 0 ? (
+                    {info.apps.length === 0 ? (
                       <div className="empty-inline">The app list is empty.</div>
                     ) : (
-                      state.info.apps.map((app, index) => (
+                      info.apps.map((app, index) => (
                         <div key={app.id || app.name || `app-${index}`} className="info-card">
                           <div className="info-card-name">{app.name}</div>
                           <div className="info-card-sub">{app.description || app.id}</div>
@@ -317,14 +328,14 @@ export function InfoPanel() {
                       Search
                     </button>
                   </div>
-                  {state.info.fuzzySearch.loading ? (
+                  {info.fuzzySearch.loading ? (
                     <div className="config-help">Searching…</div>
                   ) : null}
-                  {state.info.fuzzySearch.error ? (
-                    <div className="config-help">{state.info.fuzzySearch.error}</div>
+                  {info.fuzzySearch.error ? (
+                    <div className="config-help">{info.fuzzySearch.error}</div>
                   ) : null}
                   <div className="search-results">
-                    {state.info.fuzzySearch.results.map((result) => (
+                    {info.fuzzySearch.results.map((result) => (
                       <button
                         key={`${result.path}-${result.score ?? 'na'}`}
                         type="button"
@@ -343,15 +354,15 @@ export function InfoPanel() {
               </>
             ) : null}
 
-            {state.shell.activeInfoCategory === 'integrations' ? (
+            {shell.activeInfoCategory === 'integrations' ? (
               <>
                 <div className="info-grid">
                   <div className="info-section" id="info-section-mcp" ref={mcpRef} tabIndex={-1}>
                     <div className="info-section-title">MCP Servers</div>
-                    {state.info.infoMcpServers.length === 0 ? (
+                    {info.infoMcpServers.length === 0 ? (
                       <div className="empty-inline">No MCP servers are visible.</div>
                     ) : (
-                      state.info.infoMcpServers.map((server, index) => (
+                      info.infoMcpServers.map((server, index) => (
                         <div
                           key={`${server.id || server.name || 'mcp'}-${index}`}
                           className="mcp-item"
@@ -390,19 +401,19 @@ export function InfoPanel() {
                         Import
                       </button>
                     </div>
-                    {state.info.externalAgents.loading ? (
+                    {info.externalAgents.loading ? (
                       <div className="config-help">Scanning configuration…</div>
                     ) : null}
-                    {state.info.externalAgents.error ? (
-                      <div className="config-help">{state.info.externalAgents.error}</div>
+                    {info.externalAgents.error ? (
+                      <div className="config-help">{info.externalAgents.error}</div>
                     ) : null}
-                    {state.info.externalAgents.importedCount ? (
+                    {info.externalAgents.importedCount ? (
                       <div className="info-tag active">
-                        Imported {state.info.externalAgents.importedCount} entries
+                        Imported {info.externalAgents.importedCount} entries
                       </div>
                     ) : null}
                     <pre className="info-code-block">
-                      {JSON.stringify(state.info.externalAgents.items, null, 2)}
+                      {JSON.stringify(info.externalAgents.items, null, 2)}
                     </pre>
                   </div>
                 </div>
@@ -415,10 +426,10 @@ export function InfoPanel() {
                     tabIndex={-1}
                   >
                     <div className="info-section-title">Plugins</div>
-                    {state.info.plugins.length === 0 ? (
+                    {info.plugins.length === 0 ? (
                       <div className="empty-inline">No plugins found.</div>
                     ) : (
-                      state.info.plugins.map((plugin, index) => {
+                      info.plugins.map((plugin, index) => {
                         const pluginId = plugin.id || plugin.name || `plugin-${index}`;
                         const installed = plugin.installed !== false;
                         const enabled = installed && plugin.enabled !== false;
@@ -463,13 +474,13 @@ export function InfoPanel() {
 
                   <div className="info-section">
                     <div className="info-section-title">Plugin Detail</div>
-                    {state.info.pluginDetail ? (
+                    {info.pluginDetail ? (
                       <div className="info-card">
-                        <div className="info-card-name">{state.info.pluginDetail.name}</div>
-                        <div className="info-card-sub">{state.info.pluginDetail.description}</div>
-                        {state.info.pluginDetail.apps.length ? (
+                        <div className="info-card-name">{info.pluginDetail.name}</div>
+                        <div className="info-card-sub">{info.pluginDetail.description}</div>
+                        {info.pluginDetail.apps.length ? (
                           <div className="capability-list">
-                            {state.info.pluginDetail.apps.map((app, index) => (
+                            {info.pluginDetail.apps.map((app, index) => (
                               <span
                                 key={app.id || app.name || `plugin-app-${index}`}
                                 className="info-tag"
@@ -479,9 +490,9 @@ export function InfoPanel() {
                             ))}
                           </div>
                         ) : null}
-                        {state.info.pluginDetail.mcpServers.length ? (
+                        {info.pluginDetail.mcpServers.length ? (
                           <pre className="info-code-block">
-                            {state.info.pluginDetail.mcpServers.join('\n')}
+                            {info.pluginDetail.mcpServers.join('\n')}
                           </pre>
                         ) : null}
                       </div>
@@ -495,7 +506,7 @@ export function InfoPanel() {
               </>
             ) : null}
 
-            {state.shell.activeInfoCategory === 'settings' ? (
+            {shell.activeInfoCategory === 'settings' ? (
               <>
                 <div className="info-grid">
                   <div className="info-section">
@@ -542,10 +553,10 @@ export function InfoPanel() {
                     <div className="config-help" style={{ marginBottom: '10px' }}>
                       Toggle the skills currently available to this Codex environment.
                     </div>
-                    {state.info.skills.length === 0 ? (
+                    {info.skills.length === 0 ? (
                       <div className="empty-inline">No skills found.</div>
                     ) : (
-                      state.info.skills.map((skill, index) => {
+                      info.skills.map((skill, index) => {
                         const skillId = skill.id || skill.name || `skill-${index}`;
                         const enabled = skill.enabled !== false;
                         return (
@@ -576,7 +587,7 @@ export function InfoPanel() {
 
                   <div className="info-section">
                     <div className="info-section-title">Experimental</div>
-                    {state.info.experimentalFeatures.length === 0 ? (
+                    {info.experimentalFeatures.length === 0 ? (
                       <div className="empty-inline">No experimental features are available.</div>
                     ) : (
                       <>
@@ -694,22 +705,22 @@ export function InfoPanel() {
                     <div className="metric-card">
                       <span className="metric-label">Requests</span>
                       <strong>
-                        {state.info.protocolCoverage.requests.implemented}/
-                        {state.info.protocolCoverage.requests.total}
+                        {info.protocolCoverage.requests.implemented}/
+                        {info.protocolCoverage.requests.total}
                       </strong>
                     </div>
                     <div className="metric-card">
                       <span className="metric-label">Notifications</span>
                       <strong>
-                        {state.info.protocolCoverage.notifications.implemented}/
-                        {state.info.protocolCoverage.notifications.total}
+                        {info.protocolCoverage.notifications.implemented}/
+                        {info.protocolCoverage.notifications.total}
                       </strong>
                     </div>
                     <div className="metric-card">
                       <span className="metric-label">Server Requests</span>
                       <strong>
-                        {state.info.protocolCoverage.serverRequests.implemented}/
-                        {state.info.protocolCoverage.serverRequests.total}
+                        {info.protocolCoverage.serverRequests.implemented}/
+                        {info.protocolCoverage.serverRequests.total}
                       </strong>
                     </div>
                   </div>

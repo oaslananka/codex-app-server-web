@@ -7,16 +7,38 @@ import {
   unregisterModal,
 } from '../../src/components/ui/modal-stack';
 
+type ElementStub = {
+  attributes: Record<string, string>;
+  setAttribute: (name: string, value: string) => void;
+  removeAttribute: (name: string) => void;
+};
+
+function createElementStub(): ElementStub {
+  return {
+    attributes: {},
+    setAttribute(name, value) {
+      this.attributes[name] = value;
+    },
+    removeAttribute(name) {
+      delete this.attributes[name];
+    },
+  };
+}
+
 describe('modal stack', () => {
   const originalDocument = globalThis.document;
 
   beforeEach(() => {
+    const appRoot = createElementStub();
     Object.defineProperty(globalThis, 'document', {
       configurable: true,
       value: {
         body: {
           dataset: {},
           style: {},
+        },
+        getElementById(id: string) {
+          return id === 'app' ? appRoot : null;
         },
       },
     });
@@ -35,14 +57,18 @@ describe('modal stack', () => {
     }
   });
 
-  it('prefers the highest priority modal and locks body scrolling while any modal is open', () => {
+  it('prefers the highest priority modal and locks background interaction while any modal is open', () => {
     registerModal('settings', 'settings');
     registerModal('dialog', 'dialog');
     registerModal('approval', 'approval');
 
+    const appRoot = globalThis.document.getElementById('app') as ElementStub | null;
+
     expect(getTopModalId()).toBe('approval');
     expect(globalThis.document.body.dataset.modalOpen).toBe('true');
     expect(globalThis.document.body.style.overflow).toBe('hidden');
+    expect(appRoot?.attributes['aria-hidden']).toBe('true');
+    expect(appRoot?.attributes.inert).toBe('');
 
     unregisterModal('approval');
     expect(getTopModalId()).toBe('dialog');
@@ -52,6 +78,8 @@ describe('modal stack', () => {
     expect(getTopModalId()).toBeNull();
     expect(globalThis.document.body.dataset.modalOpen).toBe('false');
     expect(globalThis.document.body.style.overflow).toBe('');
+    expect(appRoot?.attributes['aria-hidden']).toBeUndefined();
+    expect(appRoot?.attributes.inert).toBeUndefined();
   });
 
   it('notifies subscribers when the modal stack changes', () => {

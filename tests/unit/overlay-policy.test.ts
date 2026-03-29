@@ -7,10 +7,12 @@ describe('resolveOverlayDismissals', () => {
       resolveOverlayDismissals({
         approvalOpen: false,
         inputOpen: true,
+        sidebarOpen: false,
         settingsOpen: true,
       }),
     ).toEqual({
       closeInput: false,
+      closeSidebar: false,
       closeSettings: true,
     });
   });
@@ -20,11 +22,28 @@ describe('resolveOverlayDismissals', () => {
       resolveOverlayDismissals({
         approvalOpen: true,
         inputOpen: true,
+        sidebarOpen: false,
         settingsOpen: true,
       }),
     ).toEqual({
       closeInput: true,
+      closeSidebar: false,
       closeSettings: true,
+    });
+  });
+
+  it('closes the sidebar when a modal-level overlay owns focus', () => {
+    expect(
+      resolveOverlayDismissals({
+        approvalOpen: false,
+        inputOpen: false,
+        sidebarOpen: true,
+        settingsOpen: true,
+      }),
+    ).toEqual({
+      closeInput: false,
+      closeSidebar: true,
+      closeSettings: false,
     });
   });
 
@@ -33,10 +52,12 @@ describe('resolveOverlayDismissals', () => {
       resolveOverlayDismissals({
         approvalOpen: false,
         inputOpen: false,
+        sidebarOpen: false,
         settingsOpen: true,
       }),
     ).toEqual({
       closeInput: false,
+      closeSidebar: false,
       closeSettings: false,
     });
   });

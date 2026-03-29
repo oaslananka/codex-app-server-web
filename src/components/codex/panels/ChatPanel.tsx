@@ -5,7 +5,12 @@ import { getReasoningEffortsForModel } from '../../../lib/codex-runtime/reasonin
 import { sanitizeBackendThreadId } from '../../../lib/codex-runtime/thread-ids';
 import type { ChatEntry, RuntimeSnapshot } from '../../../lib/codex-ui-runtime';
 import { Modal } from '../../ui';
-import { useControlCenterActions, useControlCenterState } from '../ControlCenterContext';
+import {
+  useChatState,
+  useControlCenterActions,
+  useShellState,
+  useThreadState,
+} from '../ControlCenterContext';
 import type { TabName } from './types';
 
 function escapeHtml(value: string) {
@@ -247,9 +252,10 @@ function getClipboardImageFiles(event: ClipboardEvent<HTMLTextAreaElement>) {
 const CHAT_AUTO_SCROLL_THRESHOLD_PX = 48;
 
 export function ThreadHeader() {
-  const state = useControlCenterState();
+  const shell = useShellState();
+  const thread = useThreadState();
   const actions = useControlCenterActions();
-  const activeThread = state.thread.activeThread;
+  const activeThread = thread.activeThread;
   const hasBackendThreadId = Boolean(sanitizeBackendThreadId(activeThread?.id));
   const [isEditing, setIsEditing] = useState(false);
   const [mobileActionsCollapsed, setMobileActionsCollapsed] = useState(false);
@@ -267,7 +273,7 @@ export function ThreadHeader() {
     }
   }, []);
 
-  const statusCopy = getThreadStatusCopy(state.thread.activeThreadStatus, state.shell.turnActive);
+  const statusCopy = getThreadStatusCopy(thread.activeThreadStatus, shell.turnActive);
   const threadTitle =
     activeThread?.title || activeThread?.name || 'Select a thread or start a new one';
 
@@ -423,7 +429,7 @@ export function AccountLoginBanner({ loggedIn, loginInProgress }: AccountLoginBa
 }
 
 export function ContentTabs() {
-  const state = useControlCenterState();
+  const shell = useShellState();
   const actions = useControlCenterActions();
   const tabs: Array<{ id: TabName; label: string }> = [
     { id: 'chat', label: 'Conversation' },
@@ -439,7 +445,7 @@ export function ContentTabs() {
         <button
           key={tab.id}
           type="button"
-          className={`ctab${state.shell.activeTab === tab.id ? ' active' : ''}`}
+          className={`ctab${shell.activeTab === tab.id ? ' active' : ''}`}
           data-tab={tab.id}
           onClick={() => actions.shell.setActiveTab(tab.id)}
         >
@@ -451,17 +457,19 @@ export function ContentTabs() {
 }
 
 export function ChatPanel() {
-  const state = useControlCenterState();
+  const chat = useChatState();
+  const shell = useShellState();
+  const thread = useThreadState();
   const actions = useControlCenterActions();
-  const activeThread = state.thread.activeThread;
+  const activeThread = thread.activeThread;
   const hasBackendThreadId = Boolean(sanitizeBackendThreadId(activeThread?.id));
   const isLocalOnlyThread = Boolean(activeThread && !hasBackendThreadId);
-  const hasInterruptibleTurn = Boolean(activeThread && state.shell.turnActive);
-  const statusCopy = getThreadStatusCopy(state.thread.activeThreadStatus, hasInterruptibleTurn);
+  const hasInterruptibleTurn = Boolean(activeThread && shell.turnActive);
+  const statusCopy = getThreadStatusCopy(thread.activeThreadStatus, hasInterruptibleTurn);
   const messagesRef = useRef<HTMLDivElement | null>(null);
   const effortOptions = useMemo(
-    () => getReasoningEffortsForModel(state.chat.models, state.chat.selectedModel),
-    [state.chat.models, state.chat.selectedModel],
+    () => getReasoningEffortsForModel(chat.models, chat.selectedModel),
+    [chat.models, chat.selectedModel],
   );
   const [mobileControlsCollapsed, setMobileControlsCollapsed] = useState(false);
   const [expandedImage, setExpandedImage] = useState<{ src: string; alt: string } | null>(null);
@@ -470,20 +478,20 @@ export function ChatPanel() {
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
   const visibleEntries = useMemo(
     () =>
-      state.shell.showCommentary
-        ? state.chat.chatEntries
-        : state.chat.chatEntries.filter((entry) => entry.role !== 'commentary'),
-    [state.chat.chatEntries, state.shell.showCommentary],
+      shell.showCommentary
+        ? chat.chatEntries
+        : chat.chatEntries.filter((entry) => entry.role !== 'commentary'),
+    [chat.chatEntries, shell.showCommentary],
   );
   const serviceTier =
-    state.chat.selectedServiceTier ||
-    (typeof state.chat.configData?.service_tier === 'string'
-      ? state.chat.configData.service_tier
+    chat.selectedServiceTier ||
+    (typeof chat.configData?.service_tier === 'string'
+      ? chat.configData.service_tier
       : '');
   const sandboxMode =
-    state.chat.selectedSandboxMode ||
-    (typeof state.chat.configData?.sandbox_mode === 'string'
-      ? state.chat.configData.sandbox_mode
+    chat.selectedSandboxMode ||
+    (typeof chat.configData?.sandbox_mode === 'string'
+      ? chat.configData.sandbox_mode
       : '');
 
   const setScrollState = useCallback((isPinned: boolean, hasUnreadMessages: boolean) => {
@@ -579,18 +587,18 @@ export function ChatPanel() {
 
   return (
     <div
-      className={`panel${state.shell.activeTab === 'chat' ? ' active' : ''}${!state.thread.activeThread ? ' is-empty-state' : ''}`}
+      className={`panel${shell.activeTab === 'chat' ? ' active' : ''}${!thread.activeThread ? ' is-empty-state' : ''}`}
       id="panel-chat"
     >
       <div
         id="connection-banner"
-        className={state.shell.connectionBanner.visible ? 'is-visible' : ''}
+        className={shell.connectionBanner.visible ? 'is-visible' : ''}
       >
         <div className="connection-banner-copy">
           <div className="connection-banner-title">Codex backend connection issue</div>
-          <div className="connection-banner-body" id="connection-banner-body">
-            {state.shell.connectionBanner.message ||
-              `Target: ${state.shell.connectionBanner.target}`}
+        <div className="connection-banner-body" id="connection-banner-body">
+            {shell.connectionBanner.message ||
+              `Target: ${shell.connectionBanner.target}`}
           </div>
         </div>
         <button
@@ -604,7 +612,7 @@ export function ChatPanel() {
       </div>
 
       <div id="chat-messages" ref={messagesRef} onScroll={updateScrollIntent}>
-        {!state.thread.activeThread ? (
+        {!thread.activeThread ? (
           <div className="empty-state">
             <div className="empty-icon">⟡</div>
             <div className="empty-title">Start a new session</div>
@@ -738,9 +746,9 @@ export function ChatPanel() {
             <span className="session-controls-toggle-copy">
               <strong>Session controls</strong>
               <span>
-                {state.chat.selectedModel || 'default'} ·{' '}
-                {state.chat.selectedEffort
-                  ? formatReasoningEffortLabel(state.chat.selectedEffort)
+                {chat.selectedModel || 'default'} ·{' '}
+                {chat.selectedEffort
+                  ? formatReasoningEffortLabel(chat.selectedEffort)
                   : 'Default'}{' '}
                 · {serviceTier ? formatServiceTierLabel(serviceTier) : 'Default'}
               </span>
@@ -757,10 +765,10 @@ export function ChatPanel() {
                 <span className="quick-label">Mode</span>
                 <select
                   className="quick-select"
-                  value={state.thread.collaborationMode}
+                  value={thread.collaborationMode}
                   onChange={(event) => actions.thread.setCollaborationMode(event.target.value)}
                 >
-                  {state.thread.collaborationModes.map((mode) => (
+                  {thread.collaborationModes.map((mode) => (
                     <option key={mode.id} value={mode.id} disabled={!mode.supported}>
                       {mode.label}
                     </option>
@@ -774,11 +782,11 @@ export function ChatPanel() {
                   id="model-select"
                   name="model-select"
                   autoComplete="off"
-                  value={state.chat.selectedModel}
+                  value={chat.selectedModel}
                   onChange={(event) => actions.chat.selectModel(event.target.value)}
                 >
                   <option value="">default</option>
-                  {state.chat.models.map((model) => (
+                  {chat.models.map((model) => (
                     <option key={model.id} value={model.id}>
                       {model.displayName || model.id}
                     </option>
@@ -792,7 +800,7 @@ export function ChatPanel() {
                   id="effort-select"
                   name="effort-select"
                   autoComplete="off"
-                  value={state.chat.selectedEffort}
+                  value={chat.selectedEffort}
                   onChange={(event) => actions.chat.selectEffort(event.target.value)}
                 >
                   <option value="">default</option>
@@ -860,9 +868,9 @@ export function ChatPanel() {
           }}
         />
 
-        {state.chat.pendingAttachments.length > 0 ? (
+        {chat.pendingAttachments.length > 0 ? (
           <div className="composer-attachments">
-            {state.chat.pendingAttachments.map((attachment) => (
+            {chat.pendingAttachments.map((attachment) => (
               <div
                 key={attachment.id}
                 className={`attachment-chip${attachment.status === 'uploading' ? ' is-uploading' : ''}`}
@@ -915,9 +923,9 @@ export function ChatPanel() {
               title="Add image"
               aria-label="Add image"
               disabled={
-                !state.thread.activeThread ||
+                !thread.activeThread ||
                 hasInterruptibleTurn ||
-                state.chat.attachmentUploadInProgress
+                chat.attachmentUploadInProgress
               }
               onClick={actions.chat.openAttachmentPicker}
             >
@@ -929,7 +937,7 @@ export function ChatPanel() {
               id="chat-input"
               name="chat-input"
               placeholder={
-                state.thread.activeThread
+                thread.activeThread
                   ? isLocalOnlyThread
                     ? 'Write your message. A new backend thread will be created automatically.'
                     : 'Write your message. Shift+Enter adds a new line.'
@@ -941,7 +949,7 @@ export function ChatPanel() {
               autoCorrect="off"
               autoCapitalize="off"
               spellCheck={false}
-              value={state.thread.messageDraft}
+              value={thread.messageDraft}
               onChange={(event) => actions.thread.setMessageDraft(event.target.value)}
               onPaste={handleComposerPaste}
               onKeyDown={(event) => {
@@ -962,7 +970,7 @@ export function ChatPanel() {
               title={hasInterruptibleTurn ? 'Steer current turn' : 'Send message'}
               aria-label={hasInterruptibleTurn ? 'Steer current turn' : 'Send message'}
               disabled={
-                state.chat.attachmentUploadInProgress
+                chat.attachmentUploadInProgress
               }
               onClick={() =>
                 hasInterruptibleTurn ? actions.chat.steerTurn() : actions.chat.sendMessage()
@@ -1003,6 +1011,4 @@ export function ChatPanel() {
     </div>
   );
 }
-
-
 

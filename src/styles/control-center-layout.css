@@ -31,7 +31,7 @@
   background: linear-gradient(180deg, rgba(16, 26, 44, 0.95), rgba(11, 18, 33, 0.92));
   border-bottom: 1px solid rgba(110, 139, 182, 0.25);
   backdrop-filter: blur(10px);
-  z-index: 50;
+  z-index: var(--z-header);
 }
 
 .logo {

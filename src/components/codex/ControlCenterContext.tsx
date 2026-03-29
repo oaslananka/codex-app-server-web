@@ -1,6 +1,12 @@
 'use client';
 
-import { createContext, type PropsWithChildren, useContext, useMemo } from 'react';
+import {
+  createContext,
+  type Context,
+  type PropsWithChildren,
+  useContext,
+  useMemo,
+} from 'react';
 import type { CollaborationModeValue } from '../../lib/codex-runtime/collaboration';
 import type { BrowserLogSettings } from '../../lib/logging/shared';
 import type { RuntimeSnapshot, ThreadSummary } from '../../lib/codex-ui-runtime';
@@ -190,7 +196,15 @@ type ControlCenterContextValue = {
   state: ControlCenterState;
 };
 
-const ControlCenterContext = createContext<ControlCenterContextValue | null>(null);
+const AccountStateContext = createContext<ControlCenterState['account'] | null>(null);
+const ShellStateContext = createContext<ControlCenterState['shell'] | null>(null);
+const ThreadStateContext = createContext<ControlCenterState['thread'] | null>(null);
+const ChatStateContext = createContext<ControlCenterState['chat'] | null>(null);
+const FilesStateContext = createContext<ControlCenterState['files'] | null>(null);
+const ConfigStateContext = createContext<ControlCenterState['config'] | null>(null);
+const InfoStateContext = createContext<ControlCenterState['info'] | null>(null);
+const TerminalStateContext = createContext<ControlCenterState['terminal'] | null>(null);
+const ControlCenterActionsContext = createContext<ControlCenterActions | null>(null);
 
 export type ControlCenterProviderProps = PropsWithChildren<ControlCenterContextValue>;
 
@@ -199,22 +213,85 @@ export function CodexControlCenterProvider({
   children,
   state,
 }: ControlCenterProviderProps) {
-  const value = useMemo(() => ({ state, actions }), [actions, state]);
-  return <ControlCenterContext.Provider value={value}>{children}</ControlCenterContext.Provider>;
+  return (
+    <ControlCenterActionsContext.Provider value={actions}>
+      <AccountStateContext.Provider value={state.account}>
+        <ShellStateContext.Provider value={state.shell}>
+          <ThreadStateContext.Provider value={state.thread}>
+            <ChatStateContext.Provider value={state.chat}>
+              <FilesStateContext.Provider value={state.files}>
+                <ConfigStateContext.Provider value={state.config}>
+                  <InfoStateContext.Provider value={state.info}>
+                    <TerminalStateContext.Provider value={state.terminal}>
+                      {children}
+                    </TerminalStateContext.Provider>
+                  </InfoStateContext.Provider>
+                </ConfigStateContext.Provider>
+              </FilesStateContext.Provider>
+            </ChatStateContext.Provider>
+          </ThreadStateContext.Provider>
+        </ShellStateContext.Provider>
+      </AccountStateContext.Provider>
+    </ControlCenterActionsContext.Provider>
+  );
 }
 
-function useControlCenterContext() {
-  const context = useContext(ControlCenterContext);
-  if (!context) {
-    throw new Error('Control center context is not available.');
+function useRequiredContext<T>(context: Context<T | null>, label: string) {
+  const value = useContext(context);
+  if (!value) {
+    throw new Error(`${label} is not available.`);
   }
-  return context;
+  return value;
 }
 
 export function useControlCenterState() {
-  return useControlCenterContext().state;
+  const account = useAccountState();
+  const shell = useShellState();
+  const thread = useThreadState();
+  const chat = useChatState();
+  const files = useFilesState();
+  const config = useConfigState();
+  const info = useInfoState();
+  const terminal = useTerminalState();
+
+  return useMemo(
+    () => ({ account, shell, thread, chat, files, config, info, terminal }),
+    [account, chat, config, files, info, shell, terminal, thread],
+  );
 }
 
 export function useControlCenterActions() {
-  return useControlCenterContext().actions;
+  return useRequiredContext(ControlCenterActionsContext, 'Control center actions');
+}
+
+export function useAccountState() {
+  return useRequiredContext(AccountStateContext, 'Account state');
+}
+
+export function useShellState() {
+  return useRequiredContext(ShellStateContext, 'Shell state');
+}
+
+export function useThreadState() {
+  return useRequiredContext(ThreadStateContext, 'Thread state');
+}
+
+export function useChatState() {
+  return useRequiredContext(ChatStateContext, 'Chat state');
+}
+
+export function useFilesState() {
+  return useRequiredContext(FilesStateContext, 'Files state');
+}
+
+export function useConfigState() {
+  return useRequiredContext(ConfigStateContext, 'Config state');
+}
+
+export function useInfoState() {
+  return useRequiredContext(InfoStateContext, 'Info state');
+}
+
+export function useTerminalState() {
+  return useRequiredContext(TerminalStateContext, 'Terminal state');
 }

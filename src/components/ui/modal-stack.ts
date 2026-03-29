@@ -22,8 +22,19 @@ const stackListeners = new Set<() => void>();
 
 function notifyModalStack() {
   if (typeof document !== 'undefined') {
+    const appRoot = document.getElementById('app');
+    const hasOpenModal = modalEntries.length > 0;
     document.body.dataset.modalOpen = modalEntries.length > 0 ? 'true' : 'false';
-    document.body.style.overflow = modalEntries.length > 0 ? 'hidden' : '';
+    document.body.style.overflow = hasOpenModal ? 'hidden' : '';
+    if (appRoot) {
+      if (hasOpenModal) {
+        appRoot.setAttribute('aria-hidden', 'true');
+        appRoot.setAttribute('inert', '');
+      } else {
+        appRoot.removeAttribute('aria-hidden');
+        appRoot.removeAttribute('inert');
+      }
+    }
   }
   stackListeners.forEach((listener) => listener());
 }

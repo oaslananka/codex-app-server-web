@@ -3,7 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FileTreeNode } from '../../../lib/codex-ui-runtime';
 import { Modal, Skeleton } from '../../ui';
-import { useControlCenterActions, useControlCenterState } from '../ControlCenterContext';
+import {
+  useControlCenterActions,
+  useFilesState,
+  useShellState,
+} from '../ControlCenterContext';
 
 function formatTimestamp(value?: string | number) {
   if (!value) return '';
@@ -45,8 +49,9 @@ function getFileIcon(name: string, type: FileTreeNode['type'], isRoot?: boolean)
 }
 
 export function FilesPanel() {
-  const state = useControlCenterState();
   const actions = useControlCenterActions();
+  const files = useFilesState();
+  const shell = useShellState();
   const [focusedPath, setFocusedPath] = useState<string | null>(null);
   const [confirmDeletePath, setConfirmDeletePath] = useState<string | null>(null);
   const itemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -55,11 +60,11 @@ export function FilesPanel() {
     const indexByPath = new Map<string, number>();
     const parentByPath = new Map<string, string | null>();
 
-    state.files.fileTree.forEach((node, index) => {
+    files.fileTree.forEach((node, index) => {
       indexByPath.set(node.path, index);
       let parentPath: string | null = null;
       for (let cursor = index - 1; cursor >= 0; cursor -= 1) {
-        const candidate = state.files.fileTree[cursor];
+        const candidate = files.fileTree[cursor];
         if (!candidate) continue;
         if (candidate.depth < node.depth) {
           parentPath = candidate.path;
@@ -70,24 +75,23 @@ export function FilesPanel() {
     });
 
     return { indexByPath, parentByPath };
-  }, [state.files.fileTree]);
+  }, [files.fileTree]);
 
   useEffect(() => {
-    if (state.files.fileTree.length === 0) {
+    if (files.fileTree.length === 0) {
       setFocusedPath(null);
       return;
     }
 
-    const selectedNode = state.files.fileTree.find((node) => node.selected);
-    const preferredPath =
-      selectedNode?.path || state.files.currentFilePath || state.files.fileTree[0]?.path;
+    const selectedNode = files.fileTree.find((node) => node.selected);
+    const preferredPath = selectedNode?.path || files.currentFilePath || files.fileTree[0]?.path;
     setFocusedPath((current) => {
       if (current && treeMetadata.indexByPath.has(current)) {
         return current;
       }
       return preferredPath ?? null;
     });
-  }, [state.files.currentFilePath, state.files.fileTree, treeMetadata.indexByPath]);
+  }, [files.currentFilePath, files.fileTree, treeMetadata.indexByPath]);
 
   useEffect(() => {
     if (!focusedPath) return;
@@ -95,7 +99,7 @@ export function FilesPanel() {
   }, [focusedPath]);
 
   const moveFocusToIndex = (index: number) => {
-    const target = state.files.fileTree[index];
+    const target = files.fileTree[index];
     if (!target) return;
     setFocusedPath(target.path);
   };
@@ -116,7 +120,7 @@ export function FilesPanel() {
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
-        moveFocusToIndex(Math.min(currentIndex + 1, state.files.fileTree.length - 1));
+        moveFocusToIndex(Math.min(currentIndex + 1, files.fileTree.length - 1));
         return;
       case 'ArrowUp':
         event.preventDefault();
@@ -128,7 +132,7 @@ export function FilesPanel() {
         return;
       case 'End':
         event.preventDefault();
-        moveFocusToIndex(state.files.fileTree.length - 1);
+        moveFocusToIndex(files.fileTree.length - 1);
         return;
       case 'ArrowRight':
         event.preventDefault();
@@ -137,7 +141,7 @@ export function FilesPanel() {
             void actions.files.toggleDirectory(node.path);
             return;
           }
-          const nextNode = state.files.fileTree[currentIndex + 1];
+          const nextNode = files.fileTree[currentIndex + 1];
           if (nextNode && nextNode.depth > node.depth) {
             setFocusedPath(nextNode.path);
             return;
@@ -170,7 +174,7 @@ export function FilesPanel() {
   };
 
   return (
-    <div className={`panel${state.shell.activeTab === 'files' ? ' active' : ''}`} id="panel-files">
+    <div className={`panel${shell.activeTab === 'files' ? ' active' : ''}`} id="panel-files">
       <div id="files-panel">
         <div className="files-toolbar">
           <input
@@ -178,7 +182,7 @@ export function FilesPanel() {
             className="files-path"
             id="files-path"
             name="files-path"
-            value={state.files.fileBrowserPath}
+            value={files.fileBrowserPath}
             placeholder="/path/to/browse"
             autoComplete="off"
             autoCorrect="off"
@@ -187,7 +191,7 @@ export function FilesPanel() {
             onChange={(event) => actions.files.setFilesPath(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter') {
-                void actions.files.browseFiles(state.files.fileBrowserPath);
+                void actions.files.browseFiles(files.fileBrowserPath);
               }
             }}
           />
@@ -195,7 +199,7 @@ export function FilesPanel() {
             type="button"
             className="btn-sm btn-primary"
             id="btn-browse"
-            onClick={() => actions.files.browseFiles(state.files.fileBrowserPath)}
+            onClick={() => actions.files.browseFiles(files.fileBrowserPath)}
           >
             Browse
           </button>
@@ -218,16 +222,16 @@ export function FilesPanel() {
         </div>
 
         <div id="files-breadcrumb">
-          {state.files.fileBreadcrumb.map((segment, index) => (
+          {files.fileBreadcrumb.map((segment, index) => (
             <span key={`${segment.path}-${index}`}>
               <button
                 type="button"
-                className={`files-crumb${index === state.files.fileBreadcrumb.length - 1 ? ' active' : ''}`}
+                className={`files-crumb${index === files.fileBreadcrumb.length - 1 ? ' active' : ''}`}
                 onClick={() => actions.files.browseFiles(segment.path)}
               >
                 {segment.label}
               </button>
-              {index < state.files.fileBreadcrumb.length - 1 ? (
+              {index < files.fileBreadcrumb.length - 1 ? (
                 <span className="files-crumb-sep">›</span>
               ) : null}
             </span>
@@ -236,19 +240,19 @@ export function FilesPanel() {
 
         <div id="files-split">
           <div id="file-tree" role="tree" aria-label="Workspace files">
-            {state.files.fileLoading ? (
+            {files.fileLoading ? (
               <div className="loading">
                 <Skeleton lines={4} />
                 <div>Loading directory…</div>
               </div>
-            ) : state.files.fileError ? (
-              <div className="panel-error">Could not read directory: {state.files.fileError}</div>
-            ) : state.files.fileTree.length === 0 ? (
+            ) : files.fileError ? (
+              <div className="panel-error">Could not read directory: {files.fileError}</div>
+            ) : files.fileTree.length === 0 ? (
               <div className="file-tree-empty">
                 Files will appear here when you open a workspace or thread.
               </div>
             ) : (
-              state.files.fileTree.map((node) => {
+              files.fileTree.map((node) => {
                 const isDirectory = node.type === 'directory';
                 const isFocused = focusedPath === node.path;
                 return (
@@ -286,19 +290,19 @@ export function FilesPanel() {
 
           <div id="file-editor-wrap">
             <div id="file-editor-bar">
-              <span id="file-editor-name">{state.files.fileEditorName}</span>
-              {state.files.fileMetadata ? (
+              <span id="file-editor-name">{files.fileEditorName}</span>
+              {files.fileMetadata ? (
                 <div className="file-meta-strip">
-                  {typeof state.files.fileMetadata.size === 'number' ? (
-                    <span>{state.files.fileMetadata.size} B</span>
+                  {typeof files.fileMetadata.size === 'number' ? (
+                    <span>{files.fileMetadata.size} B</span>
                   ) : null}
-                  {state.files.fileMetadata.modifiedAt ? (
-                    <span>{formatTimestamp(state.files.fileMetadata.modifiedAt)}</span>
+                  {files.fileMetadata.modifiedAt ? (
+                    <span>{formatTimestamp(files.fileMetadata.modifiedAt)}</span>
                   ) : null}
-                  {state.files.fileMetadata.readOnly ? <span>Read only</span> : null}
+                  {files.fileMetadata.readOnly ? <span>Read only</span> : null}
                 </div>
               ) : null}
-              {state.files.currentFilePath ? (
+              {files.currentFilePath ? (
                 <>
                   <button
                     type="button"
@@ -307,11 +311,11 @@ export function FilesPanel() {
                       actions.files.openInputModal({
                         title: 'Copy File',
                         label: 'Destination path',
-                        placeholder: `${state.files.currentFilePath}.copy`,
-                        defaultValue: `${state.files.currentFilePath}.copy`,
+                        placeholder: `${files.currentFilePath}.copy`,
+                        defaultValue: `${files.currentFilePath}.copy`,
                         confirmLabel: 'Copy',
                         onConfirm: (destination) => {
-                          void actions.files.copyPath(state.files.currentFilePath!, destination);
+                          void actions.files.copyPath(files.currentFilePath!, destination);
                         },
                       })
                     }
@@ -321,7 +325,7 @@ export function FilesPanel() {
                   <button
                     type="button"
                     className="btn-sm btn-outline danger"
-                    onClick={() => setConfirmDeletePath(state.files.currentFilePath)}
+                    onClick={() => setConfirmDeletePath(files.currentFilePath)}
                   >
                     Remove
                   </button>
@@ -331,7 +335,7 @@ export function FilesPanel() {
                 type="button"
                 className="btn-sm btn-primary"
                 id="btn-save-file"
-                disabled={!state.files.currentFilePath || state.files.fileEditorReadOnly}
+                disabled={!files.currentFilePath || files.fileEditorReadOnly}
                 onClick={() => actions.files.saveFile()}
               >
                 Save
@@ -341,12 +345,12 @@ export function FilesPanel() {
               id="file-editor"
               name="file-editor"
               placeholder="Select a file to view or edit it…"
-              readOnly={state.files.fileEditorReadOnly}
+              readOnly={files.fileEditorReadOnly}
               autoComplete="off"
               autoCorrect="off"
               autoCapitalize="off"
               spellCheck={false}
-              value={state.files.fileEditorContent}
+              value={files.fileEditorContent}
               onChange={(event) => actions.files.setEditorContent(event.target.value)}
             />
           </div>

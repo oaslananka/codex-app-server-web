@@ -1,24 +1,29 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { useControlCenterActions, useControlCenterState } from '../ControlCenterContext';
+import {
+  useControlCenterActions,
+  useShellState,
+  useTerminalState,
+} from '../ControlCenterContext';
 
 export function TerminalPanel() {
-  const state = useControlCenterState();
   const actions = useControlCenterActions();
+  const shell = useShellState();
+  const terminal = useTerminalState();
   const outputRef = useRef<HTMLDivElement | null>(null);
-  const isRunning = state.terminal.terminalRunning;
-  const hasOutput = state.terminal.terminalOutput.length > 0;
+  const isRunning = terminal.terminalRunning;
+  const hasOutput = terminal.terminalOutput.length > 0;
 
   useEffect(() => {
     const node = outputRef.current;
     if (!node) return;
     node.scrollTop = node.scrollHeight;
-  }, [state.terminal.terminalOutput]);
+  }, [terminal.terminalOutput]);
 
   return (
     <div
-      className={`panel${state.shell.activeTab === 'terminal' ? ' active' : ''}`}
+      className={`panel${shell.activeTab === 'terminal' ? ' active' : ''}`}
       id="panel-terminal"
     >
       <div id="terminal-panel">
@@ -34,7 +39,7 @@ export function TerminalPanel() {
               autoCorrect="off"
               autoCapitalize="off"
               spellCheck={false}
-              value={state.terminal.terminalCommand}
+              value={terminal.terminalCommand}
               onChange={(event) => actions.terminal.setCommand(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {
@@ -56,7 +61,7 @@ export function TerminalPanel() {
                 autoCorrect="off"
                 autoCapitalize="off"
                 spellCheck={false}
-                value={state.terminal.terminalCwd}
+                value={terminal.terminalCwd}
                 onChange={(event) => actions.terminal.setCwd(event.target.value)}
               />
             </div>
@@ -68,11 +73,11 @@ export function TerminalPanel() {
                   type="number"
                   min={40}
                   max={300}
-                  value={state.terminal.terminalSize.cols}
+                  value={terminal.terminalSize.cols}
                   onChange={(event) =>
                     actions.terminal.setSize(
                       Number(event.target.value || 120),
-                      state.terminal.terminalSize.rows,
+                      terminal.terminalSize.rows,
                     )
                   }
                 />
@@ -83,10 +88,10 @@ export function TerminalPanel() {
                   type="number"
                   min={10}
                   max={120}
-                  value={state.terminal.terminalSize.rows}
+                  value={terminal.terminalSize.rows}
                   onChange={(event) =>
                     actions.terminal.setSize(
-                      state.terminal.terminalSize.cols,
+                      terminal.terminalSize.cols,
                       Number(event.target.value || 32),
                     )
                   }
@@ -125,14 +130,14 @@ export function TerminalPanel() {
                 {isRunning ? 'Running' : 'Idle'}
               </span>
               <span className="term-output-count">
-                {hasOutput ? `${state.terminal.terminalOutput.length} lines` : 'No output yet'}
+                {hasOutput ? `${terminal.terminalOutput.length} lines` : 'No output yet'}
               </span>
             </div>
           </div>
 
           <div id="term-output" ref={outputRef}>
             {hasOutput ? (
-              state.terminal.terminalOutput.map((line) => (
+              terminal.terminalOutput.map((line) => (
                 <div key={line.id} className={`term-line-${line.channel}`}>
                   {line.text}
                 </div>
@@ -162,7 +167,7 @@ export function TerminalPanel() {
             autoCorrect="off"
             autoCapitalize="off"
             spellCheck={false}
-            value={state.terminal.terminalStdin}
+            value={terminal.terminalStdin}
             onChange={(event) => actions.terminal.setStdin(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter') {

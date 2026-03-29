@@ -1,4 +1,6 @@
 :root {
+  --z-header: 10;
+  --z-connection-banner: 20;
   --z-sidebar-overlay: 35;
   --z-sidebar: 40;
   --z-toast: 70;

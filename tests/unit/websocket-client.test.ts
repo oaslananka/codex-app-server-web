@@ -103,4 +103,10 @@ describe('WebsocketRpcClient', () => {
 
     await expect(pending).rejects.toThrow(/socket lost|disconnected/i);
   });
+
+  it('rejects requests immediately when the transport is unavailable', async () => {
+    const client = new WebsocketRpcClient('ws://localhost:4000/ws');
+
+    await expect(client.request('thread/list', {})).rejects.toThrow(/not connected|disconnected/i);
+  });
 });

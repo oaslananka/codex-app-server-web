@@ -2,7 +2,12 @@
 
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Skeleton } from '../../ui';
-import { useControlCenterActions, useControlCenterState } from '../ControlCenterContext';
+import {
+  useChatState,
+  useConfigState,
+  useControlCenterActions,
+  useShellState,
+} from '../ControlCenterContext';
 import {
   applyConfigDraftChange,
   buildConfigFieldSections,
@@ -152,16 +157,18 @@ export function JsonCard({ title, content }: { title: string; content: string })
 }
 
 export function ConfigPanel() {
-  const state = useControlCenterState();
+  const chat = useChatState();
+  const config = useConfigState();
   const actions = useControlCenterActions();
-  const integrationWarnings = state.config.integrationWarnings.filter(
+  const shell = useShellState();
+  const integrationWarnings = config.integrationWarnings.filter(
     (warning) => warning.context === 'config',
   );
   const isInitialConfigLoading =
-    state.shell.activeTab === 'config' && !state.config.configHydrated && !state.config.configError;
+    shell.activeTab === 'config' && !config.configHydrated && !config.configError;
   const sections = useMemo(
-    () => buildConfigFieldSections(state.config.configData, state.chat.models),
-    [state.chat.models, state.config.configData],
+    () => buildConfigFieldSections(config.configData, chat.models),
+    [chat.models, config.configData],
   );
   const descriptorMap = useMemo(() => buildDescriptorMap(sections), [sections]);
   const [draftState, setDraftState] = useState(() => buildInitialConfigDraftState(sections));
@@ -210,17 +217,17 @@ export function ConfigPanel() {
 
   return (
     <div
-      className={`panel${state.shell.activeTab === 'config' ? ' active' : ''}`}
+      className={`panel${shell.activeTab === 'config' ? ' active' : ''}`}
       id="panel-config"
     >
       <div id="config-panel">
-        {state.config.configLoading || isInitialConfigLoading ? (
+        {config.configLoading || isInitialConfigLoading ? (
           <div className="loading">
             <Skeleton lines={4} />
             <div>Loading configuration…</div>
           </div>
-        ) : state.config.configError ? (
-          <div className="panel-error">Could not load config: {state.config.configError}</div>
+        ) : config.configError ? (
+          <div className="panel-error">Could not load config: {config.configError}</div>
         ) : (
           <>
             {integrationWarnings.length ? (
@@ -282,14 +289,12 @@ export function ConfigPanel() {
               <div className="backend-status-card">
                 <div className="backend-status-row">
                   <span>Target</span>
-                  <code>{state.shell.connectionBanner.target}</code>
+                  <code>{shell.connectionBanner.target}</code>
                 </div>
                 <div className="backend-status-row">
                   <span>Connection</span>
-                  <span
-                    className={`backend-status-pill ${state.config.connected ? 'online' : 'offline'}`}
-                  >
-                    {state.config.connected ? 'ONLINE' : 'OFFLINE'}
+                  <span className={`backend-status-pill ${config.connected ? 'online' : 'offline'}`}>
+                    {config.connected ? 'ONLINE' : 'OFFLINE'}
                   </span>
                 </div>
                 <button
@@ -324,10 +329,10 @@ export function ConfigPanel() {
             <div className="config-grid">
               <div className="config-section">
                 <div className="config-section-title">MCP servers</div>
-                {state.config.configMcpServers.length === 0 ? (
+                {config.configMcpServers.length === 0 ? (
                   <div className="config-help">No MCP servers are configured.</div>
                 ) : (
-                  state.config.configMcpServers.map((server, index) => (
+                  config.configMcpServers.map((server, index) => (
                     <div
                       key={`${server.id || server.name || 'mcp'}-${index}`}
                       className="backend-status-card"
@@ -352,10 +357,10 @@ export function ConfigPanel() {
 
               <div className="config-section">
                 <div className="config-section-title">Config requirements</div>
-                {state.config.configRequirements ? (
+                {config.configRequirements ? (
                   <JsonCard
                     title="Requirements"
-                    content={JSON.stringify(state.config.configRequirements, null, 2)}
+                    content={JSON.stringify(config.configRequirements, null, 2)}
                   />
                 ) : (
                   <div className="config-help">
@@ -372,22 +377,22 @@ export function ConfigPanel() {
                   <div className="metric-card">
                     <span className="metric-label">Requests</span>
                     <strong>
-                      {state.config.protocolCoverage.requests.implemented}/
-                      {state.config.protocolCoverage.requests.total}
+                      {config.protocolCoverage.requests.implemented}/
+                      {config.protocolCoverage.requests.total}
                     </strong>
                   </div>
                   <div className="metric-card">
                     <span className="metric-label">Notifications</span>
                     <strong>
-                      {state.config.protocolCoverage.notifications.implemented}/
-                      {state.config.protocolCoverage.notifications.total}
+                      {config.protocolCoverage.notifications.implemented}/
+                      {config.protocolCoverage.notifications.total}
                     </strong>
                   </div>
                   <div className="metric-card">
                     <span className="metric-label">Server Requests</span>
                     <strong>
-                      {state.config.protocolCoverage.serverRequests.implemented}/
-                      {state.config.protocolCoverage.serverRequests.total}
+                      {config.protocolCoverage.serverRequests.implemented}/
+                      {config.protocolCoverage.serverRequests.total}
                     </strong>
                   </div>
                 </div>
@@ -396,7 +401,7 @@ export function ConfigPanel() {
               <div className="config-section">
                 <div className="config-section-title">Capability support</div>
                 <div className="capability-list">
-                  {Object.entries(state.config.capabilities.requests)
+                  {Object.entries(config.capabilities.requests)
                     .filter(([, status]) => status !== 'unknown')
                     .slice(0, 8)
                     .map(([method, status]) => (
