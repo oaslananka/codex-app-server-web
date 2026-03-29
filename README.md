@@ -32,14 +32,14 @@ Azure DevOps is the source of truth for CI/CD, release validation, and the prima
 
 **Project Structure**
 
-- [app](/Users/Admin/Desktop/PROJECTS/AZURE_PROJECTS/codex-app-server-web/app): Next.js app shell, layout, and entry routes
-- [src/components](/Users/Admin/Desktop/PROJECTS/AZURE_PROJECTS/codex-app-server-web/src/components): Codex control center UI, overlays, panels, and shared UI primitives
-- [src/lib](/Users/Admin/Desktop/PROJECTS/AZURE_PROJECTS/codex-app-server-web/src/lib): Runtime, transport, protocol-facing logic, and supporting utilities
-- [src/styles](/Users/Admin/Desktop/PROJECTS/AZURE_PROJECTS/codex-app-server-web/src/styles): Control center styling, responsive behavior, and overlay/panel presentation
-- [scripts](/Users/Admin/Desktop/PROJECTS/AZURE_PROJECTS/codex-app-server-web/scripts): Manifest generation, smoke tooling, vendor sync, and local backend helpers
-- [tests/unit](/Users/Admin/Desktop/PROJECTS/AZURE_PROJECTS/codex-app-server-web/tests/unit): Unit coverage for runtime behavior, protocol handling, overlays, and panel utilities
-- [azure-pipelines.yml](/Users/Admin/Desktop/PROJECTS/AZURE_PROJECTS/codex-app-server-web/azure-pipelines.yml): Primary CI/CD pipeline definition
-- [TECH_DEBT.md](/Users/Admin/Desktop/PROJECTS/AZURE_PROJECTS/codex-app-server-web/TECH_DEBT.md): Explicitly accepted debt and known boundaries
+- [`app/`](./app): Next.js app shell, layout, and entry routes
+- [`src/components/`](./src/components): Codex control center UI, overlays, panels, and shared UI primitives
+- [`src/lib/`](./src/lib): Runtime, transport, protocol-facing logic, and supporting utilities
+- [`src/styles/`](./src/styles): Control center styling, responsive behavior, and overlay/panel presentation
+- [`scripts/`](./scripts): Manifest generation, smoke tooling, vendor sync, and local backend helpers
+- [`tests/unit/`](./tests/unit): Unit coverage for runtime behavior, protocol handling, overlays, and panel utilities
+- [`azure-pipelines.yml`](./azure-pipelines.yml): Primary CI/CD pipeline definition
+- [`TECH_DEBT.md`](./TECH_DEBT.md): Explicitly accepted debt and known boundaries
 
 **Local Development**
 
@@ -79,7 +79,7 @@ pnpm smoke
 **CI/CD**
 
 - Azure DevOps is the authoritative pipeline and release path for this project.
-- [azure-pipelines.yml](/Users/Admin/Desktop/PROJECTS/AZURE_PROJECTS/codex-app-server-web/azure-pipelines.yml) defines the primary validation and delivery flow.
+- [`azure-pipelines.yml`](./azure-pipelines.yml) defines the primary validation and delivery flow.
 - The GitHub mirror is intentionally secondary and does not replace Azure DevOps as the release source of truth.
 - Protocol metadata can be validated locally with `pnpm protocol:manifest:check` before opening a change.
 
@@ -101,4 +101,4 @@ pnpm smoke
 
 **License**
 
-This project is available under the MIT License. See [LICENSE](/Users/Admin/Desktop/PROJECTS/AZURE_PROJECTS/codex-app-server-web/LICENSE).
+This project is available under the MIT License. See [`LICENSE`](./LICENSE).
