@@ -15,19 +15,42 @@ export class TransportDisconnectedError extends Error {
   }
 }
 
+function summarizeHtmlLikeError(message: string) {
+  const compact = message.replace(/\s+/g, ' ').trim();
+  const hasHtmlDocument = /<html[\s>]/i.test(message) || /<body[\s>]/i.test(message);
+
+  if (!hasHtmlDocument) {
+    return message.length > 600 ? `${message.slice(0, 597)}...` : message;
+  }
+
+  const statusMatch = compact.match(/status\s+(\d{3}\s+[A-Za-z ]+)/i);
+  const statusText = statusMatch?.[1]?.trim();
+  const statusLabel = statusText ? `Request failed with status ${statusText}` : 'Request failed';
+  const isCloudflareChallenge =
+    /cloudflare/i.test(compact) ||
+    /challenge-error-text/i.test(compact) ||
+    /enable javascript and cookies to continue/i.test(compact);
+
+  if (isCloudflareChallenge) {
+    return `${statusLabel}: remote service returned an HTML challenge page instead of API JSON. This usually means auth expired or the request was blocked upstream.`;
+  }
+
+  return `${statusLabel}: remote service returned HTML instead of API JSON.`;
+}
+
 export function normalizeError(error: unknown, fallback = 'Unknown error') {
   if (error instanceof Error) {
-    return error.message || fallback;
+    return normalizeError(error.message || fallback, fallback);
   }
 
   if (typeof error === 'string') {
-    return error;
+    return summarizeHtmlLikeError(error || fallback);
   }
 
   if (error && typeof error === 'object') {
     const maybeMessage = Reflect.get(error, 'message');
     if (typeof maybeMessage === 'string' && maybeMessage) {
-      return maybeMessage;
+      return summarizeHtmlLikeError(maybeMessage);
     }
   }
 

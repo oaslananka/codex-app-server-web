@@ -24,6 +24,7 @@ import {
   getExperimentalFeatureKey,
   splitExperimentalFeatures,
 } from './experimental-feature-utils';
+import { getAppsAvailabilityHint } from './info-panel-utils';
 
 function getMcpStatusClass(status?: string) {
   if (status === 'running') return 'running';
@@ -98,6 +99,7 @@ export function InfoPanel() {
   ];
   const { documented: documentedExperimentalFeatures, backendOnly: backendOnlyExperimentalFeatures } =
     splitExperimentalFeatures(info.experimentalFeatures);
+  const appsAvailabilityHint = getAppsAvailabilityHint(integrationWarnings);
   const filteredLogs = browserLogs
     .filter((entry) => LOG_LEVEL_PRIORITY[entry.level] >= LOG_LEVEL_PRIORITY[logFilter])
     .slice(-120)
@@ -289,6 +291,11 @@ export function InfoPanel() {
 
                   <div className="info-section" id="info-section-apps" ref={appsRef} tabIndex={-1}>
                     <div className="info-section-title">Apps</div>
+                    {appsAvailabilityHint ? (
+                      <div className="config-help" style={{ marginBottom: '10px' }}>
+                        {appsAvailabilityHint}
+                      </div>
+                    ) : null}
                     {info.apps.length === 0 ? (
                       <div className="empty-inline">The app list is empty.</div>
                     ) : (

@@ -1,4 +1,4 @@
-import { RpcMethodUnavailableError, TransportDisconnectedError } from '../errors';
+import { RpcMethodUnavailableError, TransportDisconnectedError, normalizeError } from '../errors';
 import { createBrowserLogger } from '../../logging/browser-logger';
 
 type PendingRequest = {
@@ -173,10 +173,12 @@ export class WebsocketRpcClient {
       if (message.id === this.initializeRequestId) {
         this.initializeRequestId = null;
         if (message.error) {
-          logger.error('Initialize request failed', message.error);
+          logger.error('Initialize request failed', {
+            message: normalizeError(message.error),
+          });
           const errorPayload = message.error as Record<string, unknown>;
           this.emitControl('readyError', {
-            message: typeof errorPayload.message === 'string' ? errorPayload.message : 'Initialize failed',
+            message: normalizeError(errorPayload, 'Initialize failed'),
           });
         } else {
           logger.info('Initialize request completed');
@@ -190,12 +192,14 @@ export class WebsocketRpcClient {
       if (!pending) return;
       this.pending.delete(message.id);
       if (message.error) {
+        const errorPayload = message.error as Record<string, unknown>;
+        const messageText = normalizeError(errorPayload, 'RPC request failed');
         logger.warn('RPC request failed', {
           id: message.id,
-          error: message.error,
+          method: pending.method,
+          code: errorPayload.code,
+          message: messageText,
         });
-        const errorPayload = message.error as Record<string, unknown>;
-        const messageText = typeof errorPayload.message === 'string' ? errorPayload.message : 'RPC request failed';
         const error =
           errorPayload.code === -32601
             ? new RpcMethodUnavailableError(pending.method, messageText)
