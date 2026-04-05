@@ -39,6 +39,22 @@
       "title": "Chatgptv2::LoginAccountParams"
     },
     {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "chatgptDeviceCode"
+          ],
+          "title": "ChatgptDeviceCodev2::LoginAccountParamsType"
+        }
+      },
+      "title": "ChatgptDeviceCodev2::LoginAccountParams"
+    },
+    {
       "description": "[UNSTABLE] FOR OPENAI INTERNAL USE ONLY - DO NOT USE. The access token must contain the same scopes that Codex-managed ChatGPT auth tokens have.",
       "type": "object",
       "required": [

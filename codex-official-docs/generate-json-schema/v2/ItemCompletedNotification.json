@@ -195,6 +195,15 @@
         }
       ]
     },
+    "CommandExecutionSource": {
+      "type": "string",
+      "enum": [
+        "agent",
+        "userShell",
+        "unifiedExecStartup",
+        "unifiedExecInteraction"
+      ]
+    },
     "CommandExecutionStatus": {
       "type": "string",
       "enum": [
@@ -271,6 +280,21 @@
           "$ref": "#/definitions/PatchChangeKind"
         },
         "path": {
+          "type": "string"
+        }
+      }
+    },
+    "HookPromptFragment": {
+      "type": "object",
+      "required": [
+        "hookRunId",
+        "text"
+      ],
+      "properties": {
+        "hookRunId": {
+          "type": "string"
+        },
+        "text": {
           "type": "string"
         }
       }
@@ -508,6 +532,33 @@
         {
           "type": "object",
           "required": [
+            "fragments",
+            "id",
+            "type"
+          ],
+          "properties": {
+            "fragments": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/HookPromptFragment"
+              }
+            },
+            "id": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "hookPrompt"
+              ],
+              "title": "HookPromptThreadItemType"
+            }
+          },
+          "title": "HookPromptThreadItem"
+        },
+        {
+          "type": "object",
+          "required": [
             "id",
             "text",
             "type"
@@ -667,6 +718,14 @@
               "type": [
                 "string",
                 "null"
+              ]
+            },
+            "source": {
+              "default": "agent",
+              "allOf": [
+                {
+                  "$ref": "#/definitions/CommandExecutionSource"
+                }
               ]
             },
             "status": {
@@ -987,6 +1046,12 @@
               "type": "string"
             },
             "revisedPrompt": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "savedPath": {
               "type": [
                 "string",
                 "null"

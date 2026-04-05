@@ -1,5 +1,6 @@
 import { normalizeError } from '../errors';
 import { normalizeFuzzyResults } from '../normalizers';
+import { sanitizeBackendThreadId } from '../thread-ids';
 import type { RuntimeStore } from '../store';
 
 type ServiceDeps = {
@@ -17,14 +18,16 @@ export class WorkspaceService {
 
   async loadConversationSummary() {
     const state = this.store.getState();
-    if (!state.activeThread?.id && !state.activeThread?.cwd) return;
+    const backendThreadId = sanitizeBackendThreadId(state.activeThread?.id);
+    const rolloutPath = state.activeThread?.cwd ?? state.fileBrowserPath;
+    if (!backendThreadId && !rolloutPath) return;
     this.store.patch((current) => ({
       workspaceSummary: { ...current.workspaceSummary, loading: true, error: '' },
     }));
     try {
       const response = await this.deps.requestCompat(
         'getConversationSummary',
-        state.activeThread?.id ? { conversationId: state.activeThread.id } : { rolloutPath: state.activeThread?.cwd ?? state.fileBrowserPath },
+        backendThreadId ? { conversationId: backendThreadId } : { rolloutPath },
       );
       this.store.patch({
         workspaceSummary: {
@@ -32,7 +35,7 @@ export class WorkspaceService {
             typeof (response as Record<string, unknown>).summary === 'string'
               ? String((response as Record<string, unknown>).summary)
               : JSON.stringify(response, null, 2),
-          source: state.activeThread?.id ? 'thread' : 'cwd',
+          source: backendThreadId ? 'thread' : 'cwd',
           loading: false,
           error: '',
         },
@@ -123,13 +126,25 @@ export class WorkspaceService {
 
   async startReview() {
     const state = this.store.getState();
-    if (!state.activeThread?.id) return;
+    const backendThreadId = sanitizeBackendThreadId(state.activeThread?.id);
+    if (!backendThreadId) {
+      this.store.patch((current) => ({
+        review: {
+          ...current.review,
+          loading: false,
+          error: 'Review requires an active backend thread.',
+          reviewThreadId: null,
+        },
+      }));
+      this.deps.toast('Review requires an active backend thread.', 'info');
+      return;
+    }
     this.store.patch((current) => ({
       review: { ...current.review, loading: true, error: '' },
     }));
     try {
       const response = (await this.deps.requestCompat('review/start', {
-        threadId: state.activeThread.id,
+        threadId: backendThreadId,
         target: { type: 'uncommittedChanges' },
         delivery: 'detached',
       })) as Record<string, unknown>;

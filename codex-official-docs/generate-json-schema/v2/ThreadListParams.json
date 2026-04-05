@@ -87,7 +87,6 @@
         "vscode",
         "exec",
         "appServer",
-        "custom",
         "subAgent",
         "subAgentReview",
         "subAgentCompact",

@@ -576,6 +576,26 @@
         "method": {
           "type": "string",
           "enum": [
+            "mcpServer/startupStatus/updated"
+          ],
+          "title": "McpServer/startupStatus/updatedNotificationMethod"
+        },
+        "params": {
+          "$ref": "#/definitions/McpServerStatusUpdatedNotification"
+        }
+      },
+      "title": "McpServer/startupStatus/updatedNotification"
+    },
+    {
+      "type": "object",
+      "required": [
+        "method",
+        "params"
+      ],
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": [
             "account/updated"
           ],
           "title": "Account/updatedNotificationMethod"
@@ -625,6 +645,26 @@
         }
       },
       "title": "App/list/updatedNotification"
+    },
+    {
+      "type": "object",
+      "required": [
+        "method",
+        "params"
+      ],
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": [
+            "fs/changed"
+          ],
+          "title": "Fs/changedNotificationMethod"
+        },
+        "params": {
+          "$ref": "#/definitions/FsChangedNotification"
+        }
+      },
+      "title": "Fs/changedNotification"
     },
     {
       "type": "object",
@@ -857,6 +897,26 @@
         "method": {
           "type": "string",
           "enum": [
+            "thread/realtime/transcriptUpdated"
+          ],
+          "title": "Thread/realtime/transcriptUpdatedNotificationMethod"
+        },
+        "params": {
+          "$ref": "#/definitions/ThreadRealtimeTranscriptUpdatedNotification"
+        }
+      },
+      "title": "Thread/realtime/transcriptUpdatedNotification"
+    },
+    {
+      "type": "object",
+      "required": [
+        "method",
+        "params"
+      ],
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": [
             "thread/realtime/outputAudio/delta"
           ],
           "title": "Thread/realtime/outputAudio/deltaNotificationMethod"
@@ -970,6 +1030,10 @@
     }
   ],
   "definitions": {
+    "AbsolutePathBuf": {
+      "description": "A path that is guaranteed to be absolute and normalized (though it is not guaranteed to be canonicalized or exist on the filesystem).\n\nIMPORTANT: When deserializing an `AbsolutePathBuf`, a base path must be set using [AbsolutePathBufGuard::new]. If no base path is set, the deserialization will fail unless the path being deserialized is already absolute.",
+      "type": "string"
+    },
     "AccountLoginCompletedNotification": {
       "type": "object",
       "required": [
@@ -1051,6 +1115,9 @@
           "type": "string"
         }
       }
+    },
+    "AgentPath": {
+      "type": "string"
     },
     "AppBranding": {
       "description": "EXPERIMENTAL - app metadata returned by app-list APIs.",
@@ -1480,6 +1547,28 @@
           },
           "additionalProperties": false,
           "title": "ResponseTooManyFailedAttemptsCodexErrorInfo"
+        },
+        {
+          "description": "Returned when `turn/start` or `turn/steer` is submitted while the current active turn cannot accept same-turn steering, for example `/review` or manual `/compact`.",
+          "type": "object",
+          "required": [
+            "activeTurnNotSteerable"
+          ],
+          "properties": {
+            "activeTurnNotSteerable": {
+              "type": "object",
+              "required": [
+                "turnKind"
+              ],
+              "properties": {
+                "turnKind": {
+                  "$ref": "#/definitions/NonSteerableTurnKind"
+                }
+              }
+            }
+          },
+          "additionalProperties": false,
+          "title": "ActiveTurnNotSteerableCodexErrorInfo"
         }
       ]
     },
@@ -1714,6 +1803,15 @@
         }
       }
     },
+    "CommandExecutionSource": {
+      "type": "string",
+      "enum": [
+        "agent",
+        "userShell",
+        "unifiedExecStartup",
+        "unifiedExecInteraction"
+      ]
+    },
     "CommandExecutionStatus": {
       "type": "string",
       "enum": [
@@ -1933,11 +2031,40 @@
         }
       }
     },
+    "FsChangedNotification": {
+      "description": "Filesystem watch notification emitted for `fs/watch` subscribers.",
+      "type": "object",
+      "required": [
+        "changedPaths",
+        "watchId"
+      ],
+      "properties": {
+        "changedPaths": {
+          "description": "File or directory paths associated with this event.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AbsolutePathBuf"
+          }
+        },
+        "watchId": {
+          "description": "Watch identifier returned by `fs/watch`.",
+          "type": "string"
+        }
+      }
+    },
+    "FuzzyFileSearchMatchType": {
+      "type": "string",
+      "enum": [
+        "file",
+        "directory"
+      ]
+    },
     "FuzzyFileSearchResult": {
       "description": "Superset of [`codex_file_search::FileMatch`]",
       "type": "object",
       "required": [
         "file_name",
+        "match_type",
         "path",
         "root",
         "score"
@@ -1956,6 +2083,9 @@
             "format": "uint32",
             "minimum": 0.0
           }
+        },
+        "match_type": {
+          "$ref": "#/definitions/FuzzyFileSearchMatchType"
         },
         "path": {
           "type": "string"
@@ -2105,6 +2235,8 @@
     "HookEventName": {
       "type": "string",
       "enum": [
+        "preToolUse",
+        "postToolUse",
         "sessionStart",
         "userPromptSubmit",
         "stop"
@@ -2149,6 +2281,21 @@
         "context",
         "error"
       ]
+    },
+    "HookPromptFragment": {
+      "type": "object",
+      "required": [
+        "hookRunId",
+        "text"
+      ],
+      "properties": {
+        "hookRunId": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        }
+      }
     },
     "HookRunStatus": {
       "type": "string",
@@ -2369,6 +2516,36 @@
         }
       }
     },
+    "McpServerStartupState": {
+      "type": "string",
+      "enum": [
+        "starting",
+        "ready",
+        "failed",
+        "cancelled"
+      ]
+    },
+    "McpServerStatusUpdatedNotification": {
+      "type": "object",
+      "required": [
+        "name",
+        "status"
+      ],
+      "properties": {
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/McpServerStartupState"
+        }
+      }
+    },
     "McpToolCallError": {
       "type": "object",
       "required": [
@@ -2524,6 +2701,13 @@
         }
       }
     },
+    "NonSteerableTurnKind": {
+      "type": "string",
+      "enum": [
+        "review",
+        "compact"
+      ]
+    },
     "PatchApplyStatus": {
       "type": "string",
       "enum": [
@@ -2623,7 +2807,9 @@
         "plus",
         "pro",
         "team",
+        "self_serve_business_usage_based",
         "business",
+        "enterprise_cbp_usage_based",
         "enterprise",
         "edu",
         "unknown"
@@ -2909,6 +3095,17 @@
                   "type": [
                     "string",
                     "null"
+                  ]
+                },
+                "agent_path": {
+                  "default": null,
+                  "anyOf": [
+                    {
+                      "$ref": "#/definitions/AgentPath"
+                    },
+                    {
+                      "type": "null"
+                    }
                   ]
                 },
                 "agent_role": {
@@ -3209,6 +3406,33 @@
         {
           "type": "object",
           "required": [
+            "fragments",
+            "id",
+            "type"
+          ],
+          "properties": {
+            "fragments": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/HookPromptFragment"
+              }
+            },
+            "id": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "hookPrompt"
+              ],
+              "title": "HookPromptThreadItemType"
+            }
+          },
+          "title": "HookPromptThreadItem"
+        },
+        {
+          "type": "object",
+          "required": [
             "id",
             "text",
             "type"
@@ -3368,6 +3592,14 @@
               "type": [
                 "string",
                 "null"
+              ]
+            },
+            "source": {
+              "default": "agent",
+              "allOf": [
+                {
+                  "$ref": "#/definitions/CommandExecutionSource"
+                }
               ]
             },
             "status": {
@@ -3693,6 +3925,12 @@
                 "null"
               ]
             },
+            "savedPath": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
             "status": {
               "type": "string"
             },
@@ -3914,6 +4152,26 @@
         },
         "version": {
           "$ref": "#/definitions/RealtimeConversationVersion"
+        }
+      }
+    },
+    "ThreadRealtimeTranscriptUpdatedNotification": {
+      "description": "EXPERIMENTAL - flat transcript delta emitted whenever realtime transcript text changes.",
+      "type": "object",
+      "required": [
+        "role",
+        "text",
+        "threadId"
+      ],
+      "properties": {
+        "role": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "threadId": {
+          "type": "string"
         }
       }
     },

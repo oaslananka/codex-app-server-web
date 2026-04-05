@@ -49,14 +49,10 @@
         "null"
       ]
     },
-    "personality": {
-      "anyOf": [
-        {
-          "$ref": "#/definitions/Personality"
-        },
-        {
-          "type": "null"
-        }
+    "serviceName": {
+      "type": [
+        "string",
+        "null"
       ]
     },
     "ephemeral": {
@@ -104,10 +100,14 @@
         "null"
       ]
     },
-    "serviceName": {
-      "type": [
-        "string",
-        "null"
+    "personality": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Personality"
+        },
+        {
+          "type": "null"
+        }
       ]
     }
   },

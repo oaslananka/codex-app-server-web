@@ -53,22 +53,6 @@
         "null"
       ]
     },
-    "threadId": {
-      "type": "string"
-    },
-    "model": {
-      "description": "Configuration overrides for the resumed thread, if any.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "modelProvider": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
     "serviceTier": {
       "anyOf": [
         {
@@ -85,6 +69,22 @@
           "type": "null"
         }
       ]
+    },
+    "model": {
+      "description": "Configuration overrides for the resumed thread, if any.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "modelProvider": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "threadId": {
+      "type": "string"
     },
     "sandbox": {
       "anyOf": [

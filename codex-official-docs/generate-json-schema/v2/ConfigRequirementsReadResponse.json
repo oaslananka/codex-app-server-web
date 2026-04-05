@@ -117,6 +117,13 @@
         }
       }
     },
+    "NetworkDomainPermission": {
+      "type": "string",
+      "enum": [
+        "allow",
+        "deny"
+      ]
+    },
     "NetworkRequirements": {
       "type": "object",
       "properties": {
@@ -127,6 +134,7 @@
           ]
         },
         "allowUnixSockets": {
+          "description": "Legacy compatibility view derived from `unix_sockets`.",
           "type": [
             "array",
             "null"
@@ -142,6 +150,7 @@
           ]
         },
         "allowedDomains": {
+          "description": "Legacy compatibility view derived from `domains`.",
           "type": [
             "array",
             "null"
@@ -163,12 +172,23 @@
           ]
         },
         "deniedDomains": {
+          "description": "Legacy compatibility view derived from `domains`.",
           "type": [
             "array",
             "null"
           ],
           "items": {
             "type": "string"
+          }
+        },
+        "domains": {
+          "description": "Canonical network permission map for `experimental_network`.",
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "$ref": "#/definitions/NetworkDomainPermission"
           }
         },
         "enabled": {
@@ -185,6 +205,13 @@
           "format": "uint16",
           "minimum": 0.0
         },
+        "managedAllowedDomainsOnly": {
+          "description": "When true, only managed allowlist entries are respected while managed network enforcement is active.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
         "socksPort": {
           "type": [
             "integer",
@@ -192,8 +219,25 @@
           ],
           "format": "uint16",
           "minimum": 0.0
+        },
+        "unixSockets": {
+          "description": "Canonical unix socket permission map for `experimental_network`.",
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "$ref": "#/definitions/NetworkUnixSocketPermission"
+          }
         }
       }
+    },
+    "NetworkUnixSocketPermission": {
+      "type": "string",
+      "enum": [
+        "allow",
+        "none"
+      ]
     },
     "ResidencyRequirement": {
       "type": "string",

@@ -69,9 +69,6 @@
         "null"
       ]
     },
-    "threadId": {
-      "type": "string"
-    },
     "serviceTier": {
       "anyOf": [
         {
@@ -88,6 +85,9 @@
           "type": "null"
         }
       ]
+    },
+    "threadId": {
+      "type": "string"
     },
     "sandbox": {
       "anyOf": [

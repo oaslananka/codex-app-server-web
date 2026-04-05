@@ -141,6 +141,30 @@ describe('ApprovalService', () => {
     });
   });
 
+  it('preserves optional requestUserInput questions instead of forcing them required', async () => {
+    const { store, service } = createService();
+    const promise = service.requestApproval('item/tool/requestUserInput', {
+      itemId: 'input-optional',
+      questions: [
+        {
+          id: 'notes',
+          question: 'Optional notes',
+          required: false,
+        },
+      ],
+    });
+
+    expect(store.getState().activeApprovalRequest?.questions).toEqual([
+      expect.objectContaining({
+        id: 'notes',
+        required: false,
+      }),
+    ]);
+
+    service.resolveApproval('confirm', { answers: {} });
+    await expect(promise).resolves.toEqual({ answers: {} });
+  });
+
   it('rejects and clears an active approval when the transport disconnects', async () => {
     const { store, service } = createService();
     const promise = service.requestApproval('item/tool/call', {

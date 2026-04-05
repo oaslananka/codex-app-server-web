@@ -22,11 +22,19 @@
     }
   },
   "definitions": {
+    "FuzzyFileSearchMatchType": {
+      "type": "string",
+      "enum": [
+        "file",
+        "directory"
+      ]
+    },
     "FuzzyFileSearchResult": {
       "description": "Superset of [`codex_file_search::FileMatch`]",
       "type": "object",
       "required": [
         "file_name",
+        "match_type",
         "path",
         "root",
         "score"
@@ -45,6 +53,9 @@
             "format": "uint32",
             "minimum": 0.0
           }
+        },
+        "match_type": {
+          "$ref": "#/definitions/FuzzyFileSearchMatchType"
         },
         "path": {
           "type": "string"

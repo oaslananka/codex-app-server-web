@@ -61,4 +61,55 @@ describe('TurnService', () => {
     expect(store.getState().turnActive).toBe(true);
     expect(store.getState().messageDraft).toBe('');
   });
+
+  it('removes the optimistic draft entry when turn/start fails', async () => {
+    const store = new RuntimeStore(buildInitialState());
+    store.patch({
+      messageDraft: 'this send should fail',
+    });
+
+    const requestCompat = vi.fn(async (method: string) => {
+      if (method === 'turn/start') {
+        throw new Error('backend unavailable');
+      }
+      throw new Error(`Unexpected method: ${method}`);
+    }) as <T = unknown>(
+      canonicalMethod: string,
+      params?: unknown,
+      fallbacks?: readonly string[],
+    ) => Promise<T>;
+
+    const toast = vi.fn();
+
+    const service = new TurnService(
+      store,
+      {
+        requestCompat,
+        markRequestSupported: vi.fn(),
+        markRequestUnsupported: vi.fn(),
+        toast,
+      },
+      {
+        appendUserDraftEntry(entry) {
+          store.patch((state) => ({
+            threadEntries: {
+              ...state.threadEntries,
+              [entry.threadId ?? 'thread-123']: [
+                ...(state.threadEntries[entry.threadId ?? 'thread-123'] ?? []),
+                entry,
+              ],
+            },
+          }));
+        },
+        ensureWritableThread: vi.fn(async () => 'thread-123'),
+        upsertThreadEntry: vi.fn(),
+      },
+    );
+
+    await service.sendMessage();
+
+    expect(store.getState().threadEntries['thread-123']).toEqual([]);
+    expect(store.getState().messageDraft).toBe('this send should fail');
+    expect(toast).toHaveBeenCalledWith('Send failed: backend unavailable', 'error');
+  });
 });

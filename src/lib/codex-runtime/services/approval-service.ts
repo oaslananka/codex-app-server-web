@@ -36,7 +36,7 @@ function mapQuestions(rawQuestions: unknown): ApprovalQuestion[] {
       id: String(item.id ?? crypto.randomUUID()),
       header: typeof item.header === 'string' ? item.header : undefined,
       question: String(item.question ?? ''),
-      required: true,
+      required: typeof item.required === 'boolean' ? item.required : true,
       type: Array.isArray(item.options) && item.options.length > 0 ? 'select' : 'text',
       isOther: Boolean(item.isOther),
       isSecret: Boolean(item.isSecret),

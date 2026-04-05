@@ -134,7 +134,36 @@
           },
           "additionalProperties": false,
           "title": "ResponseTooManyFailedAttemptsCodexErrorInfo"
+        },
+        {
+          "description": "Returned when `turn/start` or `turn/steer` is submitted while the current active turn cannot accept same-turn steering, for example `/review` or manual `/compact`.",
+          "type": "object",
+          "required": [
+            "activeTurnNotSteerable"
+          ],
+          "properties": {
+            "activeTurnNotSteerable": {
+              "type": "object",
+              "required": [
+                "turnKind"
+              ],
+              "properties": {
+                "turnKind": {
+                  "$ref": "#/definitions/NonSteerableTurnKind"
+                }
+              }
+            }
+          },
+          "additionalProperties": false,
+          "title": "ActiveTurnNotSteerableCodexErrorInfo"
         }
+      ]
+    },
+    "NonSteerableTurnKind": {
+      "type": "string",
+      "enum": [
+        "review",
+        "compact"
       ]
     },
     "TurnError": {

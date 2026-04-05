@@ -21,6 +21,9 @@
     }
   },
   "definitions": {
+    "AgentPath": {
+      "type": "string"
+    },
     "ByteRange": {
       "type": "object",
       "required": [
@@ -151,6 +154,28 @@
           },
           "additionalProperties": false,
           "title": "ResponseTooManyFailedAttemptsCodexErrorInfo"
+        },
+        {
+          "description": "Returned when `turn/start` or `turn/steer` is submitted while the current active turn cannot accept same-turn steering, for example `/review` or manual `/compact`.",
+          "type": "object",
+          "required": [
+            "activeTurnNotSteerable"
+          ],
+          "properties": {
+            "activeTurnNotSteerable": {
+              "type": "object",
+              "required": [
+                "turnKind"
+              ],
+              "properties": {
+                "turnKind": {
+                  "$ref": "#/definitions/NonSteerableTurnKind"
+                }
+              }
+            }
+          },
+          "additionalProperties": false,
+          "title": "ActiveTurnNotSteerableCodexErrorInfo"
         }
       ]
     },
@@ -311,6 +336,15 @@
         }
       ]
     },
+    "CommandExecutionSource": {
+      "type": "string",
+      "enum": [
+        "agent",
+        "userShell",
+        "unifiedExecStartup",
+        "unifiedExecInteraction"
+      ]
+    },
     "CommandExecutionStatus": {
       "type": "string",
       "enum": [
@@ -414,6 +448,21 @@
         }
       }
     },
+    "HookPromptFragment": {
+      "type": "object",
+      "required": [
+        "hookRunId",
+        "text"
+      ],
+      "properties": {
+        "hookRunId": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        }
+      }
+    },
     "McpToolCallError": {
       "type": "object",
       "required": [
@@ -511,6 +560,13 @@
             "final_answer"
           ]
         }
+      ]
+    },
+    "NonSteerableTurnKind": {
+      "type": "string",
+      "enum": [
+        "review",
+        "compact"
       ]
     },
     "PatchApplyStatus": {
@@ -660,6 +716,17 @@
                   "type": [
                     "string",
                     "null"
+                  ]
+                },
+                "agent_path": {
+                  "default": null,
+                  "anyOf": [
+                    {
+                      "$ref": "#/definitions/AgentPath"
+                    },
+                    {
+                      "type": "null"
+                    }
                   ]
                 },
                 "agent_role": {
@@ -875,6 +942,33 @@
         {
           "type": "object",
           "required": [
+            "fragments",
+            "id",
+            "type"
+          ],
+          "properties": {
+            "fragments": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/HookPromptFragment"
+              }
+            },
+            "id": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "hookPrompt"
+              ],
+              "title": "HookPromptThreadItemType"
+            }
+          },
+          "title": "HookPromptThreadItem"
+        },
+        {
+          "type": "object",
+          "required": [
             "id",
             "text",
             "type"
@@ -1034,6 +1128,14 @@
               "type": [
                 "string",
                 "null"
+              ]
+            },
+            "source": {
+              "default": "agent",
+              "allOf": [
+                {
+                  "$ref": "#/definitions/CommandExecutionSource"
+                }
               ]
             },
             "status": {
@@ -1354,6 +1456,12 @@
               "type": "string"
             },
             "revisedPrompt": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "savedPath": {
               "type": [
                 "string",
                 "null"

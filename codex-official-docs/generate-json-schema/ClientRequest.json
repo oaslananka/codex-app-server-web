@@ -258,6 +258,30 @@
         "method": {
           "type": "string",
           "enum": [
+            "thread/shellCommand"
+          ],
+          "title": "Thread/shellCommandRequestMethod"
+        },
+        "params": {
+          "$ref": "#/definitions/ThreadShellCommandParams"
+        }
+      },
+      "title": "Thread/shellCommandRequest"
+    },
+    {
+      "type": "object",
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "type": "string",
+          "enum": [
             "thread/rollback"
           ],
           "title": "Thread/rollbackRequestMethod"
@@ -618,6 +642,54 @@
         "method": {
           "type": "string",
           "enum": [
+            "fs/watch"
+          ],
+          "title": "Fs/watchRequestMethod"
+        },
+        "params": {
+          "$ref": "#/definitions/FsWatchParams"
+        }
+      },
+      "title": "Fs/watchRequest"
+    },
+    {
+      "type": "object",
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "type": "string",
+          "enum": [
+            "fs/unwatch"
+          ],
+          "title": "Fs/unwatchRequestMethod"
+        },
+        "params": {
+          "$ref": "#/definitions/FsUnwatchParams"
+        }
+      },
+      "title": "Fs/unwatchRequest"
+    },
+    {
+      "type": "object",
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "type": "string",
+          "enum": [
             "skills/config/write"
           ],
           "title": "Skills/config/writeRequestMethod"
@@ -819,6 +891,30 @@
         }
       },
       "title": "ExperimentalFeature/listRequest"
+    },
+    {
+      "type": "object",
+      "required": [
+        "id",
+        "method",
+        "params"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/RequestId"
+        },
+        "method": {
+          "type": "string",
+          "enum": [
+            "experimentalFeature/enablement/set"
+          ],
+          "title": "ExperimentalFeature/enablement/setRequestMethod"
+        },
+        "params": {
+          "$ref": "#/definitions/ExperimentalFeatureEnablementSetParams"
+        }
+      },
+      "title": "ExperimentalFeature/enablement/setRequest"
     },
     {
       "type": "object",
@@ -1870,6 +1966,21 @@
         }
       }
     },
+    "ExperimentalFeatureEnablementSetParams": {
+      "type": "object",
+      "required": [
+        "enablement"
+      ],
+      "properties": {
+        "enablement": {
+          "description": "Process-wide runtime feature enablement keyed by canonical feature name.\n\nOnly named features are updated. Omitted features are left unchanged. Send an empty map for a no-op.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
     "ExperimentalFeatureListParams": {
       "type": "object",
       "properties": {
@@ -2123,6 +2234,36 @@
           "type": [
             "boolean",
             "null"
+          ]
+        }
+      }
+    },
+    "FsUnwatchParams": {
+      "description": "Stop filesystem watch notifications for a prior `fs/watch`.",
+      "type": "object",
+      "required": [
+        "watchId"
+      ],
+      "properties": {
+        "watchId": {
+          "description": "Watch identifier returned by `fs/watch`.",
+          "type": "string"
+        }
+      }
+    },
+    "FsWatchParams": {
+      "description": "Start filesystem watch notifications for an absolute path.",
+      "type": "object",
+      "required": [
+        "path"
+      ],
+      "properties": {
+        "path": {
+          "description": "Absolute file or directory path to watch.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/AbsolutePathBuf"
+            }
           ]
         }
       }
@@ -2606,6 +2747,22 @@
             }
           },
           "title": "ChatgptLoginAccountParams"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "chatgptDeviceCode"
+              ],
+              "title": "ChatgptDeviceCodeLoginAccountParamsType"
+            }
+          },
+          "title": "ChatgptDeviceCodeLoginAccountParams"
         },
         {
           "description": "[UNSTABLE] FOR OPENAI INTERNAL USE ONLY - DO NOT USE. The access token must contain the same scopes that Codex-managed ChatGPT auth tokens have.",
@@ -3956,15 +4113,29 @@
     "SkillsConfigWriteParams": {
       "type": "object",
       "required": [
-        "enabled",
-        "path"
+        "enabled"
       ],
       "properties": {
         "enabled": {
           "type": "boolean"
         },
+        "name": {
+          "description": "Name-based selector.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "path": {
-          "type": "string"
+          "description": "Path-based selector.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/AbsolutePathBuf"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       }
     },
@@ -4153,9 +4324,6 @@
             "null"
           ]
         },
-        "threadId": {
-          "type": "string"
-        },
         "serviceTier": {
           "anyOf": [
             {
@@ -4172,6 +4340,9 @@
               "type": "null"
             }
           ]
+        },
+        "threadId": {
+          "type": "string"
         },
         "sandbox": {
           "anyOf": [
@@ -4403,14 +4574,10 @@
             "null"
           ]
         },
-        "personality": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/Personality"
-            },
-            {
-              "type": "null"
-            }
+        "serviceName": {
+          "type": [
+            "string",
+            "null"
           ]
         },
         "ephemeral": {
@@ -4458,10 +4625,14 @@
             "null"
           ]
         },
-        "serviceName": {
-          "type": [
-            "string",
-            "null"
+        "personality": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Personality"
+            },
+            {
+              "type": "null"
+            }
           ]
         }
       }
@@ -4473,7 +4644,6 @@
         "vscode",
         "exec",
         "appServer",
-        "custom",
         "subAgent",
         "subAgentReview",
         "subAgentCompact",
@@ -4527,14 +4697,15 @@
         "updated_at"
       ]
     },
-    "ThreadSetNameParams": {
+    "ThreadShellCommandParams": {
       "type": "object",
       "required": [
-        "name",
+        "command",
         "threadId"
       ],
       "properties": {
-        "name": {
+        "command": {
+          "description": "Shell command string evaluated by the thread's configured shell. Unlike `command/exec`, this intentionally preserves shell syntax such as pipes, redirects, and quoting. This runs unsandboxed with full access rather than inheriting the thread sandbox policy.",
           "type": "string"
         },
         "threadId": {
@@ -4595,22 +4766,6 @@
             "null"
           ]
         },
-        "threadId": {
-          "type": "string"
-        },
-        "model": {
-          "description": "Configuration overrides for the resumed thread, if any.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "modelProvider": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
         "serviceTier": {
           "anyOf": [
             {
@@ -4627,6 +4782,22 @@
               "type": "null"
             }
           ]
+        },
+        "model": {
+          "description": "Configuration overrides for the resumed thread, if any.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "modelProvider": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "threadId": {
+          "type": "string"
         },
         "sandbox": {
           "anyOf": [
@@ -4662,6 +4833,21 @@
           "type": "integer",
           "format": "uint32",
           "minimum": 0.0
+        },
+        "threadId": {
+          "type": "string"
+        }
+      }
+    },
+    "ThreadSetNameParams": {
+      "type": "object",
+      "required": [
+        "name",
+        "threadId"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
         },
         "threadId": {
           "type": "string"

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type RefObject } from 'react';
+import { sanitizeBackendThreadId } from '../../../lib/codex-runtime/thread-ids';
 import {
   clearBrowserLogs,
   getRecentBrowserLogs,
@@ -40,6 +41,7 @@ export function InfoPanel() {
   const integrationWarnings = info.integrationWarnings.filter(
     (warning) => warning.context === 'info',
   );
+  const hasBackendThreadId = Boolean(sanitizeBackendThreadId(thread.activeThread?.id));
   const isInitialInfoLoading =
     shell.activeTab === 'info' && !info.infoHydrated && !info.infoError;
   const [searchQuery, setSearchQuery] = useState('');
@@ -251,6 +253,7 @@ export function InfoPanel() {
                       <button
                         type="button"
                         className="btn-sm btn-outline"
+                        disabled={!hasBackendThreadId}
                         onClick={() => actions.info.startReview()}
                       >
                         Start Review

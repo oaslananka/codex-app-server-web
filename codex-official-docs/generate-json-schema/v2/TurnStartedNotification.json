@@ -145,6 +145,28 @@
           },
           "additionalProperties": false,
           "title": "ResponseTooManyFailedAttemptsCodexErrorInfo"
+        },
+        {
+          "description": "Returned when `turn/start` or `turn/steer` is submitted while the current active turn cannot accept same-turn steering, for example `/review` or manual `/compact`.",
+          "type": "object",
+          "required": [
+            "activeTurnNotSteerable"
+          ],
+          "properties": {
+            "activeTurnNotSteerable": {
+              "type": "object",
+              "required": [
+                "turnKind"
+              ],
+              "properties": {
+                "turnKind": {
+                  "$ref": "#/definitions/NonSteerableTurnKind"
+                }
+              }
+            }
+          },
+          "additionalProperties": false,
+          "title": "ActiveTurnNotSteerableCodexErrorInfo"
         }
       ]
     },
@@ -305,6 +327,15 @@
         }
       ]
     },
+    "CommandExecutionSource": {
+      "type": "string",
+      "enum": [
+        "agent",
+        "userShell",
+        "unifiedExecStartup",
+        "unifiedExecInteraction"
+      ]
+    },
     "CommandExecutionStatus": {
       "type": "string",
       "enum": [
@@ -381,6 +412,21 @@
           "$ref": "#/definitions/PatchChangeKind"
         },
         "path": {
+          "type": "string"
+        }
+      }
+    },
+    "HookPromptFragment": {
+      "type": "object",
+      "required": [
+        "hookRunId",
+        "text"
+      ],
+      "properties": {
+        "hookRunId": {
+          "type": "string"
+        },
+        "text": {
           "type": "string"
         }
       }
@@ -482,6 +528,13 @@
             "final_answer"
           ]
         }
+      ]
+    },
+    "NonSteerableTurnKind": {
+      "type": "string",
+      "enum": [
+        "review",
+        "compact"
       ]
     },
     "PatchApplyStatus": {
@@ -614,6 +667,33 @@
             }
           },
           "title": "UserMessageThreadItem"
+        },
+        {
+          "type": "object",
+          "required": [
+            "fragments",
+            "id",
+            "type"
+          ],
+          "properties": {
+            "fragments": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/HookPromptFragment"
+              }
+            },
+            "id": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "hookPrompt"
+              ],
+              "title": "HookPromptThreadItemType"
+            }
+          },
+          "title": "HookPromptThreadItem"
         },
         {
           "type": "object",
@@ -777,6 +857,14 @@
               "type": [
                 "string",
                 "null"
+              ]
+            },
+            "source": {
+              "default": "agent",
+              "allOf": [
+                {
+                  "$ref": "#/definitions/CommandExecutionSource"
+                }
               ]
             },
             "status": {
@@ -1097,6 +1185,12 @@
               "type": "string"
             },
             "revisedPrompt": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "savedPath": {
               "type": [
                 "string",
                 "null"

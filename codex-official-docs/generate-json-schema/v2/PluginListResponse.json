@@ -6,6 +6,20 @@
     "marketplaces"
   ],
   "properties": {
+    "featuredPluginIds": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "marketplaceLoadErrors": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/MarketplaceLoadErrorInfo"
+      }
+    },
     "marketplaces": {
       "type": "array",
       "items": {
@@ -32,6 +46,21 @@
             "string",
             "null"
           ]
+        }
+      }
+    },
+    "MarketplaceLoadErrorInfo": {
+      "type": "object",
+      "required": [
+        "marketplacePath",
+        "message"
+      ],
+      "properties": {
+        "marketplacePath": {
+          "$ref": "#/definitions/AbsolutePathBuf"
+        },
+        "message": {
+          "type": "string"
         }
       }
     },

@@ -53,6 +53,7 @@ export class FeatureService {
   private createWarning(
     context: IntegrationWarningContext,
     source: IntegrationWarningSource,
+    idSuffix: string,
     label: string,
     reason: unknown,
   ): IntegrationWarning | null {
@@ -61,7 +62,7 @@ export class FeatureService {
     }
 
     return {
-      id: `${context}:${source}`,
+      id: `${context}:${idSuffix}`,
       context,
       source,
       message: `${label} unavailable: ${normalizeError(reason)}`,
@@ -106,15 +107,16 @@ export class FeatureService {
         configRequirements.status === 'fulfilled';
       const warnings = [
         config.status === 'rejected'
-          ? this.createWarning('config', 'config', 'Config', config.reason)
+          ? this.createWarning('config', 'config', 'config-read', 'Config', config.reason)
           : null,
         mcpStatus.status === 'rejected'
-          ? this.createWarning('config', 'mcp', 'MCP server status', mcpStatus.reason)
+          ? this.createWarning('config', 'mcp', 'mcp-status', 'MCP server status', mcpStatus.reason)
           : null,
         configRequirements.status === 'rejected'
           ? this.createWarning(
               'config',
               'config',
+              'config-requirements',
               'Config requirements',
               configRequirements.reason,
             )
@@ -224,24 +226,31 @@ export class FeatureService {
     );
     const warnings = [
       mcpStatus.status === 'rejected'
-        ? this.createWarning('info', 'mcp', 'MCP servers', mcpStatus.reason)
+        ? this.createWarning('info', 'mcp', 'mcp-servers', 'MCP servers', mcpStatus.reason)
         : null,
       skills.status === 'rejected'
-        ? this.createWarning('info', 'skills', 'Skills', skills.reason)
+        ? this.createWarning('info', 'skills', 'skills', 'Skills', skills.reason)
         : null,
       features.status === 'rejected'
-        ? this.createWarning('info', 'features', 'Experimental features', features.reason)
+        ? this.createWarning(
+            'info',
+            'features',
+            'experimental-features',
+            'Experimental features',
+            features.reason,
+          )
         : null,
       plugins.status === 'rejected'
-        ? this.createWarning('info', 'plugins', 'Plugins', plugins.reason)
+        ? this.createWarning('info', 'plugins', 'plugins', 'Plugins', plugins.reason)
         : null,
       apps.status === 'rejected'
-        ? this.createWarning('info', 'apps', 'Apps', apps.reason)
+        ? this.createWarning('info', 'apps', 'apps', 'Apps', apps.reason)
         : null,
       collaborationModes.status === 'rejected'
         ? this.createWarning(
             'info',
             'features',
+            'collaboration-modes',
             'Collaboration modes',
             collaborationModes.reason,
           )

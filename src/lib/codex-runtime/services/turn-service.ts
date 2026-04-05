@@ -45,8 +45,9 @@ export class TurnService {
       return;
     }
 
+    const draftId = `draft-${Date.now()}`;
     this.threadEntries.appendUserDraftEntry({
-      id: `draft-${Date.now()}`,
+      id: draftId,
       kind: 'message',
       role: 'user',
       content: text,
@@ -89,6 +90,7 @@ export class TurnService {
       });
       this.deps.markRequestSupported('turn/start');
     } catch (error) {
+      this.removeDraftEntry(activeThreadId, draftId);
       this.deps.markRequestUnsupported('turn/start');
       this.deps.toast(`Send failed: ${normalizeError(error)}`, 'error');
     }
@@ -254,6 +256,20 @@ export class TurnService {
       content: getOutputText(item) || getTextContent(item),
       status: 'done',
       isStreaming: false,
+    });
+  }
+
+  private removeDraftEntry(threadId: string, entryId: string) {
+    const state = this.store.getState();
+    const threadEntries = state.threadEntries[threadId] ?? [];
+    const nextEntries = threadEntries.filter((entry) => entry.id !== entryId);
+
+    this.store.patch({
+      threadEntries: {
+        ...state.threadEntries,
+        [threadId]: nextEntries,
+      },
+      chatEntries: state.activeThread?.id === threadId ? nextEntries : state.chatEntries,
     });
   }
 }

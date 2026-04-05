@@ -8,7 +8,7 @@
     "turnId"
   ],
   "properties": {
-    "turnId": {
+    "threadId": {
       "type": "string"
     },
     "approvalId": {
@@ -18,7 +18,7 @@
         "null"
       ]
     },
-    "threadId": {
+    "turnId": {
       "type": "string"
     },
     "command": {
@@ -115,41 +115,6 @@
         }
       }
     },
-    "AdditionalMacOsPermissions": {
-      "type": "object",
-      "required": [
-        "accessibility",
-        "automations",
-        "calendar",
-        "contacts",
-        "launchServices",
-        "preferences",
-        "reminders"
-      ],
-      "properties": {
-        "accessibility": {
-          "type": "boolean"
-        },
-        "automations": {
-          "$ref": "#/definitions/MacOsAutomationPermission"
-        },
-        "calendar": {
-          "type": "boolean"
-        },
-        "contacts": {
-          "$ref": "#/definitions/MacOsContactsPermission"
-        },
-        "launchServices": {
-          "type": "boolean"
-        },
-        "preferences": {
-          "$ref": "#/definitions/MacOsPreferencesPermission"
-        },
-        "reminders": {
-          "type": "boolean"
-        }
-      }
-    },
     "AdditionalNetworkPermissions": {
       "type": "object",
       "properties": {
@@ -168,16 +133,6 @@
           "anyOf": [
             {
               "$ref": "#/definitions/AdditionalFileSystemPermissions"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "macos": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/AdditionalMacOsPermissions"
             },
             {
               "type": "null"
@@ -383,60 +338,6 @@
             "cancel"
           ]
         }
-      ]
-    },
-    "CommandExecutionRequestApprovalSkillMetadata": {
-      "type": "object",
-      "required": [
-        "pathToSkillsMd"
-      ],
-      "properties": {
-        "pathToSkillsMd": {
-          "type": "string"
-        }
-      }
-    },
-    "MacOsAutomationPermission": {
-      "oneOf": [
-        {
-          "type": "string",
-          "enum": [
-            "none",
-            "all"
-          ]
-        },
-        {
-          "type": "object",
-          "required": [
-            "bundle_ids"
-          ],
-          "properties": {
-            "bundle_ids": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          "additionalProperties": false,
-          "title": "BundleIdsMacOsAutomationPermission"
-        }
-      ]
-    },
-    "MacOsContactsPermission": {
-      "type": "string",
-      "enum": [
-        "none",
-        "read_only",
-        "read_write"
-      ]
-    },
-    "MacOsPreferencesPermission": {
-      "type": "string",
-      "enum": [
-        "none",
-        "read_only",
-        "read_write"
       ]
     },
     "NetworkApprovalContext": {

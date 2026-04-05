@@ -20,7 +20,8 @@
       "type": "object",
       "required": [
         "id",
-        "name"
+        "name",
+        "needsAuth"
       ],
       "properties": {
         "description": {
@@ -40,6 +41,9 @@
         },
         "name": {
           "type": "string"
+        },
+        "needsAuth": {
+          "type": "boolean"
         }
       }
     },
@@ -323,12 +327,16 @@
       "type": "object",
       "required": [
         "description",
+        "enabled",
         "name",
         "path"
       ],
       "properties": {
         "description": {
           "type": "string"
+        },
+        "enabled": {
+          "type": "boolean"
         },
         "interface": {
           "anyOf": [
