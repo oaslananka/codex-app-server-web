@@ -3,7 +3,7 @@ resources:
     - repository: githubMirror
       type: github
       name: oaslananka/codex-app-server-web
-      endpoint: github
+      endpoint: 46685bfa-7108-474c-afc5-914e4dc0d7ab
       ref: refs/heads/main
 
 trigger:
