@@ -15,6 +15,25 @@ export class TransportDisconnectedError extends Error {
   }
 }
 
+function extractErrorMessage(error: unknown, fallback = 'Unknown error') {
+  if (error instanceof Error) {
+    return error.message || fallback;
+  }
+
+  if (typeof error === 'string') {
+    return error || fallback;
+  }
+
+  if (error && typeof error === 'object') {
+    const maybeMessage = Reflect.get(error, 'message');
+    if (typeof maybeMessage === 'string' && maybeMessage) {
+      return maybeMessage;
+    }
+  }
+
+  return fallback;
+}
+
 function summarizeHtmlLikeError(message: string) {
   const compact = message.replace(/\s+/g, ' ').trim();
   const hasHtmlDocument = /<html[\s>]/i.test(message) || /<body[\s>]/i.test(message);
@@ -39,22 +58,27 @@ function summarizeHtmlLikeError(message: string) {
 }
 
 export function normalizeError(error: unknown, fallback = 'Unknown error') {
-  if (error instanceof Error) {
-    return normalizeError(error.message || fallback, fallback);
-  }
+  return summarizeHtmlLikeError(extractErrorMessage(error, fallback));
+}
 
-  if (typeof error === 'string') {
-    return summarizeHtmlLikeError(error || fallback);
-  }
+export function getErrorTelemetry(error: unknown, fallback = 'Unknown error') {
+  const rawMessage = extractErrorMessage(error, fallback);
+  const normalizedMessage = normalizeError(rawMessage, fallback);
+  const lower = normalizedMessage.toLowerCase();
+  const statusMatch = normalizedMessage.match(/status\s+(\d{3})/i);
 
-  if (error && typeof error === 'object') {
-    const maybeMessage = Reflect.get(error, 'message');
-    if (typeof maybeMessage === 'string' && maybeMessage) {
-      return summarizeHtmlLikeError(maybeMessage);
-    }
-  }
-
-  return fallback;
+  return {
+    normalizedMessage,
+    statusCode: statusMatch ? Number(statusMatch[1]) : null,
+    isHtmlResponse:
+      lower.includes('html challenge page') || lower.includes('html instead of api json'),
+    isUpstreamAuthChallenge:
+      lower.includes('html challenge page') ||
+      (lower.includes('auth expired') && lower.includes('blocked upstream')),
+    mentionsAuthExpiry: lower.includes('auth expired'),
+    mentionsUpstreamBlock: lower.includes('blocked upstream'),
+    rawMessage,
+  };
 }
 
 export function isMethodUnavailable(error: unknown) {

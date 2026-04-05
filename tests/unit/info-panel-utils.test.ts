@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { getAppsAvailabilityHint } from '../../src/components/codex/panels/info-panel-utils';
+import {
+  getAppsAvailabilityHint,
+  getAppsPendingMessage,
+  shouldShowAppsEmptyState,
+} from '../../src/components/codex/panels/info-panel-utils';
 
 describe('info panel utils', () => {
   it('returns a clear apps hint for upstream auth/challenge failures', () => {
@@ -28,5 +32,18 @@ describe('info panel utils', () => {
     ]);
 
     expect(hint).toBe('');
+  });
+
+  it('returns a pending message before the apps list is hydrated', () => {
+    expect(getAppsPendingMessage(false, false)).toContain('comes into view');
+    expect(getAppsPendingMessage(false, true)).toBe('Loading apps…');
+    expect(getAppsPendingMessage(true, false)).toBe('');
+  });
+
+  it('only shows the empty state for a hydrated, successful empty apps response', () => {
+    expect(shouldShowAppsEmptyState(false, false, '', 0)).toBe(false);
+    expect(shouldShowAppsEmptyState(true, true, '', 0)).toBe(false);
+    expect(shouldShowAppsEmptyState(true, false, '403 Forbidden', 0)).toBe(false);
+    expect(shouldShowAppsEmptyState(true, false, '', 0)).toBe(true);
   });
 });

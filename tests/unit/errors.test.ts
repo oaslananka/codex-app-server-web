@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  getErrorTelemetry,
   isInitializationPendingError,
   isMethodUnavailable,
   isRolloutUnavailableError,
@@ -28,6 +29,18 @@ describe('runtime error helpers', () => {
     expect(message).toBe(
       'Request failed with status 403 Forbidden: remote service returned an HTML challenge page instead of API JSON. This usually means auth expired or the request was blocked upstream.',
     );
+  });
+
+  it('extracts structured telemetry for upstream HTML challenge failures', () => {
+    const telemetry = getErrorTelemetry({
+      message:
+        'failed to list apps: Request failed with status 403 Forbidden: <html><body><span id="challenge-error-text">Enable JavaScript and cookies to continue</span></body></html>',
+    });
+
+    expect(telemetry.statusCode).toBe(403);
+    expect(telemetry.isHtmlResponse).toBe(true);
+    expect(telemetry.isUpstreamAuthChallenge).toBe(true);
+    expect(telemetry.normalizedMessage).toContain('HTML challenge page');
   });
 
   it('detects rollout/session loss errors that should use thread/read fallback', () => {

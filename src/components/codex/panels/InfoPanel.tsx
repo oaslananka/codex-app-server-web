@@ -24,7 +24,11 @@ import {
   getExperimentalFeatureKey,
   splitExperimentalFeatures,
 } from './experimental-feature-utils';
-import { getAppsAvailabilityHint } from './info-panel-utils';
+import {
+  getAppsAvailabilityHint,
+  getAppsPendingMessage,
+  shouldShowAppsEmptyState,
+} from './info-panel-utils';
 
 function getMcpStatusClass(status?: string) {
   if (status === 'running') return 'running';
@@ -91,6 +95,55 @@ export function InfoPanel() {
     });
   }, [shell.activeInfoTab, shell.activeTab]);
 
+  useEffect(() => {
+    if (
+      shell.activeTab !== 'info' ||
+      shell.activeInfoCategory !== 'workspace' ||
+      info.appsHydrated ||
+      info.appsLoading
+    ) {
+      return;
+    }
+
+    const node = appsRef.current;
+    if (!node) {
+      return;
+    }
+
+    if (typeof IntersectionObserver === 'undefined') {
+      void actions.info.loadApps();
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const isVisible = entries.some((entry) => entry.isIntersecting);
+        if (!isVisible) {
+          return;
+        }
+
+        observer.disconnect();
+        void actions.info.loadApps();
+      },
+      {
+        root: document.getElementById('info-panel'),
+        threshold: 0.2,
+      },
+    );
+
+    observer.observe(node);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [
+    actions.info,
+    info.appsHydrated,
+    info.appsLoading,
+    shell.activeInfoCategory,
+    shell.activeTab,
+  ]);
+
   const infoCategories: Array<{ id: ActiveInfoCategory; label: string }> = [
     { id: 'session', label: 'Session' },
     { id: 'workspace', label: 'Workspace' },
@@ -100,6 +153,13 @@ export function InfoPanel() {
   const { documented: documentedExperimentalFeatures, backendOnly: backendOnlyExperimentalFeatures } =
     splitExperimentalFeatures(info.experimentalFeatures);
   const appsAvailabilityHint = getAppsAvailabilityHint(integrationWarnings);
+  const appsPendingMessage = getAppsPendingMessage(info.appsHydrated, info.appsLoading);
+  const showAppsEmptyState = shouldShowAppsEmptyState(
+    info.appsHydrated,
+    info.appsLoading,
+    info.appsError,
+    info.apps.length,
+  );
   const filteredLogs = browserLogs
     .filter((entry) => LOG_LEVEL_PRIORITY[entry.level] >= LOG_LEVEL_PRIORITY[logFilter])
     .slice(-120)
@@ -296,9 +356,25 @@ export function InfoPanel() {
                         {appsAvailabilityHint}
                       </div>
                     ) : null}
-                    {info.apps.length === 0 ? (
+                    <div className="stack-actions" style={{ marginBottom: '10px' }}>
+                      <button
+                        type="button"
+                        className="btn-sm btn-outline"
+                        onClick={() => actions.info.loadApps(true)}
+                        disabled={info.appsLoading}
+                      >
+                        {info.appsLoading ? 'Loading Apps…' : 'Retry Apps'}
+                      </button>
+                    </div>
+                    {appsPendingMessage ? (
+                      <div className="config-help">{appsPendingMessage}</div>
+                    ) : null}
+                    {info.appsError && !appsAvailabilityHint ? (
+                      <div className="config-help">{info.appsError}</div>
+                    ) : null}
+                    {showAppsEmptyState ? (
                       <div className="empty-inline">The app list is empty.</div>
-                    ) : (
+                    ) : info.apps.length > 0 ? (
                       info.apps.map((app, index) => (
                         <div key={app.id || app.name || `app-${index}`} className="info-card">
                           <div className="info-card-name">{app.name}</div>
@@ -316,7 +392,7 @@ export function InfoPanel() {
                           </div>
                         </div>
                       ))
-                    )}
+                    ) : null}
                   </div>
                 </div>
 

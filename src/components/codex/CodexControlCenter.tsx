@@ -237,6 +237,9 @@ export function CodexControlCenter() {
       },
       info: {
         apps: snapshot.apps,
+        appsError: snapshot.appsError,
+        appsHydrated: snapshot.appsHydrated,
+        appsLoading: snapshot.appsLoading,
         experimentalFeatures: snapshot.experimentalFeatures,
         externalAgents: snapshot.externalAgents,
         fuzzySearch: snapshot.fuzzySearch,
@@ -368,6 +371,7 @@ export function CodexControlCenter() {
         detectExternalAgents: () => runtime?.detectExternalAgentConfig(),
         importExternalAgents: () => runtime?.importExternalAgentConfig(),
         installPlugin: (id) => runtime?.installPlugin(id),
+        loadApps: (force) => runtime?.loadApps(force),
         loadAuthStatus: () => runtime?.refreshAuthStatus(),
         loadGitDiff: () => runtime?.loadGitDiff(),
         loadPluginDetail: (id) => runtime?.loadPluginDetail(id),

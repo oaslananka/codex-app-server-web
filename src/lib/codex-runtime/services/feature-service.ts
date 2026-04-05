@@ -1,8 +1,13 @@
-import { isInitializationPendingError, normalizeError } from '../errors';
+import {
+  getErrorTelemetry,
+  isInitializationPendingError,
+  normalizeError,
+} from '../errors';
 import {
   normalizeCollaborationModes,
   sanitizeCollaborationMode,
 } from '../collaboration';
+import { createBrowserLogger } from '../../logging/browser-logger';
 import { sanitizeSelectedEffort } from '../reasoning';
 import {
   normalizeApps,
@@ -20,6 +25,9 @@ import type {
   IntegrationWarningSource,
 } from '../types';
 
+const logger = createBrowserLogger('runtime:features');
+const APPS_RETRY_COOLDOWN_MS = 10_000;
+
 type ServiceDeps = {
   requestCompat: <T = unknown>(
     canonicalMethod: string,
@@ -32,6 +40,8 @@ type ServiceDeps = {
 };
 
 export class FeatureService {
+  private appsRetryCooldownUntil = 0;
+
   constructor(
     private readonly store: RuntimeStore,
     private readonly deps: ServiceDeps,
@@ -46,6 +56,36 @@ export class FeatureService {
       integrationWarnings: [
         ...currentWarnings.filter((warning) => warning.context !== context),
         ...warnings,
+      ],
+    });
+  }
+
+  private patchInfoWarnings(warnings: IntegrationWarning[]) {
+    const currentWarnings = this.store.getState().integrationWarnings;
+    const retainedAppsWarning = currentWarnings.find(
+      (warning) => warning.context === 'info' && warning.source === 'apps',
+    );
+    const nextWarnings = retainedAppsWarning
+      ? [
+          ...warnings.filter((warning) => warning.source !== 'apps'),
+          retainedAppsWarning,
+        ]
+      : warnings;
+    this.patchIntegrationWarnings('info', nextWarnings);
+  }
+
+  private patchSourceWarning(
+    context: IntegrationWarningContext,
+    source: IntegrationWarningSource,
+    warning: IntegrationWarning | null,
+  ) {
+    const currentWarnings = this.store.getState().integrationWarnings;
+    this.store.patch({
+      integrationWarnings: [
+        ...currentWarnings.filter(
+          (entry) => !(entry.context === context && entry.source === source),
+        ),
+        ...(warning ? [warning] : []),
       ],
     });
   }
@@ -67,6 +107,12 @@ export class FeatureService {
       source,
       message: `${label} unavailable: ${normalizeError(reason)}`,
     };
+  }
+
+  private async refreshAppsIfHydrated() {
+    if (this.store.getState().appsHydrated) {
+      await this.loadApps(true);
+    }
   }
 
   async loadModels() {
@@ -206,22 +252,21 @@ export class FeatureService {
 
   async loadInfo() {
     this.store.patch({ infoLoading: true, infoError: '' });
-    const [mcpStatus, skills, features, plugins, apps, collaborationModes] = await Promise.allSettled([
+    const [mcpStatus, skills, features, plugins, collaborationModes] = await Promise.allSettled([
       this.deps.requestCompat('mcpServerStatus/list', {}),
       this.deps.requestCompat('skills/list', {}),
       this.deps.requestCompat('experimentalFeature/list', {}),
       this.deps.requestCompat('plugin/list', {}),
-      this.deps.requestCompat('app/list', {}),
       this.deps.requestCompat('collaborationMode/list', {}),
     ]);
 
-    const allRejected = [mcpStatus, skills, features, plugins, apps, collaborationModes].every(
+    const allRejected = [mcpStatus, skills, features, plugins, collaborationModes].every(
       (result) => result.status === 'rejected',
     );
-    const initializationPending = [mcpStatus, skills, features, plugins, apps, collaborationModes].some(
+    const initializationPending = [mcpStatus, skills, features, plugins, collaborationModes].some(
       (result) => result.status === 'rejected' && isInitializationPendingError(result.reason),
     );
-    const hasInfoPayload = [mcpStatus, skills, features, plugins, apps, collaborationModes].some(
+    const hasInfoPayload = [mcpStatus, skills, features, plugins, collaborationModes].some(
       (result) => result.status === 'fulfilled',
     );
     const warnings = [
@@ -242,9 +287,6 @@ export class FeatureService {
         : null,
       plugins.status === 'rejected'
         ? this.createWarning('info', 'plugins', 'plugins', 'Plugins', plugins.reason)
-        : null,
-      apps.status === 'rejected'
-        ? this.createWarning('info', 'apps', 'apps', 'Apps', apps.reason)
         : null,
       collaborationModes.status === 'rejected'
         ? this.createWarning(
@@ -271,7 +313,6 @@ export class FeatureService {
       experimentalFeatures:
         features.status === 'fulfilled' ? normalizeExperimentalFeatures(features.value) : [],
       plugins: plugins.status === 'fulfilled' ? normalizePluginList(plugins.value) : [],
-      apps: apps.status === 'fulfilled' ? normalizeApps(apps.value) : [],
       collaborationModes: nextModes,
       collaborationMode: sanitizeCollaborationMode(
         nextModes,
@@ -279,7 +320,7 @@ export class FeatureService {
       ),
       infoError: allRejected && !initializationPending ? 'Failed to load info panels' : '',
     });
-    this.patchIntegrationWarnings('info', warnings);
+    this.patchInfoWarnings(warnings);
 
     if (mcpStatus.status === 'fulfilled') {
       this.deps.markRequestSupported('mcpServerStatus/list');
@@ -301,15 +342,67 @@ export class FeatureService {
     } else {
       this.deps.markRequestUnsupported('plugin/list');
     }
-    if (apps.status === 'fulfilled') {
-      this.deps.markRequestSupported('app/list');
-    } else {
-      this.deps.markRequestUnsupported('app/list');
-    }
     if (collaborationModes.status === 'fulfilled') {
       this.deps.markRequestSupported('collaborationMode/list');
     } else {
       this.deps.markRequestUnsupported('collaborationMode/list');
+    }
+  }
+
+  async loadApps(force = false) {
+    const remainingCooldownMs = this.appsRetryCooldownUntil - Date.now();
+    if (remainingCooldownMs > 0) {
+      logger.info('Apps load skipped during cooldown', {
+        force,
+        remainingCooldownMs,
+      });
+      this.deps.toast(
+        `Apps retry is cooling down for ${Math.ceil(remainingCooldownMs / 1000)}s.`,
+        'info',
+      );
+      return;
+    }
+
+    this.store.patch((current) => ({
+      appsLoading: true,
+      appsError: '',
+      appsHydrated: current.appsHydrated,
+    }));
+
+    try {
+      const response = await this.deps.requestCompat('app/list', force ? { forceRefetch: true } : {});
+      this.store.patch({
+        apps: normalizeApps(response),
+        appsHydrated: true,
+        appsLoading: false,
+        appsError: '',
+      });
+      this.appsRetryCooldownUntil = 0;
+      this.patchSourceWarning('info', 'apps', null);
+      this.deps.markRequestSupported('app/list');
+    } catch (error) {
+      const telemetry = getErrorTelemetry(error);
+      const shouldCooldown = telemetry.isUpstreamAuthChallenge;
+      this.appsRetryCooldownUntil = shouldCooldown ? Date.now() + APPS_RETRY_COOLDOWN_MS : 0;
+      logger.warn('Apps load failed', {
+        force,
+        statusCode: telemetry.statusCode,
+        isHtmlResponse: telemetry.isHtmlResponse,
+        isUpstreamAuthChallenge: telemetry.isUpstreamAuthChallenge,
+        mentionsAuthExpiry: telemetry.mentionsAuthExpiry,
+        mentionsUpstreamBlock: telemetry.mentionsUpstreamBlock,
+        cooldownMs: shouldCooldown ? APPS_RETRY_COOLDOWN_MS : 0,
+        message: telemetry.normalizedMessage,
+      });
+      const warning = this.createWarning('info', 'apps', 'apps', 'Apps', error);
+      this.store.patch({
+        apps: [],
+        appsHydrated: true,
+        appsLoading: false,
+        appsError: normalizeError(error),
+      });
+      this.patchSourceWarning('info', 'apps', warning);
+      this.deps.markRequestUnsupported('app/list');
     }
   }
 
@@ -349,6 +442,7 @@ export class FeatureService {
       this.deps.markRequestSupported('plugin/install');
       this.deps.toast('Plugin installed', 'success');
       await this.loadInfo();
+      await this.refreshAppsIfHydrated();
     } catch (error) {
       this.deps.markRequestUnsupported('plugin/install');
       this.deps.toast(`Plugin install failed: ${normalizeError(error)}`, 'error');
@@ -361,6 +455,7 @@ export class FeatureService {
       this.deps.markRequestSupported('plugin/uninstall');
       this.deps.toast('Plugin removed', 'info');
       await this.loadInfo();
+      await this.refreshAppsIfHydrated();
     } catch (error) {
       this.deps.markRequestUnsupported('plugin/uninstall');
       this.deps.toast(`Plugin removal failed: ${normalizeError(error)}`, 'error');
@@ -451,6 +546,8 @@ export class FeatureService {
   }
 
   handleAppsUpdated() {
-    void this.loadInfo();
+    if (this.store.getState().appsHydrated) {
+      void this.loadApps(true);
+    }
   }
 }

@@ -310,6 +310,9 @@ export type RuntimeSnapshot = {
   infoHydrated: boolean;
   infoLoading: boolean;
   infoError: string;
+  appsHydrated: boolean;
+  appsLoading: boolean;
+  appsError: string;
   infoMcpServers: McpServerSummary[];
   skills: SkillSummary[];
   experimentalFeatures: ExperimentalFeatureSummary[];

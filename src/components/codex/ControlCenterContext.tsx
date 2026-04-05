@@ -80,6 +80,9 @@ export type ControlCenterState = {
   };
   info: {
     apps: RuntimeSnapshot['apps'];
+    appsError: string;
+    appsHydrated: boolean;
+    appsLoading: boolean;
     experimentalFeatures: RuntimeSnapshot['experimentalFeatures'];
     externalAgents: RuntimeSnapshot['externalAgents'];
     fuzzySearch: RuntimeSnapshot['fuzzySearch'];
@@ -166,6 +169,7 @@ export type ControlCenterActions = {
     detectExternalAgents: () => void | Promise<void>;
     importExternalAgents: () => void | Promise<void>;
     installPlugin: (id: string) => void | Promise<void>;
+    loadApps: (force?: boolean) => void | Promise<void>;
     loadAuthStatus: () => void | Promise<void>;
     loadGitDiff: () => void | Promise<void>;
     loadPluginDetail: (id: string) => void | Promise<void>;

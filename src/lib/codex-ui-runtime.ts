@@ -399,6 +399,14 @@ export function ensureInfoLoaded(force = false) {
   return featureService.loadInfo();
 }
 
+export function ensureAppsLoaded(force = false) {
+  const state = store.getState();
+  if (!force && (state.appsHydrated || state.appsLoading)) {
+    return Promise.resolve();
+  }
+  return featureService.loadApps(force);
+}
+
 export function setSkillEnabled(id: string, name: string | undefined, enabled: boolean) {
   return featureService.setSkillEnabled(id, name, enabled);
 }
@@ -417,6 +425,10 @@ export function uninstallPlugin(id: string) {
 
 export function loadPluginDetail(id: string) {
   return featureService.loadPluginDetail(id);
+}
+
+export function loadApps(force = false) {
+  return featureService.loadApps(force);
 }
 
 export function setFilesPath(path: string) {

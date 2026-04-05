@@ -53,6 +53,7 @@ type AuthServiceLike = {
 
 type FeatureServiceLike = {
   loadInfo: () => Promise<unknown>;
+  loadApps?: (force?: boolean) => Promise<unknown>;
   handleAppsUpdated: () => void;
   loadModels: () => Promise<unknown>;
 };
@@ -92,6 +93,7 @@ export function buildDisconnectedRuntimePatch(
     currentProcId: null,
     fileLoading: false,
     infoLoading: false,
+    appsLoading: false,
     loginInProgress: false,
     review: {
       ...state.review,
