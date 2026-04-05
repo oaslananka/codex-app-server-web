@@ -148,4 +148,32 @@ describe('WebsocketRpcClient', () => {
     expect(lastLog?.message).toBe('RPC request failed');
     expect(lastLog?.details.join('\n')).not.toContain('<html>');
   });
+
+  it('reconnects by reopening the browser websocket so initialize runs again', () => {
+    const client = new WebsocketRpcClient('ws://localhost:4000/ws');
+    client.connect();
+
+    const firstSocket = MockWebSocket.instances[0];
+    expect(firstSocket).toBeDefined();
+    if (!firstSocket) {
+      throw new Error('Expected first websocket instance');
+    }
+
+    firstSocket.onopen?.();
+    expect(firstSocket.sent[0]).toContain('"method":"initialize"');
+
+    client.reconnect();
+
+    expect(MockWebSocket.instances).toHaveLength(2);
+    expect(firstSocket.readyState).toBe(MockWebSocket.CLOSED);
+
+    const secondSocket = MockWebSocket.instances[1];
+    expect(secondSocket).toBeDefined();
+    if (!secondSocket) {
+      throw new Error('Expected second websocket instance');
+    }
+
+    secondSocket.onopen?.();
+    expect(secondSocket.sent[0]).toContain('"method":"initialize"');
+  });
 });

@@ -121,10 +121,10 @@ export class WebsocketRpcClient {
 
   reconnect() {
     this.clearReconnectTimer();
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      this.sendRaw({ __ctrl: true, type: 'reconnect' });
-      return;
-    }
+    // Re-open the browser websocket so the full initialize -> ready bootstrap
+    // runs again. Reconnecting only the upstream Codex socket leaves the UI
+    // transport open, which skips initialize and can stall the session until
+    // a hard page refresh.
     this.connect();
   }
 
