@@ -7,6 +7,8 @@ export class RuntimeStore {
 
   private readonly listeners = new Set<Listener>();
 
+  private notifyScheduled = false;
+
   constructor(initialState: RuntimeState) {
     this.state = initialState;
   }
@@ -23,7 +25,13 @@ export class RuntimeStore {
   setState(next: RuntimeState | ((current: RuntimeState) => RuntimeState)) {
     const resolved = typeof next === 'function' ? next(this.state) : next;
     this.state = resolved;
-    this.listeners.forEach((listener) => listener(this.state));
+    if (!this.notifyScheduled) {
+      this.notifyScheduled = true;
+      queueMicrotask(() => {
+        this.notifyScheduled = false;
+        this.listeners.forEach((listener) => listener(this.state));
+      });
+    }
   }
 
   patch(partial: Partial<RuntimeState> | ((current: RuntimeState) => Partial<RuntimeState>)) {

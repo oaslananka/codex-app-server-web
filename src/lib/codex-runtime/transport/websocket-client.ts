@@ -30,6 +30,10 @@ export class WebsocketRpcClient {
 
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
+  private reconnectAttempt = 0;
+
+  private static readonly MAX_RECONNECT_DELAY_MS = 30_000;
+
   private readonly wsUrl: string;
 
   constructor(wsUrl?: string) {
@@ -54,6 +58,7 @@ export class WebsocketRpcClient {
     }
 
     this.ws.onopen = () => {
+      this.reconnectAttempt = 0;
       logger.info('Websocket connection opened', { url: this.wsUrl });
       this.emitControl('connected', { url: this.wsUrl });
       const initializeId = this.rpcId++;
@@ -274,9 +279,16 @@ export class WebsocketRpcClient {
 
   private scheduleReconnect() {
     if (this.reconnectTimer != null) return;
+    const baseDelay = Math.min(
+      1500 * Math.pow(1.5, this.reconnectAttempt),
+      WebsocketRpcClient.MAX_RECONNECT_DELAY_MS,
+    );
+    const jitter = Math.random() * 500;
+    const delay = baseDelay + jitter;
+    this.reconnectAttempt++;
     this.reconnectTimer = globalThis.setTimeout(() => {
       this.reconnectTimer = null;
       this.connect();
-    }, 1500);
+    }, delay);
   }
 }

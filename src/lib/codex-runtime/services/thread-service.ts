@@ -308,10 +308,11 @@ export class ThreadService {
   }
 
   setThreadFilter(filter: string) {
-    const state = this.store.getState();
+    // Patch activeFilter first so filterThreads reads the new value.
+    this.store.patch({ activeFilter: filter });
+    const updatedState = this.store.getState();
     this.store.patch({
-      activeFilter: filter,
-      visibleThreads: this.filterThreads(state.threads, state.searchTerm),
+      visibleThreads: this.filterThreads(updatedState.threads, updatedState.searchTerm),
     });
   }
 

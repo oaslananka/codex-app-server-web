@@ -57,6 +57,11 @@ const UPLOAD_BODY_LIMIT_BYTES = parsePositiveInt(
 );
 const NODE_ENV = process.env.NODE_ENV || 'production';
 const UPLOADS_DIR = path.join(os.tmpdir(), 'codex-app-server-web-uploads');
+const MAX_BROWSER_BUFFER_SIZE = 100;
+const UPLOAD_MAX_AGE_MS = 60 * 60 * 1000; // 1 hour
+const ALLOWED_IMAGE_EXTENSIONS = new Set([
+  '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.ico', '.avif',
+]);
 const prerenderManifestPath = path.join(__dirname, '.next', 'prerender-manifest.json');
 const appPagePath = path.join(__dirname, 'app', 'page.tsx');
 const hasBuildArtifacts = fs.existsSync(prerenderManifestPath);
@@ -223,6 +228,11 @@ const registerApiRoutes = () => {
 
           fs.mkdirSync(UPLOADS_DIR, { recursive: true, mode: 0o700 });
           const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+          const ext = path.extname(safeName).toLowerCase();
+          if (!ALLOWED_IMAGE_EXTENSIONS.has(ext)) {
+            reply.code(400);
+            return { error: `Unsupported image extension: ${ext}` };
+          }
           const uploadPath = path.join(
             UPLOADS_DIR,
             `${Date.now()}-${crypto.randomUUID()}-${safeName}`,
@@ -414,8 +424,12 @@ wss.on('connection', (browserWs, req) => {
     if (codexWs && codexWs.readyState === WebSocket.OPEN) {
       codexWs.send(data);
     } else {
-      // Buffer while connecting
-      browserBuffer.push(data);
+      // Buffer while connecting, with a size cap to prevent memory leaks
+      if (browserBuffer.length < MAX_BROWSER_BUFFER_SIZE) {
+        browserBuffer.push(data);
+      } else {
+        connectionLogger.warn('Browser buffer full, dropping message');
+      }
     }
   });
 
@@ -484,3 +498,20 @@ bootstrap().catch((err) => {
   logger.error('Startup error', err);
   process.exit(1);
 });
+
+// Periodic cleanup of uploaded temp files older than 1 hour
+setInterval(() => {
+  try {
+    if (!fs.existsSync(UPLOADS_DIR)) return;
+    const now = Date.now();
+    for (const file of fs.readdirSync(UPLOADS_DIR)) {
+      const filePath = path.join(UPLOADS_DIR, file);
+      try {
+        const stat = fs.statSync(filePath);
+        if (now - stat.mtimeMs > UPLOAD_MAX_AGE_MS) {
+          fs.unlinkSync(filePath);
+        }
+      } catch { /* ignore per-file cleanup errors */ }
+    }
+  } catch { /* ignore cleanup errors */ }
+}, 15 * 60 * 1000); // Run every 15 minutes

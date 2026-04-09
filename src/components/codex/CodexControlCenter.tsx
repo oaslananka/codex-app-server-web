@@ -80,8 +80,9 @@ export function CodexControlCenter() {
     [shell],
   );
 
+  const { closeSettings: closeSettingsFn } = shell;
   const openInputModal = useCallback((config: InputModalConfig) => {
-    shell.closeSettings();
+    closeSettingsFn();
     setInputModal({
       isOpen: true,
       ...config,
@@ -90,7 +91,7 @@ export function CodexControlCenter() {
         setInputModal(null);
       },
     });
-  }, [shell.closeSettings]);
+  }, [closeSettingsFn]);
 
   const closeInputModal = useCallback(() => {
     setInputModal(null);
@@ -452,6 +453,7 @@ export function CodexControlCenter() {
         logSettings={logSettings}
         onCloseSettings={shell.closeSettings}
         onDismissApproval={() => runtime?.dismissApprovalRequest()}
+        onDismissToast={(id) => setToasts((current) => current.filter((entry) => entry.id !== id))}
         onReconnect={() => runtime?.reconnectCodex()}
         onResolveApproval={(action, values) => runtime?.resolveApprovalRequest(action, values)}
         onUpdateLogSettings={(values) => updateBrowserLogSettings(values)}

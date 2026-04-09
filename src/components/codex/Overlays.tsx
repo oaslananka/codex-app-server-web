@@ -18,6 +18,7 @@ type OverlaysProps = {
   logSettings: BrowserLogSettings;
   onCloseSettings: () => void;
   onDismissApproval: () => void;
+  onDismissToast?: (id: string) => void;
   onResolveApproval: (
     action: 'confirm' | 'alternate' | 'deny',
     values: {
@@ -58,6 +59,7 @@ export function Overlays({
   logSettings,
   onCloseSettings,
   onDismissApproval,
+  onDismissToast,
   onResolveApproval,
   onReconnect,
   onUpdateLogSettings,
@@ -409,7 +411,15 @@ export function Overlays({
       <div id="toast-container">
         {toasts.map((toast) => (
           <div key={toast.id} className={`toast ${toast.type}`}>
-            {toast.message}
+            <span className="toast-message">{toast.message}</span>
+            <button
+              type="button"
+              className="toast-dismiss"
+              aria-label="Dismiss"
+              onClick={() => onDismissToast?.(toast.id)}
+            >
+              ✕
+            </button>
           </div>
         ))}
       </div>

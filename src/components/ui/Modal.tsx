@@ -113,7 +113,7 @@ export function Modal({
     };
   }, [closeOnEscape, isTopModal, onClose, stackVersion]);
 
-  if (!isTopModal || typeof document === 'undefined') {
+  if (!isOpen || typeof document === 'undefined') {
     return null;
   }
 
@@ -123,8 +123,10 @@ export function Modal({
       data-modal-layer={layer}
       className={overlayClassName ?? 'modal-overlay'}
       role="presentation"
+      style={!isTopModal ? { pointerEvents: 'none' } : undefined}
+      aria-hidden={!isTopModal}
       onClick={(event) => {
-        if (closeOnBackdrop && event.target === event.currentTarget) {
+        if (closeOnBackdrop && isTopModal && event.target === event.currentTarget) {
           onClose();
         }
       }}

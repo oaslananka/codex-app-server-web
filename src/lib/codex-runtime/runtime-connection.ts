@@ -309,15 +309,15 @@ function registerNotifications({
     updateCapability,
     'fuzzyFileSearch/sessionCompleted',
     (payload) => {
-      if (Array.isArray(payload.results)) {
-        store.patch({
-          fuzzySearch: {
-            ...store.getState().fuzzySearch,
-            loading: false,
-            results: payload.results as RuntimeState['fuzzySearch']['results'],
-          },
-        });
-      }
+      store.patch({
+        fuzzySearch: {
+          ...store.getState().fuzzySearch,
+          loading: false,
+          results: Array.isArray(payload.results)
+            ? (payload.results as RuntimeState['fuzzySearch']['results'])
+            : store.getState().fuzzySearch.results,
+        },
+      });
     },
   );
   registerNotificationHandler(client, updateCapability, 'thread/realtime/started', (payload) =>

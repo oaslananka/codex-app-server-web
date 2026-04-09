@@ -99,11 +99,15 @@ function updateCapability<
     supportedMethods:
       status === 'supported' && !state.supportedMethods.includes(method)
         ? [...state.supportedMethods, method]
-        : state.supportedMethods,
+        : status === 'unsupported'
+          ? state.supportedMethods.filter((entry) => entry !== method)
+          : state.supportedMethods,
     unsupportedMethods:
       status === 'unsupported' && !state.unsupportedMethods.includes(method)
         ? [...state.unsupportedMethods, method]
-        : state.unsupportedMethods.filter((entry) => entry !== method),
+        : status === 'supported'
+          ? state.unsupportedMethods.filter((entry) => entry !== method)
+          : state.unsupportedMethods,
   });
 }
 
