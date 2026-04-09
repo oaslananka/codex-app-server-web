@@ -6,7 +6,6 @@ import {
   subscribeToBrowserLogSettings,
   updateBrowserLogSettings,
 } from '../../lib/logging/browser-logger';
-import type { RuntimeSnapshot } from '../../lib/codex-ui-runtime';
 import { ErrorBoundary, InputModal, type InputModalConfig } from '../ui';
 import {
   CodexControlCenterProvider,
@@ -20,7 +19,11 @@ import { Sidebar } from './Sidebar';
 import { MainPanels } from './panels';
 import type { ActiveInfoCategory, ActiveInfoTab } from './panels/types';
 import { type ShellRuntime, useControlCenterShell } from './hooks/useControlCenterShell';
-import { useRuntimeSnapshot } from './hooks/useRuntimeSnapshot';
+import {
+  type RuntimeSnapshotStore,
+  shallowEqual,
+  useRuntimeSelector,
+} from './hooks/useRuntimeSnapshot';
 
 type RuntimeModule = typeof import('../../lib/codex-ui-runtime');
 
@@ -30,11 +33,7 @@ type ToastEntry = {
   type: 'info' | 'success' | 'error';
 };
 
-type ControlCenterRuntime = RuntimeModule &
-  ShellRuntime & {
-    subscribe(listener: (snapshot: RuntimeSnapshot) => void): () => void;
-    getSnapshot(): RuntimeSnapshot;
-  };
+type ControlCenterRuntime = RuntimeModule & ShellRuntime & RuntimeSnapshotStore;
 
 async function bootstrapControlCenter() {
   const runtime = await import('../../lib/codex-ui-runtime');
@@ -68,21 +67,154 @@ export function CodexControlCenter() {
     null,
   );
   const shell = useControlCenterShell(runtime);
-  const snapshot = useRuntimeSnapshot(runtime);
-  const integrationWarningCount = snapshot.integrationWarnings.length;
+  const {
+    activeTab: shellActiveTab,
+    closeSettings,
+    isSidebarOpen,
+    openSettings,
+    saveSettings,
+    setActiveTab: setShellActiveTab,
+    setSidebarOpen,
+    settingsOpen,
+    showCommentary,
+    toggleCommentary,
+  } = shell;
+  const accountState = useRuntimeSelector<ControlCenterState['account']>(
+    runtime,
+    (snapshot) => ({
+      accountEmail: snapshot.accountEmail,
+      accountPlan: snapshot.accountPlan,
+      authStatus: snapshot.authStatus,
+      loggedIn: snapshot.loggedIn,
+      loginInProgress: snapshot.loginInProgress,
+    }),
+    shallowEqual,
+  );
+  const runtimeShellState = useRuntimeSelector(
+    runtime,
+    (snapshot) => ({
+      connectionBanner: snapshot.connectionBanner,
+      turnActive: snapshot.turnActive,
+    }),
+    shallowEqual,
+  );
+  const threadState = useRuntimeSelector<ControlCenterState['thread']>(
+    runtime,
+    (snapshot) => ({
+      activeFilter: snapshot.activeFilter,
+      activeThread: snapshot.activeThread,
+      activeThreadId: snapshot.activeThreadId,
+      activeThreadStatus: snapshot.activeThreadStatus,
+      collaborationMode: snapshot.collaborationMode,
+      collaborationModes: snapshot.collaborationModes,
+      messageDraft: snapshot.messageDraft,
+      review: snapshot.review,
+      searchTerm: snapshot.searchTerm,
+      visibleThreads: snapshot.visibleThreads,
+    }),
+    shallowEqual,
+  );
+  const chatState = useRuntimeSelector<ControlCenterState['chat']>(
+    runtime,
+    (snapshot) => ({
+      attachmentUploadInProgress: snapshot.attachmentUploadInProgress,
+      chatEntries: snapshot.chatEntries,
+      configData: snapshot.configData,
+      models: snapshot.models,
+      pendingAttachments: snapshot.pendingAttachments,
+      selectedEffort: snapshot.selectedEffort,
+      selectedModel: snapshot.selectedModel,
+      selectedSandboxMode: snapshot.selectedSandboxMode,
+      selectedServiceTier: snapshot.selectedServiceTier,
+    }),
+    shallowEqual,
+  );
+  const filesState = useRuntimeSelector<ControlCenterState['files']>(
+    runtime,
+    (snapshot) => ({
+      currentFilePath: snapshot.currentFilePath,
+      fileBreadcrumb: snapshot.fileBreadcrumb,
+      fileBrowserPath: snapshot.fileBrowserPath,
+      fileEditorContent: snapshot.fileEditorContent,
+      fileEditorName: snapshot.fileEditorName,
+      fileEditorReadOnly: snapshot.fileEditorReadOnly,
+      fileError: snapshot.fileError,
+      fileLoading: snapshot.fileLoading,
+      fileMetadata: snapshot.fileMetadata,
+      fileTree: snapshot.fileTree,
+    }),
+    shallowEqual,
+  );
+  const configState = useRuntimeSelector<ControlCenterState['config']>(
+    runtime,
+    (snapshot) => ({
+      capabilities: snapshot.capabilities,
+      configData: snapshot.configData,
+      configError: snapshot.configError,
+      configHydrated: snapshot.configHydrated,
+      integrationWarnings: snapshot.integrationWarnings,
+      configLoading: snapshot.configLoading,
+      configMcpServers: snapshot.configMcpServers,
+      configRequirements: snapshot.configRequirements,
+      connected: snapshot.connected,
+      protocolCoverage: snapshot.protocolCoverage,
+    }),
+    shallowEqual,
+  );
+  const infoState = useRuntimeSelector<ControlCenterState['info']>(
+    runtime,
+    (snapshot) => ({
+      apps: snapshot.apps,
+      appsError: snapshot.appsError,
+      appsHydrated: snapshot.appsHydrated,
+      appsLoading: snapshot.appsLoading,
+      experimentalFeatures: snapshot.experimentalFeatures,
+      externalAgents: snapshot.externalAgents,
+      fuzzySearch: snapshot.fuzzySearch,
+      gitDiff: snapshot.gitDiff,
+      infoError: snapshot.infoError,
+      infoHydrated: snapshot.infoHydrated,
+      integrationWarnings: snapshot.integrationWarnings,
+      infoLoading: snapshot.infoLoading,
+      infoMcpServers: snapshot.infoMcpServers,
+      pluginDetail: snapshot.pluginDetail,
+      plugins: snapshot.plugins,
+      protocolCoverage: snapshot.protocolCoverage,
+      skills: snapshot.skills,
+      workspaceSummary: snapshot.workspaceSummary,
+    }),
+    shallowEqual,
+  );
+  const terminalState = useRuntimeSelector<ControlCenterState['terminal']>(
+    runtime,
+    (snapshot) => ({
+      terminalCommand: snapshot.terminalCommand,
+      terminalCwd: snapshot.terminalCwd,
+      terminalOutput: snapshot.terminalOutput,
+      terminalRunning: snapshot.terminalRunning,
+      terminalSize: snapshot.terminalSize,
+      terminalStdin: snapshot.terminalStdin,
+    }),
+    shallowEqual,
+  );
+  const activeApprovalRequest = useRuntimeSelector(
+    runtime,
+    (snapshot) => snapshot.activeApprovalRequest,
+  );
+  const connectionState = useRuntimeSelector(runtime, (snapshot) => snapshot.connectionState);
+  const integrationWarningCount = configState.integrationWarnings.length;
 
   const openInfoTab = useCallback(
     (tab: ActiveInfoTab) => {
       setActiveInfoTab(tab);
       setActiveInfoCategory(getInfoCategoryForTab(tab));
-      shell.setActiveTab('info');
+      setShellActiveTab('info');
     },
-    [shell],
+    [setShellActiveTab],
   );
 
-  const { closeSettings: closeSettingsFn } = shell;
   const openInputModal = useCallback((config: InputModalConfig) => {
-    closeSettingsFn();
+    closeSettings();
     setInputModal({
       isOpen: true,
       ...config,
@@ -91,7 +223,7 @@ export function CodexControlCenter() {
         setInputModal(null);
       },
     });
-  }, [closeSettingsFn]);
+  }, [closeSettings]);
 
   const closeInputModal = useCallback(() => {
     setInputModal(null);
@@ -128,30 +260,34 @@ export function CodexControlCenter() {
       return;
     }
 
-    if (shell.activeTab === 'config') {
+    if (shellActiveTab === 'config') {
       void runtime.ensureConfigLoaded?.();
       return;
     }
 
-    if (shell.activeTab === 'info') {
+    if (shellActiveTab === 'info') {
       void runtime.ensureInfoLoaded?.();
     }
-  }, [runtime, shell.activeTab]);
+  }, [runtime, shellActiveTab]);
 
   useEffect(() => {
-    const { closeInput, closeSettings, closeSidebar } = resolveOverlayDismissals({
-      approvalOpen: Boolean(snapshot.activeApprovalRequest),
+    const {
+      closeInput,
+      closeSettings: closeSettingsOverlay,
+      closeSidebar,
+    } = resolveOverlayDismissals({
+      approvalOpen: Boolean(activeApprovalRequest),
       inputOpen: Boolean(inputModal?.isOpen),
-      sidebarOpen: shell.isSidebarOpen,
-      settingsOpen: shell.settingsOpen,
+      sidebarOpen: isSidebarOpen,
+      settingsOpen,
     });
 
-    if (!closeInput && !closeSettings && !closeSidebar) {
+    if (!closeInput && !closeSettingsOverlay && !closeSidebar) {
       return;
     }
 
-    if (closeSettings) {
-      shell.closeSettings();
+    if (closeSettingsOverlay) {
+      closeSettings();
     }
 
     if (closeInput) {
@@ -159,137 +295,76 @@ export function CodexControlCenter() {
     }
 
     if (closeSidebar) {
-      shell.setSidebarOpen(false);
+      setSidebarOpen(false);
     }
   }, [
+    activeApprovalRequest,
+    closeSettings,
     inputModal?.isOpen,
-    shell.closeSettings,
-    shell.isSidebarOpen,
-    shell.setSidebarOpen,
-    shell.settingsOpen,
-    snapshot.activeApprovalRequest,
+    isSidebarOpen,
+    setSidebarOpen,
+    settingsOpen,
   ]);
 
-  const controlCenterState = useMemo<ControlCenterState>(
+  const shellState = useMemo<ControlCenterState['shell']>(
     () => ({
-      account: {
-        accountEmail: snapshot.accountEmail,
-        accountPlan: snapshot.accountPlan,
-        authStatus: snapshot.authStatus,
-        loggedIn: snapshot.loggedIn,
-        loginInProgress: snapshot.loginInProgress,
-      },
-      shell: {
-        activeInfoCategory,
-        activeInfoTab,
-        activeTab: shell.activeTab,
-        connectionBanner: snapshot.connectionBanner,
-        logSettings,
-        settingsOpen: shell.settingsOpen,
-        showCommentary: shell.showCommentary,
-        turnActive: snapshot.turnActive,
-      },
-      thread: {
-        activeFilter: snapshot.activeFilter,
-        activeThread: snapshot.activeThread,
-        activeThreadId: snapshot.activeThreadId,
-        activeThreadStatus: snapshot.activeThreadStatus,
-        collaborationMode: snapshot.collaborationMode,
-        collaborationModes: snapshot.collaborationModes,
-        messageDraft: snapshot.messageDraft,
-        review: snapshot.review,
-        searchTerm: snapshot.searchTerm,
-        visibleThreads: snapshot.visibleThreads,
-      },
-      chat: {
-        attachmentUploadInProgress: snapshot.attachmentUploadInProgress,
-        chatEntries: snapshot.chatEntries,
-        configData: snapshot.configData,
-        models: snapshot.models,
-        pendingAttachments: snapshot.pendingAttachments,
-        selectedEffort: snapshot.selectedEffort,
-        selectedModel: snapshot.selectedModel,
-        selectedSandboxMode: snapshot.selectedSandboxMode,
-        selectedServiceTier: snapshot.selectedServiceTier,
-      },
-      files: {
-        currentFilePath: snapshot.currentFilePath,
-        fileBreadcrumb: snapshot.fileBreadcrumb,
-        fileBrowserPath: snapshot.fileBrowserPath,
-        fileEditorContent: snapshot.fileEditorContent,
-        fileEditorName: snapshot.fileEditorName,
-        fileEditorReadOnly: snapshot.fileEditorReadOnly,
-        fileError: snapshot.fileError,
-        fileLoading: snapshot.fileLoading,
-        fileMetadata: snapshot.fileMetadata,
-        fileTree: snapshot.fileTree,
-      },
-      config: {
-        capabilities: snapshot.capabilities,
-        configData: snapshot.configData,
-        configError: snapshot.configError,
-        configHydrated: snapshot.configHydrated,
-        integrationWarnings: snapshot.integrationWarnings,
-        configLoading: snapshot.configLoading,
-        configMcpServers: snapshot.configMcpServers,
-        configRequirements: snapshot.configRequirements,
-        connected: snapshot.connected,
-        protocolCoverage: snapshot.protocolCoverage,
-      },
-      info: {
-        apps: snapshot.apps,
-        appsError: snapshot.appsError,
-        appsHydrated: snapshot.appsHydrated,
-        appsLoading: snapshot.appsLoading,
-        experimentalFeatures: snapshot.experimentalFeatures,
-        externalAgents: snapshot.externalAgents,
-        fuzzySearch: snapshot.fuzzySearch,
-        gitDiff: snapshot.gitDiff,
-        infoError: snapshot.infoError,
-        infoHydrated: snapshot.infoHydrated,
-        integrationWarnings: snapshot.integrationWarnings,
-        infoLoading: snapshot.infoLoading,
-        infoMcpServers: snapshot.infoMcpServers,
-        pluginDetail: snapshot.pluginDetail,
-        plugins: snapshot.plugins,
-        protocolCoverage: snapshot.protocolCoverage,
-        skills: snapshot.skills,
-        workspaceSummary: snapshot.workspaceSummary,
-      },
-      terminal: {
-        terminalCommand: snapshot.terminalCommand,
-        terminalCwd: snapshot.terminalCwd,
-        terminalOutput: snapshot.terminalOutput,
-        terminalRunning: snapshot.terminalRunning,
-        terminalSize: snapshot.terminalSize,
-        terminalStdin: snapshot.terminalStdin,
-      },
+      activeInfoCategory,
+      activeInfoTab,
+      activeTab: shellActiveTab,
+      connectionBanner: runtimeShellState.connectionBanner,
+      logSettings,
+      settingsOpen,
+      showCommentary,
+      turnActive: runtimeShellState.turnActive,
     }),
     [
       activeInfoCategory,
       activeInfoTab,
       logSettings,
-      shell.activeTab,
-      shell.settingsOpen,
-      shell.showCommentary,
-      snapshot,
+      runtimeShellState,
+      settingsOpen,
+      shellActiveTab,
+      showCommentary,
+    ],
+  );
+
+  const controlCenterState = useMemo<ControlCenterState>(
+    () => ({
+      account: accountState,
+      shell: shellState,
+      thread: threadState,
+      chat: chatState,
+      files: filesState,
+      config: configState,
+      info: infoState,
+      terminal: terminalState,
+    }),
+    [
+      accountState,
+      chatState,
+      configState,
+      filesState,
+      infoState,
+      shellState,
+      terminalState,
+      threadState,
     ],
   );
 
   const controlCenterActions = useMemo<ControlCenterActions>(
     () => ({
       shell: {
-        closeSettings: shell.closeSettings,
+        closeSettings,
         openInfoTab,
-        openSettings: shell.openSettings,
-        saveSettings: shell.saveSettings,
-        setActiveTab: shell.setActiveTab,
+        openSettings,
+        saveSettings,
+        setActiveTab: setShellActiveTab,
         setActiveInfoCategory,
         setLogSettings: (values) => {
           updateBrowserLogSettings(values);
         },
-        setSidebarOpen: shell.setSidebarOpen,
-        toggleCommentary: shell.toggleCommentary,
+        setSidebarOpen,
+        toggleCommentary,
       },
       thread: {
         archiveThread: (threadId, isArchived) => runtime?.archiveThreadById(threadId, isArchived),
@@ -379,7 +454,7 @@ export function CodexControlCenter() {
         loadSummary: () => runtime?.loadWorkspaceSummary(),
         logout: () => runtime?.logoutAccount(),
         openFuzzyResult: (path) => {
-          shell.setActiveTab('files');
+          setShellActiveTab('files');
           return runtime?.openFilePath(path);
         },
         reloadMcp: () => runtime?.reloadMcpServers(),
@@ -401,7 +476,18 @@ export function CodexControlCenter() {
         write: () => runtime?.writeTerminalStdin(),
       },
     }),
-    [closeInputModal, openInfoTab, openInputModal, runtime, shell],
+    [
+      closeInputModal,
+      closeSettings,
+      openInfoTab,
+      openInputModal,
+      openSettings,
+      runtime,
+      saveSettings,
+      setShellActiveTab,
+      setSidebarOpen,
+      toggleCommentary,
+    ],
   );
 
   return (
@@ -409,38 +495,38 @@ export function CodexControlCenter() {
       <CodexControlCenterProvider state={controlCenterState} actions={controlCenterActions}>
         <div id="app">
           <Header
-            activeTab={shell.activeTab}
+            activeTab={shellActiveTab}
             activeInfoTab={activeInfoTab}
-            accountEmail={snapshot.accountEmail}
-            accountPlan={snapshot.accountPlan}
-            connectionState={snapshot.connectionState}
+            accountEmail={accountState.accountEmail}
+            accountPlan={accountState.accountPlan}
+            connectionState={connectionState}
             integrationWarningCount={integrationWarningCount}
-            isSidebarOpen={shell.isSidebarOpen}
-            showCommentary={shell.showCommentary}
+            isSidebarOpen={isSidebarOpen}
+            showCommentary={showCommentary}
             onOpenIntegrationWarnings={() => openInfoTab('mcp')}
             onOpenMcp={() => openInfoTab('mcp')}
             onOpenModels={() => openInfoTab('models')}
             onOpenPlugins={() => openInfoTab('plugins')}
-            onOpenSettings={shell.openSettings}
-            onToggleCommentary={shell.toggleCommentary}
-            onToggleSidebar={() => shell.setSidebarOpen(!shell.isSidebarOpen)}
+            onOpenSettings={openSettings}
+            onToggleCommentary={toggleCommentary}
+            onToggleSidebar={() => setSidebarOpen(!isSidebarOpen)}
           />
           <Sidebar
-            activeFilter={snapshot.activeFilter}
-            activeThreadId={snapshot.activeThreadId}
-            isOpen={shell.isSidebarOpen}
+            activeFilter={threadState.activeFilter}
+            activeThreadId={threadState.activeThreadId}
+            isOpen={isSidebarOpen}
             onArchiveThread={(threadId, isArchived) =>
               runtime?.archiveThreadById(threadId, isArchived)
             }
-            onClose={() => shell.setSidebarOpen(false)}
+            onClose={() => setSidebarOpen(false)}
             onFilterChange={(filter) => runtime?.setThreadFilter(filter)}
             onForkThread={(threadId) => runtime?.forkThreadById(threadId)}
             onNewThread={() => runtime?.startNewThread()}
             onRefreshThreads={() => runtime?.refreshThreads()}
             onSearchChange={(searchTerm) => runtime?.setThreadSearch(searchTerm)}
             onSelectThread={(threadId) => runtime?.selectThreadById(threadId)}
-            searchTerm={snapshot.searchTerm}
-            threads={snapshot.visibleThreads}
+            searchTerm={threadState.searchTerm}
+            threads={threadState.visibleThreads}
           />
           <ErrorBoundary>
             <MainPanels />
@@ -448,16 +534,16 @@ export function CodexControlCenter() {
         </div>
       </CodexControlCenterProvider>
       <Overlays
-        activeApprovalRequest={snapshot.activeApprovalRequest}
-        connectionTarget={snapshot.connectionBanner.target}
+        activeApprovalRequest={activeApprovalRequest}
+        connectionTarget={runtimeShellState.connectionBanner.target}
         logSettings={logSettings}
-        onCloseSettings={shell.closeSettings}
+        onCloseSettings={closeSettings}
         onDismissApproval={() => runtime?.dismissApprovalRequest()}
         onDismissToast={(id) => setToasts((current) => current.filter((entry) => entry.id !== id))}
         onReconnect={() => runtime?.reconnectCodex()}
         onResolveApproval={(action, values) => runtime?.resolveApprovalRequest(action, values)}
         onUpdateLogSettings={(values) => updateBrowserLogSettings(values)}
-        settingsOpen={shell.settingsOpen}
+        settingsOpen={settingsOpen}
         toasts={toasts}
       />
       {inputModal ? (

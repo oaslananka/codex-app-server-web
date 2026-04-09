@@ -12,7 +12,7 @@ This file tracks meaningful remaining technical debt after the March 2026 protoc
 
 ### 1. Runtime bootstrap is still concentrated in `codex-ui-runtime.ts`
 
-- File: [src/lib/codex-ui-runtime.ts](c:/Users/Admin/Desktop/PROJECTS/codex-web-ui/src/lib/codex-ui-runtime.ts)
+- File: [src/lib/codex-ui-runtime.ts](./src/lib/codex-ui-runtime.ts)
 - Why it matters:
   - Transport wiring, store mutation, and public action exports still converge in one module.
   - This is now much safer than before, but it is still the biggest coordination surface in the app.
@@ -24,8 +24,8 @@ This file tracks meaningful remaining technical debt after the March 2026 protoc
 ### 2. Approval UI supports the 2026 payload model, but decision rendering is still generic
 
 - Files:
-  - [src/components/codex/Overlays.tsx](c:/Users/Admin/Desktop/PROJECTS/codex-web-ui/src/components/codex/Overlays.tsx)
-  - [src/lib/codex-runtime/services/approval-service.ts](c:/Users/Admin/Desktop/PROJECTS/codex-web-ui/src/lib/codex-runtime/services/approval-service.ts)
+  - [src/components/codex/Overlays.tsx](./src/components/codex/Overlays.tsx)
+  - [src/lib/codex-runtime/services/approval-service.ts](./src/lib/codex-runtime/services/approval-service.ts)
 - Why it matters:
   - The runtime now preserves `availableDecisions`, `commandActions`, `networkApprovalContext`, and permission scopes.
   - The modal currently renders these richer payloads as structured context rather than bespoke UI cards per decision family.
@@ -37,8 +37,8 @@ This file tracks meaningful remaining technical debt after the March 2026 protoc
 ### 3. Browser smoke coverage is present, but still intentionally lean
 
 - Files:
-  - [scripts/smoke-control-center.py](c:/Users/Admin/Desktop/PROJECTS/codex-web-ui/scripts/smoke-control-center.py)
-  - [.github/workflows/ci.yml](c:/Users/Admin/Desktop/PROJECTS/codex-web-ui/.github/workflows/ci.yml)
+  - [scripts/smoke-control-center.mjs](./scripts/smoke-control-center.mjs)
+  - [azure-pipelines.yml](./azure-pipelines.yml)
 - Why it matters:
   - CI now gates on typecheck, unit tests, build, manifest validation, and browser smoke.
   - The smoke flow validates cross-platform UI rendering, tab navigation, and responsive layout, but does not yet spin up a mocked backend for approval-flow interaction coverage.

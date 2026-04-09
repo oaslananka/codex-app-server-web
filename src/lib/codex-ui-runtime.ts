@@ -35,6 +35,7 @@ import type { CollaborationModeValue } from './codex-runtime/collaboration';
 import { sanitizeSelectedEffort } from './codex-runtime/reasoning';
 import { RuntimeStore } from './codex-runtime/store';
 import type { RuntimeSnapshot, RuntimeState } from './codex-runtime/types';
+import { reconcileMethodSupportLists } from './codex-runtime/capability-state';
 import { WebsocketRpcClient } from './codex-runtime/transport/websocket-client';
 import { ThreadService } from './codex-runtime/services/thread-service';
 import { TerminalService } from './codex-runtime/services/terminal-service';
@@ -88,6 +89,12 @@ function updateCapability<
   status: 'supported' | 'unsupported',
 ) {
   const state = store.getState();
+  const methodSupportLists = reconcileMethodSupportLists({
+    supportedMethods: state.supportedMethods,
+    unsupportedMethods: state.unsupportedMethods,
+    method,
+    status,
+  });
   store.patch({
     capabilities: {
       ...state.capabilities,
@@ -96,18 +103,8 @@ function updateCapability<
         [method]: status,
       },
     },
-    supportedMethods:
-      status === 'supported' && !state.supportedMethods.includes(method)
-        ? [...state.supportedMethods, method]
-        : status === 'unsupported'
-          ? state.supportedMethods.filter((entry) => entry !== method)
-          : state.supportedMethods,
-    unsupportedMethods:
-      status === 'unsupported' && !state.unsupportedMethods.includes(method)
-        ? [...state.unsupportedMethods, method]
-        : status === 'supported'
-          ? state.unsupportedMethods.filter((entry) => entry !== method)
-          : state.unsupportedMethods,
+    supportedMethods: methodSupportLists.supportedMethods,
+    unsupportedMethods: methodSupportLists.unsupportedMethods,
   });
 }
 

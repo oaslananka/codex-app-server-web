@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { buildInitialState } from '../../src/lib/codex-runtime/runtime-state';
-import { buildDisconnectedRuntimePatch } from '../../src/lib/codex-runtime/runtime-connection';
+import {
+  buildDisconnectedRuntimePatch,
+  buildFuzzySearchCompletedPatch,
+} from '../../src/lib/codex-runtime/runtime-connection';
 
 describe('runtime connection disconnect handling', () => {
   it('clears loading and pending UI state when the transport drops', () => {
@@ -49,5 +52,43 @@ describe('runtime connection disconnect handling', () => {
     expect(patch.gitDiff?.loading).toBe(false);
     expect(patch.workspaceSummary?.loading).toBe(false);
     expect(patch.externalAgents?.loading).toBe(false);
+  });
+
+  it('clears fuzzy-search loading even when the completion payload omits results', () => {
+    const state = buildInitialState();
+    const previousResults = [{ path: '/tmp/example.ts', score: 0.75 }];
+    state.fuzzySearch = {
+      ...state.fuzzySearch,
+      loading: true,
+      results: previousResults,
+    };
+
+    const patch = buildFuzzySearchCompletedPatch(state, {});
+
+    expect(patch.fuzzySearch?.loading).toBe(false);
+    expect(patch.fuzzySearch?.results).toBe(previousResults);
+  });
+
+  it('normalizes fuzzy-search file results using the reported root path', () => {
+    const state = buildInitialState();
+
+    const patch = buildFuzzySearchCompletedPatch(state, {
+      files: [
+        {
+          root: '/workspace/project',
+          path: 'src/components/App.tsx',
+          score: 0.91,
+        },
+      ],
+    });
+
+    expect(patch.fuzzySearch?.loading).toBe(false);
+    expect(patch.fuzzySearch?.results).toEqual([
+      {
+        path: '/workspace/project/src/components/App.tsx',
+        score: 0.91,
+        preview: undefined,
+      },
+    ]);
   });
 });

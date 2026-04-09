@@ -56,7 +56,7 @@ function ConfigValueField({ descriptor, draftValue, error, onDraftChange }: Conf
           rows={3}
           autoComplete="off"
           autoCorrect="off"
-          autoCapitalize="off"
+          autoCapitalize="none"
           spellCheck={false}
           onChange={(event) => onDraftChange(configKey, event.target.value)}
         />
@@ -100,7 +100,7 @@ function ConfigValueField({ descriptor, draftValue, error, onDraftChange }: Conf
         value={String(draftValue)}
         autoComplete="off"
         autoCorrect="off"
-        autoCapitalize="off"
+        autoCapitalize="none"
         spellCheck={false}
         onChange={(event) => onDraftChange(configKey, event.target.value)}
       />

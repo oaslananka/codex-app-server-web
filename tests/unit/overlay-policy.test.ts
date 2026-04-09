@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { resolveOverlayDismissals } from '../../src/components/codex/overlay-policy';
 
 describe('resolveOverlayDismissals', () => {
-  it('closes settings when a higher priority overlay is active', () => {
+  it('closes settings when an input modal is active', () => {
     expect(
       resolveOverlayDismissals({
         approvalOpen: false,
@@ -17,7 +17,22 @@ describe('resolveOverlayDismissals', () => {
     });
   });
 
-  it('closes both input and settings when approval is active', () => {
+  it('keeps settings open when approval is layered above it', () => {
+    expect(
+      resolveOverlayDismissals({
+        approvalOpen: true,
+        inputOpen: false,
+        sidebarOpen: false,
+        settingsOpen: true,
+      }),
+    ).toEqual({
+      closeInput: false,
+      closeSidebar: false,
+      closeSettings: false,
+    });
+  });
+
+  it('closes both input and settings when approval is active over an input modal', () => {
     expect(
       resolveOverlayDismissals({
         approvalOpen: true,

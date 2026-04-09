@@ -21,6 +21,6 @@ export function resolveOverlayDismissals({
   return {
     closeInput: approvalOpen && inputOpen,
     closeSidebar: sidebarOpen && modalOwnsFocus,
-    closeSettings: settingsOpen && (approvalOpen || inputOpen),
+    closeSettings: settingsOpen && inputOpen,
   };
 }

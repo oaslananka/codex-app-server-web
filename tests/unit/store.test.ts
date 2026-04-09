@@ -102,7 +102,7 @@ function createState(): RuntimeState {
 }
 
 describe('RuntimeStore', () => {
-  it('patches state and notifies subscribers', () => {
+  it('patches state and notifies subscribers after the microtask flush', async () => {
     const store = new RuntimeStore(createState());
     const listener = vi.fn();
     const unsubscribe = store.subscribe(listener);
@@ -111,11 +111,32 @@ describe('RuntimeStore', () => {
 
     expect(store.getState().connected).toBe(true);
     expect(store.getState().connectionState).toBe('connected');
+    expect(listener).not.toHaveBeenCalled();
+
+    await Promise.resolve();
     expect(listener).toHaveBeenCalledTimes(1);
 
     unsubscribe();
     store.patch({ connectionState: 'offline' });
+    await Promise.resolve();
     expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it('coalesces multiple synchronous patches into one notification', async () => {
+    const store = new RuntimeStore(createState());
+    const listener = vi.fn();
+
+    store.subscribe(listener);
+    store.patch({ connected: true });
+    store.patch({ connectionState: 'connected' });
+
+    expect(listener).not.toHaveBeenCalled();
+
+    await Promise.resolve();
+
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(listener.mock.calls[0]?.[0].connected).toBe(true);
+    expect(listener.mock.calls[0]?.[0].connectionState).toBe('connected');
   });
 
   it('supports functional patch updates', () => {

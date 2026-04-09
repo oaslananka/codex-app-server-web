@@ -1,4 +1,5 @@
 import { normalizeError } from './errors';
+import { normalizeFuzzyResults } from './normalizers';
 import { createBrowserLogger } from '../logging/browser-logger';
 import {
   type OfficialNotificationMethod,
@@ -127,6 +128,20 @@ export function buildDisconnectedRuntimePatch(
       ...state.workspaceSummary,
       loading: false,
       error: '',
+    },
+  };
+}
+
+export function buildFuzzySearchCompletedPatch(
+  state: RuntimeState,
+  payload: Record<string, unknown>,
+): Partial<RuntimeState> {
+  const nextResults = normalizeFuzzyResults(payload);
+  return {
+    fuzzySearch: {
+      ...state.fuzzySearch,
+      loading: false,
+      results: nextResults.length > 0 ? nextResults : state.fuzzySearch.results,
     },
   };
 }
@@ -294,12 +309,13 @@ function registerNotifications({
     turnService.handleThreadRealtime(payload, 'server-request-resolved'),
   );
   registerNotificationHandler(client, updateCapability, 'fuzzyFileSearch/sessionUpdated', (payload) => {
-    if (Array.isArray(payload.results)) {
+    const nextResults = normalizeFuzzyResults(payload);
+    if (nextResults.length > 0) {
       store.patch({
         fuzzySearch: {
           ...store.getState().fuzzySearch,
           loading: true,
-          results: payload.results as RuntimeState['fuzzySearch']['results'],
+          results: nextResults,
         },
       });
     }
@@ -309,15 +325,7 @@ function registerNotifications({
     updateCapability,
     'fuzzyFileSearch/sessionCompleted',
     (payload) => {
-      store.patch({
-        fuzzySearch: {
-          ...store.getState().fuzzySearch,
-          loading: false,
-          results: Array.isArray(payload.results)
-            ? (payload.results as RuntimeState['fuzzySearch']['results'])
-            : store.getState().fuzzySearch.results,
-        },
-      });
+      store.patch(buildFuzzySearchCompletedPatch(store.getState(), payload));
     },
   );
   registerNotificationHandler(client, updateCapability, 'thread/realtime/started', (payload) =>

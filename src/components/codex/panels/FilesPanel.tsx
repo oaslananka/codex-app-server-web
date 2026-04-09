@@ -186,7 +186,7 @@ export function FilesPanel() {
             placeholder="/path/to/browse"
             autoComplete="off"
             autoCorrect="off"
-            autoCapitalize="off"
+            autoCapitalize="none"
             spellCheck={false}
             onChange={(event) => actions.files.setFilesPath(event.target.value)}
             onKeyDown={(event) => {
@@ -348,7 +348,7 @@ export function FilesPanel() {
               readOnly={files.fileEditorReadOnly}
               autoComplete="off"
               autoCorrect="off"
-              autoCapitalize="off"
+              autoCapitalize="none"
               spellCheck={false}
               value={files.fileEditorContent}
               onChange={(event) => actions.files.setEditorContent(event.target.value)}

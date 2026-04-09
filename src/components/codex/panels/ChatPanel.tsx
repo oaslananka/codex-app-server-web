@@ -249,6 +249,28 @@ function getClipboardImageFiles(event: ClipboardEvent<HTMLTextAreaElement>) {
     .filter((file): file is File => file instanceof File);
 }
 
+function hasMeaningfulEntryContent(entry: ChatEntry) {
+  return Boolean(entry.content.trim() || entry.attachments?.length);
+}
+
+function shouldRenderChatEntry(entry: ChatEntry, showCommentary: boolean) {
+  if (!showCommentary && (entry.role === 'commentary' || entry.kind === 'reasoning')) {
+    return false;
+  }
+
+  if (
+    (entry.kind === 'tool' || entry.kind === 'reasoning' || entry.isCollapsible) &&
+    !hasMeaningfulEntryContent(entry) &&
+    entry.status !== 'running' &&
+    entry.status !== 'waiting' &&
+    entry.status !== 'error'
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
 const CHAT_AUTO_SCROLL_THRESHOLD_PX = 48;
 
 export function ThreadHeader() {
@@ -260,6 +282,11 @@ export function ThreadHeader() {
   const [isEditing, setIsEditing] = useState(false);
   const [mobileActionsCollapsed, setMobileActionsCollapsed] = useState(false);
   const [draftName, setDraftName] = useState('');
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   useEffect(() => {
     setDraftName(activeThread?.title || activeThread?.name || '');
@@ -276,6 +303,8 @@ export function ThreadHeader() {
   const statusCopy = getThreadStatusCopy(thread.activeThreadStatus, shell.turnActive);
   const threadTitle =
     activeThread?.title || activeThread?.name || 'Select a thread or start a new one';
+  const showThreadActions = isHydrated && Boolean(activeThread);
+  const threadActionsDisabled = !isHydrated || !hasBackendThreadId;
 
   return (
     <div id="thread-header">
@@ -301,7 +330,7 @@ export function ThreadHeader() {
             placeholder="Thread name"
             autoComplete="off"
             autoCorrect="off"
-            autoCapitalize="off"
+            autoCapitalize="none"
             spellCheck={false}
             onChange={(event) => setDraftName(event.target.value)}
           />
@@ -318,7 +347,7 @@ export function ThreadHeader() {
       <span className="thread-status-pill">{statusCopy}</span>
       <div
         className={`thread-actions-wrap${mobileActionsCollapsed ? ' is-collapsed' : ''}`}
-        style={{ display: activeThread ? 'flex' : 'none' }}
+        style={{ display: showThreadActions ? 'flex' : 'none' }}
       >
         <button
           type="button"
@@ -332,13 +361,17 @@ export function ThreadHeader() {
         </button>
         <div
           id="thread-actions"
-          style={{ display: activeThread ? 'flex' : 'none', gap: '6px', alignItems: 'center' }}
+          style={{
+            display: showThreadActions ? 'flex' : 'none',
+            gap: '6px',
+            alignItems: 'center',
+          }}
         >
           <button
             type="button"
             className="th-btn"
             id="btn-rename"
-            disabled={!hasBackendThreadId}
+            disabled={threadActionsDisabled}
             onClick={() => setIsEditing(true)}
           >
             ✏ Rename
@@ -347,7 +380,7 @@ export function ThreadHeader() {
             type="button"
             className="th-btn"
             id="btn-fork"
-            disabled={!hasBackendThreadId}
+            disabled={threadActionsDisabled}
             onClick={() => activeThread && actions.thread.forkThread(activeThread.id)}
           >
             ⑂ Fork
@@ -356,7 +389,7 @@ export function ThreadHeader() {
             type="button"
             className="th-btn"
             id="btn-rollback"
-            disabled={!hasBackendThreadId}
+            disabled={threadActionsDisabled}
             onClick={() => actions.thread.rollbackThread()}
           >
             ↩ Rollback
@@ -365,7 +398,7 @@ export function ThreadHeader() {
             type="button"
             className="th-btn"
             id="btn-compact"
-            disabled={!hasBackendThreadId}
+            disabled={threadActionsDisabled}
             onClick={() => actions.thread.compactThread()}
           >
             ⊞ Compact
@@ -374,7 +407,7 @@ export function ThreadHeader() {
             type="button"
             className={`th-btn${activeThread?.archived ? '' : ' danger'}`}
             id="btn-archive"
-            disabled={!hasBackendThreadId}
+            disabled={threadActionsDisabled}
             onClick={() =>
               activeThread && actions.thread.archiveThread(activeThread.id, activeThread.archived)
             }
@@ -473,14 +506,12 @@ export function ChatPanel() {
   );
   const [mobileControlsCollapsed, setMobileControlsCollapsed] = useState(false);
   const [expandedImage, setExpandedImage] = useState<{ src: string; alt: string } | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
   const autoScrollPinnedRef = useRef(true);
   const unreadMessagesRef = useRef(false);
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
   const visibleEntries = useMemo(
-    () =>
-      shell.showCommentary
-        ? chat.chatEntries
-        : chat.chatEntries.filter((entry) => entry.role !== 'commentary'),
+    () => chat.chatEntries.filter((entry) => shouldRenderChatEntry(entry, shell.showCommentary)),
     [chat.chatEntries, shell.showCommentary],
   );
   const serviceTier =
@@ -561,6 +592,10 @@ export function ChatPanel() {
   }, []);
 
   useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
+  useEffect(() => {
     if (!expandedImage) {
       return;
     }
@@ -596,7 +631,7 @@ export function ChatPanel() {
       >
         <div className="connection-banner-copy">
           <div className="connection-banner-title">Codex backend connection issue</div>
-        <div className="connection-banner-body" id="connection-banner-body">
+          <div className="connection-banner-body" id="connection-banner-body">
             {shell.connectionBanner.message ||
               `Target: ${shell.connectionBanner.target}`}
           </div>
@@ -923,6 +958,7 @@ export function ChatPanel() {
               title="Add image"
               aria-label="Add image"
               disabled={
+                !isHydrated ||
                 !thread.activeThread ||
                 hasInterruptibleTurn ||
                 chat.attachmentUploadInProgress
@@ -947,7 +983,7 @@ export function ChatPanel() {
               disabled={false}
               autoComplete="off"
               autoCorrect="off"
-              autoCapitalize="off"
+              autoCapitalize="none"
               spellCheck={false}
               value={thread.messageDraft}
               onChange={(event) => actions.thread.setMessageDraft(event.target.value)}
@@ -1011,4 +1047,3 @@ export function ChatPanel() {
     </div>
   );
 }
-

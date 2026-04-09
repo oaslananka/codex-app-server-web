@@ -112,3 +112,27 @@ export function isRolloutUnavailableError(error: unknown) {
   const message = String(Reflect.get(error, 'message') || error || '');
   return /no rollout found/i.test(message) || /rollout .* not found/i.test(message);
 }
+
+export function isMissingPathError(error: unknown) {
+  const message =
+    error instanceof Error
+      ? error.message
+      : error && typeof error === 'object'
+        ? String(Reflect.get(error, 'message') || '')
+        : String(error || '');
+  return (
+    /no such file or directory/i.test(message) ||
+    /\bos error 2\b/i.test(message) ||
+    /\benoent\b/i.test(message)
+  );
+}
+
+export function isDirectoryPathError(error: unknown) {
+  const message =
+    error instanceof Error
+      ? error.message
+      : error && typeof error === 'object'
+        ? String(Reflect.get(error, 'message') || '')
+        : String(error || '');
+  return /is a directory/i.test(message) || /\bos error 21\b/i.test(message) || /\beisdir\b/i.test(message);
+}

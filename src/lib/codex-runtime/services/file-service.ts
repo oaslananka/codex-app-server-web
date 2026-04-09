@@ -1,6 +1,7 @@
-import { normalizeError } from '../errors';
+import { isMissingPathError, normalizeError } from '../errors';
 import { normalizeFileContent, normalizeFileEntries, normalizeFileMetadata } from '../normalizers';
 import type { RuntimeStore } from '../store';
+import type { RuntimeState } from '../types';
 
 type ServiceDeps = {
   requestCompat: <T = unknown>(canonicalMethod: string, params?: unknown, fallbacks?: readonly string[]) => Promise<T>;
@@ -20,6 +21,12 @@ function normalizePath(path: string | null | undefined) {
   return nextValue.replace(/\/+/g, '/');
 }
 
+function isAbsolutePath(path: string | null | undefined) {
+  if (!path) return false;
+  const normalized = path.replace(/\\/g, '/').trim();
+  return normalized.startsWith('/') || /^[A-Za-z]:($|\/)/.test(normalized);
+}
+
 function joinPath(base: string, child: string) {
   return normalizePath(`${base.replace(/\/$/, '')}/${child.replace(/^\//, '')}`);
 }
@@ -37,6 +44,53 @@ function parentPath(path: string) {
     return segments.length === 1 ? `${segments[0]}/` : `${segments[0]}/${segments.slice(1).join('/')}`;
   }
   return `/${segments.join('/')}`;
+}
+
+function resolvePathAgainstBase(base: string, target: string) {
+  const normalizedBase = normalizePath(base);
+  const normalizedTarget = target.replace(/\\/g, '/').trim();
+  if (!normalizedTarget) {
+    return normalizedBase;
+  }
+
+  const baseSegments = normalizedBase.split('/').filter(Boolean);
+  const targetSegments = normalizedTarget.split('/').filter(Boolean);
+  const segments =
+    normalizedTarget.startsWith('/')
+      ? []
+      : /^[A-Za-z]:($|\/)/.test(normalizedTarget)
+        ? []
+        : baseSegments;
+
+  for (const segment of targetSegments) {
+    if (segment === '.') {
+      continue;
+    }
+    if (segment === '..') {
+      segments.pop();
+      continue;
+    }
+    segments.push(segment);
+  }
+
+  if (/^[A-Za-z]:$/.test(segments[0] ?? '')) {
+    const [drive, ...rest] = segments;
+    return rest.length ? `${drive}/${rest.join('/')}` : `${drive}/`;
+  }
+
+  return `/${segments.join('/')}`.replace(/\/+/g, '/');
+}
+
+function resolveRequestedPath(state: RuntimeState, path: string) {
+  if (isAbsolutePath(path)) {
+    return normalizePath(path);
+  }
+
+  const basePath =
+    state.activeThread?.cwd ||
+    state.fileBrowserPath ||
+    (state.currentFilePath ? parentPath(state.currentFilePath) : '/');
+  return resolvePathAgainstBase(basePath, path);
 }
 
 function decodeBase64Utf8(value: string) {
@@ -80,7 +134,7 @@ export class FileService {
 
     try {
       const response = await this.deps.requestCompat('fs/readDirectory', { path: normalized });
-      const entries = normalizeFileEntries(response);
+      const entries = normalizeFileEntries(response, normalized);
       this.store.patch((current) => ({
         fileLoading: false,
         fileTreeCache: {
@@ -112,7 +166,7 @@ export class FileService {
 
     try {
       const response = await this.deps.requestCompat('fs/readDirectory', { path: normalized });
-      const entries = normalizeFileEntries(response);
+      const entries = normalizeFileEntries(response, normalized);
       expanded.add(normalized);
       this.store.patch((current) => ({
         fileTreeExpanded: [...expanded],
@@ -128,7 +182,8 @@ export class FileService {
   }
 
   async openFile(path: string, name?: string) {
-    const normalized = normalizePath(path);
+    const state = this.store.getState();
+    const normalized = resolveRequestedPath(state, path);
     this.store.patch({
       currentFilePath: normalized,
       fileEditorName: name ?? normalized.split('/').pop() ?? normalized,
@@ -144,6 +199,33 @@ export class FileService {
         this.deps.requestCompat('fs/getMetadata', { path: normalized }),
       ]);
 
+      const metadata =
+        metadataResponse.status === 'fulfilled'
+          ? normalizeFileMetadata(metadataResponse.value)
+          : null;
+
+      if (metadataResponse.status === 'fulfilled') {
+        this.store.patch({
+          fileMetadata: metadata,
+        });
+        this.deps.markRequestSupported('fs/getMetadata');
+      } else {
+        this.deps.markRequestUnsupported('fs/getMetadata');
+        this.store.patch({ fileMetadata: null });
+      }
+
+      if (metadata?.type === 'directory') {
+        this.store.patch({
+          currentFilePath: null,
+          fileEditorContent: '',
+          fileEditorReadOnly: true,
+          fileLoading: false,
+          fileError: '',
+        });
+        await this.browse(normalized);
+        return;
+      }
+
       if (fileResponse.status === 'fulfilled') {
         const encoded = normalizeFileContent(fileResponse.value);
         this.store.patch({
@@ -155,24 +237,24 @@ export class FileService {
       } else {
         throw fileResponse.reason;
       }
-
-      if (metadataResponse.status === 'fulfilled') {
-        this.store.patch({
-          fileMetadata: normalizeFileMetadata(metadataResponse.value),
-        });
-        this.deps.markRequestSupported('fs/getMetadata');
-      } else {
-        this.deps.markRequestUnsupported('fs/getMetadata');
-        this.store.patch({ fileMetadata: null });
-      }
     } catch (error) {
       this.deps.markRequestUnsupported('fs/readFile');
+      const missingPath = isMissingPathError(error);
+      const errorMessage = missingPath
+        ? 'File no longer exists. Refresh the folder and choose another file.'
+        : normalizeError(error);
       this.store.patch({
-        fileEditorContent: `File load failed: ${normalizeError(error)}`,
+        currentFilePath: missingPath ? null : normalized,
+        fileMetadata: null,
+        fileEditorContent: missingPath ? errorMessage : `File load failed: ${errorMessage}`,
         fileEditorReadOnly: true,
         fileLoading: false,
-        fileError: normalizeError(error),
+        fileError: errorMessage,
       });
+      if (missingPath) {
+        this.deps.toast(errorMessage, 'info');
+        await this.browse(parentPath(normalized));
+      }
     }
   }
 

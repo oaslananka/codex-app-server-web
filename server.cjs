@@ -59,6 +59,7 @@ const NODE_ENV = process.env.NODE_ENV || 'production';
 const UPLOADS_DIR = path.join(os.tmpdir(), 'codex-app-server-web-uploads');
 const MAX_BROWSER_BUFFER_SIZE = 100;
 const UPLOAD_MAX_AGE_MS = 60 * 60 * 1000; // 1 hour
+const MAX_CODEX_RECONNECT_DELAY_MS = 30_000;
 const ALLOWED_IMAGE_EXTENSIONS = new Set([
   '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.ico', '.avif',
 ]);
@@ -292,6 +293,8 @@ wss.on('connection', (browserWs, req) => {
   let reconnectTimer = null;
   let browserBuffer = []; // messages queued before codex is ready
   let codexConnectionId = 0;
+  let reconnectAttempt = 0;
+  let browserClosing = false;
 
   // Helper: send JSON to browser
   const sendBrowser = (obj) => {
@@ -315,12 +318,20 @@ wss.on('connection', (browserWs, req) => {
       return;
     }
 
+    const baseDelay = Math.min(
+      1500 * Math.pow(1.5, reconnectAttempt),
+      MAX_CODEX_RECONNECT_DELAY_MS,
+    );
+    const jitter = Math.random() * 500;
+    const delay = baseDelay + jitter;
+    reconnectAttempt++;
+
     reconnectTimer = setTimeout(() => {
       reconnectTimer = null;
       if (browserWs.readyState === WebSocket.OPEN && !codexWs) {
         connectCodex();
       }
-    }, 2000);
+    }, delay);
   };
 
   // ── Connect to Codex ────────────────────────────────────────────────────
@@ -354,6 +365,7 @@ wss.on('connection', (browserWs, req) => {
         return;
       }
       connectionLogger.info('Codex backend connected');
+      reconnectAttempt = 0;
       clearReconnectTimer();
       ctrl('connected', { url: wsUrl });
 
@@ -383,13 +395,19 @@ wss.on('connection', (browserWs, req) => {
       if (codexWs !== currentCodexWs || connectionId !== codexConnectionId) {
         return;
       }
-      connectionLogger.warn('Codex backend disconnected', {
+      const closeDetails = {
         code,
         reason: reason.toString(),
-      });
+      };
+      const browserSessionEnded = browserClosing || browserWs.readyState !== WebSocket.OPEN;
+      if (browserSessionEnded) {
+        connectionLogger.info('Codex backend disconnected after browser session ended', closeDetails);
+      } else {
+        connectionLogger.warn('Codex backend disconnected', closeDetails);
+      }
       const isManualReconnect = code === 4001;
       codexWs = null;
-      if (!isManualReconnect) {
+      if (!isManualReconnect && !browserSessionEnded) {
         ctrl('disconnected', { code, reason: reason.toString() });
         scheduleReconnect();
       }
@@ -408,6 +426,7 @@ wss.on('connection', (browserWs, req) => {
       if (msg.__ctrl) {
         if (msg.type === 'reconnect') {
           clearReconnectTimer();
+          reconnectAttempt = 0;
           const previousCodexWs = codexWs;
           codexWs = null;
           if (previousCodexWs && previousCodexWs.readyState !== WebSocket.CLOSED) {
@@ -435,7 +454,9 @@ wss.on('connection', (browserWs, req) => {
 
   browserWs.on('close', () => {
     connectionLogger.info('Browser disconnected');
+    browserClosing = true;
     clearReconnectTimer();
+    reconnectAttempt = 0;
     if (codexWs) codexWs.close();
   });
 

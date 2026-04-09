@@ -4,6 +4,131 @@ import { ThreadService } from '../../src/lib/codex-runtime/services/thread-servi
 import { RuntimeStore } from '../../src/lib/codex-runtime/store';
 
 describe('ThreadService', () => {
+  it('uses the updated active filter when recalculating visible threads', () => {
+    const store = new RuntimeStore(buildInitialState());
+    store.patch({
+      activeFilter: 'active',
+      threads: [
+        {
+          id: 'thread-active',
+          title: 'Active thread',
+          archived: false,
+          status: { type: 'idle' },
+        },
+        {
+          id: 'thread-archived',
+          title: 'Archived thread',
+          archived: true,
+          status: { type: 'idle' },
+        },
+      ],
+      visibleThreads: [
+        {
+          id: 'thread-active',
+          title: 'Active thread',
+          archived: false,
+          status: { type: 'idle' },
+        },
+      ],
+    });
+
+    const service = new ThreadService(store, {
+      requestCompat: vi.fn(),
+      markRequestSupported: vi.fn(),
+      markRequestUnsupported: vi.fn(),
+      toast: vi.fn(),
+    });
+
+    service.setThreadFilter('archived');
+
+    const snapshot = store.getState();
+    expect(snapshot.activeFilter).toBe('archived');
+    expect(snapshot.visibleThreads.map((thread) => thread.id)).toEqual(['thread-archived']);
+  });
+
+  it('ignores thread-start notifications that do not include a canonical backend id', () => {
+    const store = new RuntimeStore(buildInitialState());
+
+    const service = new ThreadService(store, {
+      requestCompat: vi.fn(),
+      markRequestSupported: vi.fn(),
+      markRequestUnsupported: vi.fn(),
+      toast: vi.fn(),
+    });
+
+    service.handleThreadStarted({
+      thread: {
+        title: 'Untitled Thread',
+        status: { type: 'idle' },
+      },
+    });
+
+    expect(store.getState().threads).toEqual([]);
+    expect(store.getState().visibleThreads).toEqual([]);
+  });
+
+  it('drops stale synthetic threads but preserves the active local draft thread', async () => {
+    const store = new RuntimeStore(buildInitialState());
+    store.patch({
+      activeThreadId: 'thread:local-draft',
+      activeThread: {
+        id: 'thread:local-draft',
+        title: 'Untitled Thread',
+        status: { type: 'idle' },
+      },
+      messageDraft: 'continue working',
+      threads: [
+        {
+          id: 'thread:stale-placeholder',
+          title: 'Untitled Thread',
+          status: { type: 'idle' },
+        },
+        {
+          id: 'thread:local-draft',
+          title: 'Untitled Thread',
+          status: { type: 'idle' },
+        },
+      ],
+      visibleThreads: [
+        {
+          id: 'thread:stale-placeholder',
+          title: 'Untitled Thread',
+          status: { type: 'idle' },
+        },
+        {
+          id: 'thread:local-draft',
+          title: 'Untitled Thread',
+          status: { type: 'idle' },
+        },
+      ],
+    });
+
+    const service = new ThreadService(store, {
+      requestCompat: vi.fn().mockResolvedValue({
+        threads: [
+          {
+            id: '019d3144-50cf-75d2-95d5-7eda39430211',
+            title: 'Backend thread',
+            status: { type: 'idle' },
+          },
+        ],
+      }),
+      markRequestSupported: vi.fn(),
+      markRequestUnsupported: vi.fn(),
+      toast: vi.fn(),
+    });
+
+    await service.loadThreads();
+
+    const snapshot = store.getState();
+    expect(snapshot.threads.map((thread) => thread.id)).toEqual([
+      '019d3144-50cf-75d2-95d5-7eda39430211',
+      'thread:local-draft',
+    ]);
+    expect(snapshot.threads.some((thread) => thread.id === 'thread:stale-placeholder')).toBe(false);
+    expect(snapshot.activeThreadId).toBe('thread:local-draft');
+  });
+
   it('falls back to thread/read when thread/resume loses the rollout', async () => {
     const store = new RuntimeStore(buildInitialState());
     store.patch({

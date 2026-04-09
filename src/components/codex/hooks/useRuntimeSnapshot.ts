@@ -1,145 +1,89 @@
 'use client';
 
-import { useSyncExternalStore } from 'react';
+import { useRef, useSyncExternalStore } from 'react';
+import { buildInitialState } from '../../../lib/codex-runtime/runtime-state';
 import type { RuntimeSnapshot } from '../../../lib/codex-ui-runtime';
 
-type RuntimeSnapshotStore = {
+export type RuntimeSnapshotStore = {
   subscribe(listener: (snapshot: RuntimeSnapshot) => void): () => void;
   getSnapshot(): RuntimeSnapshot;
 };
 
-const EMPTY_SNAPSHOT: RuntimeSnapshot = {
-  connected: false,
-  connectionState: 'offline',
-  connectionError: '',
-  activeThreadId: null,
-  activeTab: 'chat',
-  activeFilter: 'active',
-  searchTerm: '',
-  visibleThreads: [],
-  activeThread: null,
-  activeThreadStatus: { type: 'idle' },
-  loggedIn: true,
-  loginInProgress: false,
-  accountEmail: 'Not connected',
-  accountPlan: '',
-  showCommentary: false,
-  pendingAttachments: [],
-  attachmentUploadInProgress: false,
-  turnActive: false,
-  collaborationMode: 'default',
-  collaborationModes: [
-    {
-      id: 'default',
-      label: 'Default',
-      description: 'Standard Codex conversation flow.',
-      supported: true,
-    },
-    {
-      id: 'plan',
-      label: 'Plan',
-      description: 'Plan-first collaboration with an explicit planning pass.',
-      supported: true,
-    },
-  ],
-  messageDraft: '',
-  selectedModel: '',
-  selectedEffort: '',
-  selectedServiceTier: '',
-  selectedSandboxMode: '',
-  models: [],
-  configData: null,
-  configHydrated: false,
-  configLoading: false,
-  configError: '',
-  integrationWarnings: [],
-  configMcpServers: [],
-  configRequirements: null,
-  infoHydrated: false,
-  infoLoading: false,
-  infoError: '',
-  appsHydrated: false,
-  appsLoading: false,
-  appsError: '',
-  infoMcpServers: [],
-  skills: [],
-  experimentalFeatures: [],
-  plugins: [],
-  pluginDetail: null,
-  apps: [],
-  fileBrowserPath: '/',
-  fileBreadcrumb: [{ label: '/', path: '/' }],
-  fileTree: [],
-  fileLoading: false,
-  fileError: '',
-  currentFilePath: null,
-  fileEditorName: 'No file selected',
-  fileEditorContent: '',
-  fileEditorReadOnly: true,
-  fileMetadata: null,
-  terminalCommand: '',
-  terminalCwd: '',
-  terminalStdin: '',
-  terminalOutput: [],
-  terminalRunning: false,
-  terminalSize: { cols: 120, rows: 32 },
-  chatEntries: [],
-  activeApprovalRequest: null,
-  protocolCoverage: {
-    requests: { implemented: 0, total: 0, missing: [], extra: [] },
-    notifications: { implemented: 0, total: 0, missing: [], extra: [] },
-    serverRequests: { implemented: 0, total: 0, missing: [], extra: [] },
-  },
-  capabilities: {
-    requests: {} as RuntimeSnapshot['capabilities']['requests'],
-    notifications: {} as RuntimeSnapshot['capabilities']['notifications'],
-    serverRequests: {} as RuntimeSnapshot['capabilities']['serverRequests'],
-  },
-  workspaceSummary: {
-    content: '',
-    source: 'idle',
-    loading: false,
-    error: '',
-  },
-  gitDiff: {
-    content: '',
-    loading: false,
-    error: '',
-  },
-  authStatus: {
-    content: '',
-    loading: false,
-    error: '',
-  },
-  fuzzySearch: {
-    query: '',
-    loading: false,
-    error: '',
-    results: [],
-  },
-  review: {
-    loading: false,
-    error: '',
-    reviewThreadId: null,
-  },
-  externalAgents: {
-    loading: false,
-    error: '',
-    items: [],
-    importedCount: 0,
-  },
-  connectionBanner: {
-    visible: false,
-    target: '',
-    message: '',
-  },
-};
+export type SelectorEqualityFn<T> = (left: T, right: T) => boolean;
+
+export const EMPTY_RUNTIME_SNAPSHOT: RuntimeSnapshot = buildInitialState();
 
 const subscribeEmptyStore = () => () => undefined;
-const getEmptySnapshot = () => EMPTY_SNAPSHOT;
+const getEmptySnapshot = () => EMPTY_RUNTIME_SNAPSHOT;
 
-export function useRuntimeSnapshot(runtime: RuntimeSnapshotStore | null): RuntimeSnapshot {
+export function shallowEqual<T>(left: T, right: T) {
+  if (Object.is(left, right)) {
+    return true;
+  }
+
+  if (
+    typeof left !== 'object' ||
+    left === null ||
+    typeof right !== 'object' ||
+    right === null
+  ) {
+    return false;
+  }
+
+  const leftEntries = Object.entries(left as Record<string, unknown>);
+  const rightRecord = right as Record<string, unknown>;
+  if (leftEntries.length !== Object.keys(rightRecord).length) {
+    return false;
+  }
+
+  return leftEntries.every(
+    ([key, value]) =>
+      Object.prototype.hasOwnProperty.call(rightRecord, key) &&
+      Object.is(value, rightRecord[key]),
+  );
+}
+
+export function useRuntimeSelector<T>(
+  runtime: RuntimeSnapshotStore | null,
+  selector: (snapshot: RuntimeSnapshot) => T,
+  isEqual: SelectorEqualityFn<T> = Object.is,
+): T {
   const subscribe = runtime?.subscribe ?? subscribeEmptyStore;
   const getSnapshot = runtime?.getSnapshot ?? getEmptySnapshot;
-  return useSyncExternalStore(subscribe, getSnapshot, getEmptySnapshot);
+  const selectionCacheRef = useRef<{
+    snapshot: RuntimeSnapshot;
+    selection: T;
+  } | null>(null);
+
+  const getSelection = () => {
+    const snapshot = getSnapshot();
+    const nextSelection = selector(snapshot);
+    const cachedSelection = selectionCacheRef.current;
+
+    if (cachedSelection) {
+      if (Object.is(cachedSelection.snapshot, snapshot)) {
+        return cachedSelection.selection;
+      }
+
+      if (isEqual(cachedSelection.selection, nextSelection)) {
+        selectionCacheRef.current = {
+          snapshot,
+          selection: cachedSelection.selection,
+        };
+        return cachedSelection.selection;
+      }
+    }
+
+    selectionCacheRef.current = {
+      snapshot,
+      selection: nextSelection,
+    };
+    return nextSelection;
+  };
+
+  return useSyncExternalStore(subscribe, getSelection, getSelection);
+}
+
+export function useRuntimeSnapshot(runtime: RuntimeSnapshotStore | null): RuntimeSnapshot {
+  return useRuntimeSelector(runtime, (snapshot) => snapshot);
 }

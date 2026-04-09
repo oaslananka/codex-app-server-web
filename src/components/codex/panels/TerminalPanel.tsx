@@ -37,7 +37,7 @@ export function TerminalPanel() {
               placeholder="Start a new shell command in the active workspace"
               autoComplete="off"
               autoCorrect="off"
-              autoCapitalize="off"
+              autoCapitalize="none"
               spellCheck={false}
               value={terminal.terminalCommand}
               onChange={(event) => actions.terminal.setCommand(event.target.value)}
@@ -59,7 +59,7 @@ export function TerminalPanel() {
                 placeholder="Working directory"
                 autoComplete="off"
                 autoCorrect="off"
-                autoCapitalize="off"
+                autoCapitalize="none"
                 spellCheck={false}
                 value={terminal.terminalCwd}
                 onChange={(event) => actions.terminal.setCwd(event.target.value)}
@@ -165,7 +165,7 @@ export function TerminalPanel() {
             disabled={!isRunning}
             autoComplete="off"
             autoCorrect="off"
-            autoCapitalize="off"
+            autoCapitalize="none"
             spellCheck={false}
             value={terminal.terminalStdin}
             onChange={(event) => actions.terminal.setStdin(event.target.value)}

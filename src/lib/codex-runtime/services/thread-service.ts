@@ -8,7 +8,7 @@ import { buildCollaborationMode } from '../collaboration';
 import { normalizeChatEntry, normalizeThread, normalizeThreadEntries, normalizeThreadSessionSettings, normalizeThreadsResponse, normalizeThreadStatus } from '../normalizers';
 import { sanitizeBackendThreadId } from '../thread-ids';
 import type { RuntimeStore } from '../store';
-import type { ChatEntry, ThreadSummary } from '../types';
+import type { ChatEntry, RuntimeState, ThreadSummary } from '../types';
 
 type ServiceDeps = {
   requestCompat: <T = unknown>(canonicalMethod: string, params?: unknown, fallbacks?: readonly string[]) => Promise<T>;
@@ -45,6 +45,34 @@ function hasMeaningfulThreadHistory(entries: ChatEntry[]) {
   );
 }
 
+function shouldRetainMissingThread(state: RuntimeState, thread: ThreadSummary) {
+  if (sanitizeBackendThreadId(thread.id)) {
+    return true;
+  }
+
+  const entries = state.threadEntries[thread.id] ?? [];
+  if (hasMeaningfulThreadHistory(entries)) {
+    return true;
+  }
+
+  if (state.activeThreadId !== thread.id) {
+    return false;
+  }
+
+  return Boolean(state.messageDraft.trim() || state.pendingAttachments.length);
+}
+
+function mergeIncomingThreads(state: RuntimeState, incomingThreads: ThreadSummary[]) {
+  return [
+    ...incomingThreads,
+    ...state.threads.filter(
+      (thread) =>
+        !incomingThreads.some((loadedThread) => loadedThread.id === thread.id) &&
+        shouldRetainMissingThread(state, thread),
+    ),
+  ];
+}
+
 export class ThreadService {
   constructor(
     private readonly store: RuntimeStore,
@@ -62,13 +90,10 @@ export class ThreadService {
 
     try {
       const response = await this.deps.requestCompat('thread/list', params);
-      const threads = normalizeThreadsResponse(response);
-      const mergedThreads = [
-        ...threads,
-        ...state.threads.filter(
-          (thread) => !threads.some((loadedThread) => loadedThread.id === thread.id),
-        ),
-      ];
+      const threads = normalizeThreadsResponse(response).filter((thread) =>
+        shouldRetainMissingThread(state, thread),
+      );
+      const mergedThreads = mergeIncomingThreads(state, threads);
       const restoredActiveThread = state.activeThreadId
         ? mergedThreads.find((thread) => thread.id === state.activeThreadId) ?? null
         : null;
@@ -340,6 +365,9 @@ export class ThreadService {
 
   handleThreadStarted(payload: Record<string, unknown>) {
     const thread = normalizeThread(payload.thread ?? payload);
+    if (!sanitizeBackendThreadId(thread.id)) {
+      return;
+    }
     const state = this.store.getState();
     const threads = [thread, ...state.threads.filter((item) => item.id !== thread.id)];
     this.store.patch({
@@ -375,13 +403,12 @@ export class ThreadService {
   async loadLoadedThreads() {
     try {
       const response = (await this.deps.requestCompat('thread/loaded/list', {})) as Record<string, unknown>;
-      const threads = normalizeThreadsResponse(response);
       const state = this.store.getState();
+      const threads = normalizeThreadsResponse(response).filter((thread) =>
+        shouldRetainMissingThread(state, thread),
+      );
       if (!threads.length) return;
-      const merged = [
-        ...threads,
-        ...state.threads.filter((thread) => !threads.some((loadedThread) => loadedThread.id === thread.id)),
-      ];
+      const merged = mergeIncomingThreads(state, threads);
       this.store.patch({
         threads: merged,
         visibleThreads: this.filterThreads(merged, state.searchTerm),
@@ -562,12 +589,18 @@ export class ThreadService {
       unknown
     >;
     if (threadRecord && Object.keys(threadRecord).length > 0) {
-      const normalizedThread = normalizeThread(threadRecord);
-      const threads = state.threads.map((thread) =>
-        thread.id === normalizedThread.id ? { ...thread, ...normalizedThread } : thread,
-      );
+      const normalizedThreadRecord = normalizeThread(threadRecord);
+      const normalizedThread = sanitizeBackendThreadId(normalizedThreadRecord.id)
+        ? normalizedThreadRecord
+        : { ...normalizedThreadRecord, id: backendThreadId };
+      const hasExistingThread = state.threads.some((thread) => thread.id === backendThreadId);
+      const threads = hasExistingThread
+        ? state.threads.map((thread) =>
+            thread.id === backendThreadId ? { ...thread, ...normalizedThread } : thread,
+          )
+        : [normalizedThread, ...state.threads.filter((thread) => thread.id !== backendThreadId)];
       const activeThread =
-        threads.find((thread) => thread.id === normalizedThread.id) ?? normalizedThread;
+        threads.find((thread) => thread.id === backendThreadId) ?? normalizedThread;
       this.store.patch({
         threads,
         activeThread,

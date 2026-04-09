@@ -137,7 +137,12 @@ export function Sidebar({
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    window.localStorage.setItem(THREAD_ORDER_STORAGE_KEY, JSON.stringify(threadOrder));
+    const timer = window.setTimeout(() => {
+      window.localStorage.setItem(THREAD_ORDER_STORAGE_KEY, JSON.stringify(threadOrder));
+    }, 300);
+    return () => {
+      window.clearTimeout(timer);
+    };
   }, [threadOrder]);
 
   useEffect(() => {
@@ -319,7 +324,7 @@ export function Sidebar({
             placeholder="Search threads…"
             autoComplete="off"
             autoCorrect="off"
-            autoCapitalize="off"
+            autoCapitalize="none"
             spellCheck={false}
             data-lpignore="true"
             data-1p-ignore="true"

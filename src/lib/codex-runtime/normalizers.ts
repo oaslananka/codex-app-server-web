@@ -20,6 +20,21 @@ function asArray<T = unknown>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
+function joinAbsoluteRootPath(root: unknown, path: unknown) {
+  const normalizedPath = String(path ?? '').replace(/\\/g, '/').trim();
+  if (!normalizedPath) return '';
+  if (normalizedPath.startsWith('/') || /^[A-Za-z]:($|\/)/.test(normalizedPath)) {
+    return normalizedPath;
+  }
+
+  const normalizedRoot = String(root ?? '').replace(/\\/g, '/').replace(/\/+$/, '').trim();
+  if (!normalizedRoot) {
+    return normalizedPath;
+  }
+
+  return `${normalizedRoot}/${normalizedPath.replace(/^\.?\//, '')}`.replace(/\/+/g, '/');
+}
+
 function normalizeSandboxModeValue(value: unknown) {
   if (typeof value === 'string') return value;
   const policy = asRecord(value);
@@ -446,15 +461,18 @@ export function getItemLabel(item: Record<string, unknown>) {
   return String(item.command ?? item.path ?? item.toolName ?? item.name ?? item.type ?? 'item');
 }
 
-export function normalizeFileEntries(response: unknown) {
+export function normalizeFileEntries(response: unknown, rootPath = '') {
   const value = asRecord(response);
   return asArray(value.entries).map((entry) => {
     const item = asRecord(entry);
-    const entryName = String(item.name ?? item.fileName ?? item.path ?? '');
+    const entryName = String(item.fileName ?? item.name ?? item.path ?? '');
     return {
       name: entryName.split('/').filter(Boolean).pop() || entryName,
-      path: typeof item.path === 'string' ? item.path : entryName,
-      type: item.type === 'directory' ? 'directory' : 'file',
+      path: joinAbsoluteRootPath(rootPath, item.path ?? item.filePath ?? entryName),
+      type:
+        item.type === 'directory' || item.isDirectory === true
+          ? 'directory'
+          : 'file',
     } as const;
   });
 }
@@ -482,10 +500,10 @@ export function normalizeFileMetadata(response: unknown): FileMetadataSummary | 
 
 export function normalizeFuzzyResults(response: unknown) {
   const value = asRecord(response);
-  return asArray(value.results ?? value.data).map((result) => {
+  return asArray(value.results ?? value.files ?? value.data).map((result) => {
     const item = asRecord(result);
     return {
-      path: String(item.path ?? item.filePath ?? ''),
+      path: joinAbsoluteRootPath(item.root, item.path ?? item.filePath),
       score: typeof item.score === 'number' ? item.score : undefined,
       preview: typeof item.preview === 'string' ? item.preview : undefined,
     };

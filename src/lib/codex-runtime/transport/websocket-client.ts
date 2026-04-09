@@ -1,4 +1,10 @@
-import { RpcMethodUnavailableError, TransportDisconnectedError, normalizeError } from '../errors';
+import {
+  isDirectoryPathError,
+  RpcMethodUnavailableError,
+  TransportDisconnectedError,
+  isMissingPathError,
+  normalizeError,
+} from '../errors';
 import { createBrowserLogger } from '../../logging/browser-logger';
 
 type PendingRequest = {
@@ -12,6 +18,7 @@ type NotificationHandler = (params: Record<string, unknown>) => void;
 type ServerRequestHandler = (params: Record<string, unknown>) => Promise<unknown> | unknown;
 
 const logger = createBrowserLogger('runtime:ws');
+const EXPECTED_FILE_PATH_METHODS = new Set(['fs/readFile', 'fs/getMetadata']);
 
 export class WebsocketRpcClient {
   private ws: WebSocket | null = null;
@@ -199,12 +206,20 @@ export class WebsocketRpcClient {
       if (message.error) {
         const errorPayload = message.error as Record<string, unknown>;
         const messageText = normalizeError(errorPayload, 'RPC request failed');
-        logger.warn('RPC request failed', {
+        const errorDetails = {
           id: message.id,
           method: pending.method,
           code: errorPayload.code,
           message: messageText,
-        });
+        };
+        if (
+          EXPECTED_FILE_PATH_METHODS.has(pending.method) &&
+          (isMissingPathError(errorPayload) || isDirectoryPathError(errorPayload))
+        ) {
+          logger.trace('RPC request returned an expected file-path error', errorDetails);
+        } else {
+          logger.warn('RPC request failed', errorDetails);
+        }
         const error =
           errorPayload.code === -32601
             ? new RpcMethodUnavailableError(pending.method, messageText)

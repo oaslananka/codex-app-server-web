@@ -61,6 +61,7 @@ describe('WebsocketRpcClient', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
     clearBrowserLogs();
     if (originalWindow === undefined) {
       Reflect.deleteProperty(globalThis, 'window');
@@ -149,6 +150,80 @@ describe('WebsocketRpcClient', () => {
     expect(lastLog?.details.join('\n')).not.toContain('<html>');
   });
 
+  it('does not warn for expected file-path RPC errors that are handled by the UI', async () => {
+    const client = new WebsocketRpcClient('ws://localhost:4000/ws');
+    client.connect();
+
+    const socket = MockWebSocket.instances[0];
+    expect(socket).toBeDefined();
+    if (!socket) {
+      throw new Error('Expected websocket instance');
+    }
+
+    socket.onopen?.();
+    socket.onmessage?.({
+      data: JSON.stringify({ jsonrpc: '2.0', id: 1, result: { ok: true } }),
+    });
+
+    const initialLogCount = getRecentBrowserLogs().length;
+    const pending = client.request('fs/readFile', { path: '/workspace/missing.ts' });
+    socket.onmessage?.({
+      data: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 2,
+        error: {
+          code: -32603,
+          message: 'No such file or directory (os error 2)',
+        },
+      }),
+    });
+
+    await expect(pending).rejects.toThrow('No such file or directory (os error 2)');
+
+    const newLogs = getRecentBrowserLogs().slice(initialLogCount);
+    expect(newLogs.some((entry) => entry.message === 'RPC request failed')).toBe(false);
+    expect(
+      newLogs.some((entry) => entry.message === 'RPC request returned an expected file-path error'),
+    ).toBe(true);
+  });
+
+  it('does not warn when fs/readFile hits a directory path during directory navigation', async () => {
+    const client = new WebsocketRpcClient('ws://localhost:4000/ws');
+    client.connect();
+
+    const socket = MockWebSocket.instances[0];
+    expect(socket).toBeDefined();
+    if (!socket) {
+      throw new Error('Expected websocket instance');
+    }
+
+    socket.onopen?.();
+    socket.onmessage?.({
+      data: JSON.stringify({ jsonrpc: '2.0', id: 1, result: { ok: true } }),
+    });
+
+    const initialLogCount = getRecentBrowserLogs().length;
+    const pending = client.request('fs/readFile', { path: '/workspace/src' });
+    socket.onmessage?.({
+      data: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 2,
+        error: {
+          code: -32603,
+          message: 'Is a directory (os error 21)',
+        },
+      }),
+    });
+
+    await expect(pending).rejects.toThrow('Is a directory (os error 21)');
+
+    const newLogs = getRecentBrowserLogs().slice(initialLogCount);
+    expect(newLogs.some((entry) => entry.message === 'RPC request failed')).toBe(false);
+    expect(
+      newLogs.some((entry) => entry.message === 'RPC request returned an expected file-path error'),
+    ).toBe(true);
+  });
+
   it('reconnects by reopening the browser websocket so initialize runs again', () => {
     const client = new WebsocketRpcClient('ws://localhost:4000/ws');
     client.connect();
@@ -175,5 +250,51 @@ describe('WebsocketRpcClient', () => {
 
     secondSocket.onopen?.();
     expect(secondSocket.sent[0]).toContain('"method":"initialize"');
+  });
+
+  it('uses exponential backoff with jitter and resets the delay after a successful reconnect', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const client = new WebsocketRpcClient('ws://localhost:4000/ws');
+    client.connect();
+
+    const firstSocket = MockWebSocket.instances[0];
+    expect(firstSocket).toBeDefined();
+    if (!firstSocket) {
+      throw new Error('Expected first websocket instance');
+    }
+
+    firstSocket.onclose?.({ code: 1006, reason: 'socket lost' });
+    await vi.advanceTimersByTimeAsync(1499);
+    expect(MockWebSocket.instances).toHaveLength(1);
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(MockWebSocket.instances).toHaveLength(2);
+
+    const secondSocket = MockWebSocket.instances[1];
+    expect(secondSocket).toBeDefined();
+    if (!secondSocket) {
+      throw new Error('Expected second websocket instance');
+    }
+
+    secondSocket.onclose?.({ code: 1006, reason: 'socket lost again' });
+    await vi.advanceTimersByTimeAsync(2249);
+    expect(MockWebSocket.instances).toHaveLength(2);
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(MockWebSocket.instances).toHaveLength(3);
+
+    const thirdSocket = MockWebSocket.instances[2];
+    expect(thirdSocket).toBeDefined();
+    if (!thirdSocket) {
+      throw new Error('Expected third websocket instance');
+    }
+
+    thirdSocket.onopen?.();
+    thirdSocket.onclose?.({ code: 1006, reason: 'socket lost after reconnect' });
+    await vi.advanceTimersByTimeAsync(1499);
+    expect(MockWebSocket.instances).toHaveLength(3);
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(MockWebSocket.instances).toHaveLength(4);
   });
 });
