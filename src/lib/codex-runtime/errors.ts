@@ -113,6 +113,15 @@ export function isRolloutUnavailableError(error: unknown) {
   return /no rollout found/i.test(message) || /rollout .* not found/i.test(message);
 }
 
+export function isThreadEmptyBeforeFirstUserMessageError(error: unknown) {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const message = String(Reflect.get(error, 'message') || error || '');
+  return /includeTurns is unavailable before first user message/i.test(message);
+}
+
 export function isMissingPathError(error: unknown) {
   const message =
     error instanceof Error

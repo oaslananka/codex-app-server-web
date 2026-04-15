@@ -2,6 +2,7 @@ import {
   isInitializationPendingError,
   isMethodUnavailable,
   isRolloutUnavailableError,
+  isThreadEmptyBeforeFirstUserMessageError,
   normalizeError,
 } from '../errors';
 import { buildCollaborationMode } from '../collaboration';
@@ -540,6 +541,10 @@ export class ThreadService {
       if (isMethodUnavailable(error)) {
         this.deps.markRequestUnsupported('thread/resume');
       }
+      if (isThreadEmptyBeforeFirstUserMessageError(error)) {
+        this.replaceThreadEntries(threadId, []);
+        return;
+      }
       if (hasMeaningfulThreadHistory(existingEntries)) {
         if (state.activeThreadId === threadId) {
           this.store.patch({ chatEntries: existingEntries });
@@ -629,8 +634,24 @@ export class ThreadService {
       ...normalizeThreadSessionSettings(response),
     });
 
-    await this.loadThreads();
     const threadId = this.extractThreadId(response);
+    const threadRecord = ((response.thread ?? {}) as Record<string, unknown>) || {};
+    if (threadId && Object.keys(threadRecord).length > 0) {
+      const normalizedThreadRecord = normalizeThread(threadRecord);
+      const normalizedThread = sanitizeBackendThreadId(normalizedThreadRecord.id)
+        ? normalizedThreadRecord
+        : { ...normalizedThreadRecord, id: threadId };
+      const nextThreads = [
+        normalizedThread,
+        ...state.threads.filter((thread) => thread.id !== threadId),
+      ];
+      this.store.patch({
+        threads: nextThreads,
+        visibleThreads: this.filterThreads(nextThreads, state.searchTerm),
+      });
+    }
+
+    await this.loadThreads();
     if (threadId) {
       await this.selectThread(threadId);
     }
