@@ -216,4 +216,121 @@ describe('ThreadService', () => {
     expect(snapshot.chatEntries[0]?.content).toBe('hello');
     expect(snapshot.chatEntries[1]?.content).toBe('world');
   });
+
+  it('preserves a newly started thread when thread/list is empty before the first message', async () => {
+    const store = new RuntimeStore(buildInitialState());
+
+    const requestCompat = vi.fn(async (method: string) => {
+      if (method === 'thread/start') {
+        return {
+          thread: {
+            id: '019d3144-50cf-75d2-95d5-7eda39430211',
+            title: 'Fresh thread',
+            cwd: '/workspace',
+            status: { type: 'idle' },
+          },
+        };
+      }
+
+      if (method === 'thread/list') {
+        return { threads: [] };
+      }
+
+      if (method === 'thread/resume') {
+        throw {
+          code: -32600,
+          message: 'no rollout found for thread id 019d3144-50cf-75d2-95d5-7eda39430211',
+        };
+      }
+
+      if (method === 'thread/read') {
+        throw {
+          code: -32600,
+          message:
+            'thread 019d3144-50cf-75d2-95d5-7eda39430211 is not available: includeTurns is unavailable before first user message',
+        };
+      }
+
+      throw new Error(`Unexpected method: ${method}`);
+    }) as <T = unknown>(
+      canonicalMethod: string,
+      params?: unknown,
+      fallbacks?: readonly string[],
+    ) => Promise<T>;
+
+    const service = new ThreadService(store, {
+      requestCompat,
+      markRequestSupported: vi.fn(),
+      markRequestUnsupported: vi.fn(),
+      toast: vi.fn(),
+    });
+
+    const threadId = await service.ensureWritableThread(null);
+
+    const snapshot = store.getState();
+    expect(threadId).toBe('019d3144-50cf-75d2-95d5-7eda39430211');
+    expect(snapshot.activeThreadId).toBe('019d3144-50cf-75d2-95d5-7eda39430211');
+    expect(snapshot.activeThread?.id).toBe('019d3144-50cf-75d2-95d5-7eda39430211');
+    expect(snapshot.threads.map((thread) => thread.id)).toEqual([
+      '019d3144-50cf-75d2-95d5-7eda39430211',
+    ]);
+  });
+
+  it('treats includeTurns-unavailable as an empty thread instead of an error', async () => {
+    const store = new RuntimeStore(buildInitialState());
+    store.patch({
+      threads: [
+        {
+          id: '019d3144-50cf-75d2-95d5-7eda39430211',
+          title: 'Fresh thread',
+          status: { type: 'idle' },
+        },
+      ],
+      visibleThreads: [
+        {
+          id: '019d3144-50cf-75d2-95d5-7eda39430211',
+          title: 'Fresh thread',
+          status: { type: 'idle' },
+        },
+      ],
+    });
+
+    const requestCompat = vi.fn(async (method: string) => {
+      if (method === 'thread/resume') {
+        throw {
+          code: -32600,
+          message: 'no rollout found for thread id 019d3144-50cf-75d2-95d5-7eda39430211',
+        };
+      }
+
+      if (method === 'thread/read') {
+        throw {
+          code: -32600,
+          message:
+            'thread 019d3144-50cf-75d2-95d5-7eda39430211 is not available: includeTurns is unavailable before first user message',
+        };
+      }
+
+      throw new Error(`Unexpected method: ${method}`);
+    }) as <T = unknown>(
+      canonicalMethod: string,
+      params?: unknown,
+      fallbacks?: readonly string[],
+    ) => Promise<T>;
+
+    const service = new ThreadService(store, {
+      requestCompat,
+      markRequestSupported: vi.fn(),
+      markRequestUnsupported: vi.fn(),
+      toast: vi.fn(),
+    });
+
+    await service.selectThread('019d3144-50cf-75d2-95d5-7eda39430211');
+
+    const snapshot = store.getState();
+    expect(snapshot.activeThreadId).toBe('019d3144-50cf-75d2-95d5-7eda39430211');
+    expect(snapshot.chatEntries).toHaveLength(1);
+    expect(snapshot.chatEntries[0]?.content).toBe('Thread is empty. Send a message to start.');
+    expect(snapshot.chatEntries[0]?.status).toBe('done');
+  });
 });
