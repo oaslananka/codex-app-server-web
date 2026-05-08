@@ -152,6 +152,7 @@ writeJson(metadataPath, {
   generationCommands,
 });
 
+run('pnpm', ['exec', 'prettier', '--write', 'codex-official-docs/upstream-metadata.json']);
 run('pnpm', ['protocol:manifest:check']);
 run('pnpm', ['protocol:drift:check']);
 
