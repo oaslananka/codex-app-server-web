@@ -98,4 +98,3 @@ main().catch((error) => {
   logger.error('Smoke test failed', error);
   process.exitCode = 1;
 });
-

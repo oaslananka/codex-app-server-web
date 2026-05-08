@@ -61,7 +61,15 @@ const MAX_BROWSER_BUFFER_SIZE = 100;
 const UPLOAD_MAX_AGE_MS = 60 * 60 * 1000; // 1 hour
 const MAX_CODEX_RECONNECT_DELAY_MS = 30_000;
 const ALLOWED_IMAGE_EXTENSIONS = new Set([
-  '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.ico', '.avif',
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.gif',
+  '.webp',
+  '.svg',
+  '.bmp',
+  '.ico',
+  '.avif',
 ]);
 const prerenderManifestPath = path.join(__dirname, '.next', 'prerender-manifest.json');
 const appPagePath = path.join(__dirname, 'app', 'page.tsx');
@@ -401,7 +409,10 @@ wss.on('connection', (browserWs, req) => {
       };
       const browserSessionEnded = browserClosing || browserWs.readyState !== WebSocket.OPEN;
       if (browserSessionEnded) {
-        connectionLogger.info('Codex backend disconnected after browser session ended', closeDetails);
+        connectionLogger.info(
+          'Codex backend disconnected after browser session ended',
+          closeDetails,
+        );
       } else {
         connectionLogger.warn('Codex backend disconnected', closeDetails);
       }
@@ -521,18 +532,25 @@ bootstrap().catch((err) => {
 });
 
 // Periodic cleanup of uploaded temp files older than 1 hour
-setInterval(() => {
-  try {
-    if (!fs.existsSync(UPLOADS_DIR)) return;
-    const now = Date.now();
-    for (const file of fs.readdirSync(UPLOADS_DIR)) {
-      const filePath = path.join(UPLOADS_DIR, file);
-      try {
-        const stat = fs.statSync(filePath);
-        if (now - stat.mtimeMs > UPLOAD_MAX_AGE_MS) {
-          fs.unlinkSync(filePath);
+setInterval(
+  () => {
+    try {
+      if (!fs.existsSync(UPLOADS_DIR)) return;
+      const now = Date.now();
+      for (const file of fs.readdirSync(UPLOADS_DIR)) {
+        const filePath = path.join(UPLOADS_DIR, file);
+        try {
+          const stat = fs.statSync(filePath);
+          if (now - stat.mtimeMs > UPLOAD_MAX_AGE_MS) {
+            fs.unlinkSync(filePath);
+          }
+        } catch {
+          /* ignore per-file cleanup errors */
         }
-      } catch { /* ignore per-file cleanup errors */ }
+      }
+    } catch {
+      /* ignore cleanup errors */
     }
-  } catch { /* ignore cleanup errors */ }
-}, 15 * 60 * 1000); // Run every 15 minutes
+  },
+  15 * 60 * 1000,
+); // Run every 15 minutes

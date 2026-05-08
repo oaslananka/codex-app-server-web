@@ -6,12 +6,7 @@ export function reconcileMethodSupportLists<K extends string>(params: {
   method: K;
   status: CapabilityStatus;
 }) {
-  const {
-    supportedMethods,
-    unsupportedMethods,
-    method,
-    status,
-  } = params;
+  const { supportedMethods, unsupportedMethods, method, status } = params;
 
   return {
     supportedMethods:

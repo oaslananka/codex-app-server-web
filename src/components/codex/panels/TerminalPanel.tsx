@@ -1,11 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import {
-  useControlCenterActions,
-  useShellState,
-  useTerminalState,
-} from '../ControlCenterContext';
+import { useControlCenterActions, useShellState, useTerminalState } from '../ControlCenterContext';
 
 export function TerminalPanel() {
   const actions = useControlCenterActions();
@@ -22,10 +18,7 @@ export function TerminalPanel() {
   }, [terminal.terminalOutput]);
 
   return (
-    <div
-      className={`panel${shell.activeTab === 'terminal' ? ' active' : ''}`}
-      id="panel-terminal"
-    >
+    <div className={`panel${shell.activeTab === 'terminal' ? ' active' : ''}`} id="panel-terminal">
       <div id="terminal-panel">
         <div className="term-toolbar">
           <div className="term-command-group">
@@ -153,15 +146,17 @@ export function TerminalPanel() {
         <div className="term-stdin">
           <div className="term-stdin-copy">
             <div className="term-stdin-label">Process input</div>
-            <div className="term-stdin-help">
-              Send text to the running command after it starts.
-            </div>
+            <div className="term-stdin-help">Send text to the running command after it starts.</div>
           </div>
           <input
             type="text"
             id="term-stdin-input"
             name="term-stdin-input"
-            placeholder={isRunning ? 'Type input for the running command' : 'Start a command to enable process input'}
+            placeholder={
+              isRunning
+                ? 'Type input for the running command'
+                : 'Start a command to enable process input'
+            }
             disabled={!isRunning}
             autoComplete="off"
             autoCorrect="off"

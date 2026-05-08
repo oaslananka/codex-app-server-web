@@ -6,13 +6,24 @@ import {
   normalizeError,
 } from '../errors';
 import { buildCollaborationMode } from '../collaboration';
-import { normalizeChatEntry, normalizeThread, normalizeThreadEntries, normalizeThreadSessionSettings, normalizeThreadsResponse, normalizeThreadStatus } from '../normalizers';
+import {
+  normalizeChatEntry,
+  normalizeThread,
+  normalizeThreadEntries,
+  normalizeThreadSessionSettings,
+  normalizeThreadsResponse,
+  normalizeThreadStatus,
+} from '../normalizers';
 import { sanitizeBackendThreadId } from '../thread-ids';
 import type { RuntimeStore } from '../store';
 import type { ChatEntry, RuntimeState, ThreadSummary } from '../types';
 
 type ServiceDeps = {
-  requestCompat: <T = unknown>(canonicalMethod: string, params?: unknown, fallbacks?: readonly string[]) => Promise<T>;
+  requestCompat: <T = unknown>(
+    canonicalMethod: string,
+    params?: unknown,
+    fallbacks?: readonly string[],
+  ) => Promise<T>;
   markRequestSupported(method: string): void;
   markRequestUnsupported(method: string): void;
   toast(message: string, type?: 'info' | 'success' | 'error'): void;
@@ -96,15 +107,15 @@ export class ThreadService {
       );
       const mergedThreads = mergeIncomingThreads(state, threads);
       const restoredActiveThread = state.activeThreadId
-        ? mergedThreads.find((thread) => thread.id === state.activeThreadId) ?? null
+        ? (mergedThreads.find((thread) => thread.id === state.activeThreadId) ?? null)
         : null;
       const preservedEntries = state.activeThreadId
-        ? state.threadEntries[state.activeThreadId] ?? []
+        ? (state.threadEntries[state.activeThreadId] ?? [])
         : [];
       const shouldPreserveActiveSelection = Boolean(
         state.activeThreadId &&
-          !threads.some((thread) => thread.id === state.activeThreadId) &&
-          (hasMeaningfulThreadHistory(preservedEntries) || state.activeThread),
+        !threads.some((thread) => thread.id === state.activeThreadId) &&
+        (hasMeaningfulThreadHistory(preservedEntries) || state.activeThread),
       );
       this.store.patch({
         threads: mergedThreads,
@@ -114,7 +125,7 @@ export class ThreadService {
         activeThreadStatus:
           restoredActiveThread?.status ??
           (shouldPreserveActiveSelection
-            ? state.activeThread?.status ?? state.activeThreadStatus
+            ? (state.activeThread?.status ?? state.activeThreadStatus)
             : state.activeThreadStatus),
         activeThreadId:
           state.activeThreadId && !restoredActiveThread && !shouldPreserveActiveSelection
@@ -152,7 +163,9 @@ export class ThreadService {
       activeThreadStatus: activeThread?.status ?? { type: 'idle' },
       currentFilePath: null,
       fileBrowserPath: normalizePath(activeThread?.cwd),
-      fileBreadcrumb: [{ label: normalizePath(activeThread?.cwd), path: normalizePath(activeThread?.cwd) }],
+      fileBreadcrumb: [
+        { label: normalizePath(activeThread?.cwd), path: normalizePath(activeThread?.cwd) },
+      ],
     });
     const backendThreadId = sanitizeBackendThreadId(threadId);
     if (!backendThreadId) {
@@ -190,7 +203,8 @@ export class ThreadService {
 
     const state = this.store.getState();
     const sourceThread =
-      (threadId ? state.threads.find((thread) => thread.id === threadId) : null) ?? state.activeThread;
+      (threadId ? state.threads.find((thread) => thread.id === threadId) : null) ??
+      state.activeThread;
     const nextThreadId = await this.startThreadInternal({
       cwd: sourceThread?.cwd,
     });
@@ -205,7 +219,10 @@ export class ThreadService {
   async archiveThread(threadId: string, isArchived?: boolean) {
     const backendThreadId = sanitizeBackendThreadId(threadId);
     if (!backendThreadId) {
-      this.deps.toast('This thread cannot be updated because it does not have a valid backend id.', 'info');
+      this.deps.toast(
+        'This thread cannot be updated because it does not have a valid backend id.',
+        'info',
+      );
       return;
     }
     const canonicalMethod = isArchived ? 'thread/unarchive' : 'thread/archive';
@@ -221,11 +238,16 @@ export class ThreadService {
   async forkThread(threadId: string) {
     const backendThreadId = sanitizeBackendThreadId(threadId);
     if (!backendThreadId) {
-      this.deps.toast('This thread cannot be forked because it does not have a valid backend id.', 'info');
+      this.deps.toast(
+        'This thread cannot be forked because it does not have a valid backend id.',
+        'info',
+      );
       return;
     }
     try {
-      const response = (await this.deps.requestCompat('thread/fork', { threadId: backendThreadId })) as Record<string, unknown>;
+      const response = (await this.deps.requestCompat('thread/fork', {
+        threadId: backendThreadId,
+      })) as Record<string, unknown>;
       this.store.patch({
         ...normalizeThreadSessionSettings(response),
       });
@@ -250,10 +272,13 @@ export class ThreadService {
     const activeThreadId = state.activeThreadId;
     const backendThreadId = sanitizeBackendThreadId(state.activeThreadId);
     if (!backendThreadId) {
-      this.deps.toast('This thread cannot be rolled back because it does not have a valid backend id.', 'info');
+      this.deps.toast(
+        'This thread cannot be rolled back because it does not have a valid backend id.',
+        'info',
+      );
       return;
     }
-    const entries = activeThreadId ? state.threadEntries[activeThreadId] ?? [] : [];
+    const entries = activeThreadId ? (state.threadEntries[activeThreadId] ?? []) : [];
     const lastEntry = [...entries].reverse().find((entry) => entry.kind !== 'system');
     if (!lastEntry) {
       this.deps.toast('No thread items available to rollback', 'info');
@@ -275,7 +300,10 @@ export class ThreadService {
     const state = this.store.getState();
     const backendThreadId = sanitizeBackendThreadId(state.activeThreadId);
     if (!backendThreadId) {
-      this.deps.toast('This thread cannot be compacted because it does not have a valid backend id.', 'info');
+      this.deps.toast(
+        'This thread cannot be compacted because it does not have a valid backend id.',
+        'info',
+      );
       return;
     }
     try {
@@ -291,11 +319,17 @@ export class ThreadService {
     const backendThreadId = sanitizeBackendThreadId(state.activeThreadId);
     if (!backendThreadId || !name.trim()) {
       if (!name.trim()) return;
-      this.deps.toast('This thread cannot be renamed because it does not have a valid backend id.', 'info');
+      this.deps.toast(
+        'This thread cannot be renamed because it does not have a valid backend id.',
+        'info',
+      );
       return;
     }
     try {
-      await this.deps.requestCompat('thread/name/set', { threadId: backendThreadId, name: name.trim() });
+      await this.deps.requestCompat('thread/name/set', {
+        threadId: backendThreadId,
+        name: name.trim(),
+      });
       await this.loadThreads();
       this.deps.toast('Thread renamed', 'success');
     } catch (error) {
@@ -307,11 +341,17 @@ export class ThreadService {
     const state = this.store.getState();
     const backendThreadId = sanitizeBackendThreadId(state.activeThreadId);
     if (!backendThreadId) {
-      this.deps.toast('This thread cannot be updated because it does not have a valid backend id.', 'info');
+      this.deps.toast(
+        'This thread cannot be updated because it does not have a valid backend id.',
+        'info',
+      );
       return;
     }
     try {
-      await this.deps.requestCompat('thread/metadata/update', { threadId: backendThreadId, ...metadata });
+      await this.deps.requestCompat('thread/metadata/update', {
+        threadId: backendThreadId,
+        ...metadata,
+      });
       this.deps.toast('Thread metadata updated', 'success');
     } catch (error) {
       this.deps.markRequestUnsupported('thread/metadata/update');
@@ -355,7 +395,9 @@ export class ThreadService {
     if (!threadId) return;
     const status = normalizeThreadStatus(payload.status);
     const state = this.store.getState();
-    const threads = state.threads.map((thread) => (thread.id === threadId ? { ...thread, status } : thread));
+    const threads = state.threads.map((thread) =>
+      thread.id === threadId ? { ...thread, status } : thread,
+    );
     this.store.patch({
       threads,
       visibleThreads: this.filterThreads(threads, state.searchTerm),
@@ -381,7 +423,9 @@ export class ThreadService {
     const threadId = typeof payload.threadId === 'string' ? payload.threadId : null;
     if (!threadId) return;
     const state = this.store.getState();
-    const threads = state.threads.map((thread) => (thread.id === threadId ? { ...thread, archived } : thread));
+    const threads = state.threads.map((thread) =>
+      thread.id === threadId ? { ...thread, archived } : thread,
+    );
     this.store.patch({
       threads,
       visibleThreads: this.filterThreads(threads, state.searchTerm),
@@ -393,17 +437,25 @@ export class ThreadService {
     if (!threadId) return;
     const nextName = typeof payload.name === 'string' ? payload.name : undefined;
     const state = this.store.getState();
-    const threads = state.threads.map((thread) => (thread.id === threadId ? { ...thread, name: nextName, title: nextName } : thread));
+    const threads = state.threads.map((thread) =>
+      thread.id === threadId ? { ...thread, name: nextName, title: nextName } : thread,
+    );
     this.store.patch({
       threads,
       visibleThreads: this.filterThreads(threads, state.searchTerm),
-      activeThread: state.activeThreadId === threadId ? threads.find((thread) => thread.id === threadId) ?? state.activeThread : state.activeThread,
+      activeThread:
+        state.activeThreadId === threadId
+          ? (threads.find((thread) => thread.id === threadId) ?? state.activeThread)
+          : state.activeThread,
     });
   }
 
   async loadLoadedThreads() {
     try {
-      const response = (await this.deps.requestCompat('thread/loaded/list', {})) as Record<string, unknown>;
+      const response = (await this.deps.requestCompat('thread/loaded/list', {})) as Record<
+        string,
+        unknown
+      >;
       const state = this.store.getState();
       const threads = normalizeThreadsResponse(response).filter((thread) =>
         shouldRetainMissingThread(state, thread),
@@ -672,21 +724,32 @@ export class ThreadService {
     this.store.patch({
       threadEntries: {
         ...state.threadEntries,
-        [threadId]: entries.length ? entries : [{
-          id: `thread-empty-${threadId}`,
-          kind: 'system',
-          role: 'system',
-          content: 'Thread is empty. Send a message to start.',
-          status: 'done',
-        }],
+        [threadId]: entries.length
+          ? entries
+          : [
+              {
+                id: `thread-empty-${threadId}`,
+                kind: 'system',
+                role: 'system',
+                content: 'Thread is empty. Send a message to start.',
+                status: 'done',
+              },
+            ],
       },
-      chatEntries: state.activeThreadId === threadId ? (entries.length ? entries : [{
-        id: `thread-empty-${threadId}`,
-        kind: 'system',
-        role: 'system',
-        content: 'Thread is empty. Send a message to start.',
-        status: 'done',
-      }]) : state.chatEntries,
+      chatEntries:
+        state.activeThreadId === threadId
+          ? entries.length
+            ? entries
+            : [
+                {
+                  id: `thread-empty-${threadId}`,
+                  kind: 'system',
+                  role: 'system',
+                  content: 'Thread is empty. Send a message to start.',
+                  status: 'done',
+                },
+              ]
+          : state.chatEntries,
     });
   }
 
@@ -697,7 +760,9 @@ export class ThreadService {
       if (state.activeFilter === 'archived' && !thread.archived) return false;
       if (state.activeFilter === 'active' && thread.archived) return false;
       if (!normalizedSearch) return true;
-      return `${thread.title ?? ''} ${thread.name ?? ''} ${thread.preview ?? ''}`.toLowerCase().includes(normalizedSearch);
+      return `${thread.title ?? ''} ${thread.name ?? ''} ${thread.preview ?? ''}`
+        .toLowerCase()
+        .includes(normalizedSearch);
     });
   }
 }

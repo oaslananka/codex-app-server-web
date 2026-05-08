@@ -7,6 +7,7 @@
     "createdAtMs",
     "isDirectory",
     "isFile",
+    "isSymlink",
     "modifiedAtMs"
   ],
   "properties": {
@@ -16,11 +17,15 @@
       "format": "int64"
     },
     "isDirectory": {
-      "description": "Whether the path currently resolves to a directory.",
+      "description": "Whether the path resolves to a directory.",
       "type": "boolean"
     },
     "isFile": {
-      "description": "Whether the path currently resolves to a regular file.",
+      "description": "Whether the path resolves to a regular file.",
+      "type": "boolean"
+    },
+    "isSymlink": {
+      "description": "Whether the path itself is a symbolic link.",
       "type": "boolean"
     },
     "modifiedAtMs": {

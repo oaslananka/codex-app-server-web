@@ -164,7 +164,10 @@ export function Overlays({
                     <div className="approval-section-title">{section.title}</div>
                     <div className="approval-section-list">
                       {section.items.map((item) => (
-                        <div key={`${section.title}-${item.label}`} className="approval-section-row">
+                        <div
+                          key={`${section.title}-${item.label}`}
+                          className="approval-section-row"
+                        >
                           <span className="approval-section-label">{item.label}</span>
                           <code className="approval-section-value">{item.value}</code>
                         </div>
@@ -360,9 +363,7 @@ export function Overlays({
             <select
               id="browser-log-level"
               value={logSettings.level}
-              onChange={(event) =>
-                onUpdateLogSettings({ level: event.target.value as LogLevel })
-              }
+              onChange={(event) => onUpdateLogSettings({ level: event.target.value as LogLevel })}
             >
               <option value="trace">Trace</option>
               <option value="debug">Debug</option>

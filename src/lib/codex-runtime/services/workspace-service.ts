@@ -4,7 +4,11 @@ import { sanitizeBackendThreadId } from '../thread-ids';
 import type { RuntimeStore } from '../store';
 
 type ServiceDeps = {
-  requestCompat: <T = unknown>(canonicalMethod: string, params?: unknown, fallbacks?: readonly string[]) => Promise<T>;
+  requestCompat: <T = unknown>(
+    canonicalMethod: string,
+    params?: unknown,
+    fallbacks?: readonly string[],
+  ) => Promise<T>;
   markRequestSupported(method: string): void;
   markRequestUnsupported(method: string): void;
   toast(message: string, type?: 'info' | 'success' | 'error'): void;
@@ -152,7 +156,8 @@ export class WorkspaceService {
         review: {
           loading: false,
           error: '',
-          reviewThreadId: typeof response.reviewThreadId === 'string' ? response.reviewThreadId : null,
+          reviewThreadId:
+            typeof response.reviewThreadId === 'string' ? response.reviewThreadId : null,
         },
       });
       this.deps.markRequestSupported('review/start');
@@ -179,7 +184,11 @@ export class WorkspaceService {
         includeHome: true,
         cwds: [state.activeThread?.cwd ?? state.fileBrowserPath],
       })) as Record<string, unknown>;
-      const items = Array.isArray(response.migrationItems) ? response.migrationItems : Array.isArray(response.items) ? response.items : [];
+      const items = Array.isArray(response.migrationItems)
+        ? response.migrationItems
+        : Array.isArray(response.items)
+          ? response.items
+          : [];
       this.store.patch({
         externalAgents: {
           loading: false,

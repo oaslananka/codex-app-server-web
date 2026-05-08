@@ -1,11 +1,10 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "FsWatchResponse",
-  "description": "Created watch handle returned by `fs/watch`.",
+  "description": "Successful response for `fs/watch`.",
   "type": "object",
   "required": [
-    "path",
-    "watchId"
+    "path"
   ],
   "properties": {
     "path": {
@@ -15,10 +14,6 @@
           "$ref": "#/definitions/AbsolutePathBuf"
         }
       ]
-    },
-    "watchId": {
-      "description": "Connection-scoped watch identifier used for `fs/unwatch` and `fs/changed`.",
-      "type": "string"
     }
   },
   "definitions": {

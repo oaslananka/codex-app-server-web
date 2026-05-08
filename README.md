@@ -28,7 +28,7 @@ Azure DevOps is the source of truth for CI/CD, release validation, and the prima
 - WebSocket transport with `ws`
 - TypeScript
 - pnpm
-- Node.js 20+
+- Node.js 24 LTS for CI, with a minimum runtime of Node.js 20.9 for Next.js 16
 
 **Project Structure**
 
@@ -72,7 +72,10 @@ pnpm start:mock-codex
 pnpm typecheck
 pnpm test
 pnpm build
+pnpm format:check
 pnpm protocol:manifest:check
+pnpm protocol:drift:check
+pnpm repo:hygiene:check
 pnpm smoke
 ```
 
@@ -82,6 +85,9 @@ pnpm smoke
 - [`azure-pipelines.yml`](./azure-pipelines.yml) defines the primary validation and delivery flow.
 - The GitHub mirror is intentionally secondary and does not replace Azure DevOps as the release source of truth.
 - Protocol metadata can be validated locally with `pnpm protocol:manifest:check` before opening a change.
+- Protocol drift is gated with `pnpm protocol:drift:check`; upstream artifact sync is documented in [`docs/automation/upstream-codex-sync.md`](./docs/automation/upstream-codex-sync.md).
+- Dependency updates are grouped by Dependabot for npm and GitHub Actions through [`.github/dependabot.yml`](./.github/dependabot.yml).
+- Release readiness is blocked by `pnpm release:state` until an explicit guarded publish target exists, as documented in [`docs/automation/release-readiness.md`](./docs/automation/release-readiness.md).
 
 **Contribution Guidance**
 

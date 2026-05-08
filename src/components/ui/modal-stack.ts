@@ -70,13 +70,13 @@ export function unregisterModal(id: string) {
 
 export function getTopModalId() {
   if (!modalEntries.length) return null;
-  return [...modalEntries]
-    .sort((left, right) => {
-      const priorityDelta =
-        MODAL_LAYER_PRIORITY[right.layer] - MODAL_LAYER_PRIORITY[left.layer];
+  return (
+    [...modalEntries].sort((left, right) => {
+      const priorityDelta = MODAL_LAYER_PRIORITY[right.layer] - MODAL_LAYER_PRIORITY[left.layer];
       if (priorityDelta !== 0) return priorityDelta;
       return right.order - left.order;
-    })[0]?.id ?? null;
+    })[0]?.id ?? null
+  );
 }
 
 export function resetModalStackForTests() {

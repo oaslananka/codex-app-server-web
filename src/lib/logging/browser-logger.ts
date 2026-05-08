@@ -135,16 +135,19 @@ function writeLog(level: LogLevel, scope: string, message: string, args: unknown
     ? [timestamp, level.toUpperCase(), scope]
     : [level.toUpperCase(), scope];
   const prefix = prefixParts.join(' · ');
-  getConsoleMethod(level)(`%c${prefix}%c ${message}`, getLevelStyles(level), getScopeStyle(), ...args);
+  getConsoleMethod(level)(
+    `%c${prefix}%c ${message}`,
+    getLevelStyles(level),
+    getScopeStyle(),
+    ...args,
+  );
 }
 
 export function getBrowserLogSettings() {
   return currentSettings;
 }
 
-export function updateBrowserLogSettings(
-  patch: Partial<BrowserLogSettings>,
-): BrowserLogSettings {
+export function updateBrowserLogSettings(patch: Partial<BrowserLogSettings>): BrowserLogSettings {
   currentSettings = {
     level: normalizeLogLevel(patch.level, currentSettings.level),
     timestamps:
@@ -155,9 +158,7 @@ export function updateBrowserLogSettings(
   return currentSettings;
 }
 
-export function subscribeToBrowserLogSettings(
-  listener: (settings: BrowserLogSettings) => void,
-) {
+export function subscribeToBrowserLogSettings(listener: (settings: BrowserLogSettings) => void) {
   listeners.add(listener);
   return () => {
     listeners.delete(listener);

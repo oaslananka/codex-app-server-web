@@ -170,8 +170,7 @@ describe('FeatureService', () => {
         const method = call[0];
         const params = call[1];
         return (
-          method === 'app/list' &&
-          JSON.stringify(params) === JSON.stringify({ forceRefetch: true })
+          method === 'app/list' && JSON.stringify(params) === JSON.stringify({ forceRefetch: true })
         );
       }),
     ).toBe(true);
@@ -195,18 +194,15 @@ describe('FeatureService', () => {
 
     await service.uninstallPlugin('plugin-1');
 
-    expect(requestCompat).toHaveBeenCalledWith(
+    expect(requestCompat).toHaveBeenCalledWith('plugin/uninstall', { pluginId: 'plugin-1' }, [
       'plugin/uninstall',
-      { pluginId: 'plugin-1' },
-      ['plugin/uninstall'],
-    );
+    ]);
     expect(
       (requestCompat.mock.calls as Array<unknown[]>).some((call) => {
         const method = call[0];
         const params = call[1];
         return (
-          method === 'app/list' &&
-          JSON.stringify(params) === JSON.stringify({ forceRefetch: true })
+          method === 'app/list' && JSON.stringify(params) === JSON.stringify({ forceRefetch: true })
         );
       }),
     ).toBe(true);

@@ -187,7 +187,10 @@ export function ConfigPanel() {
     );
   }, [sections]);
 
-  const dirtyCount = useMemo(() => countDirtyConfigFields(draftState.dirtyMap), [draftState.dirtyMap]);
+  const dirtyCount = useMemo(
+    () => countDirtyConfigFields(draftState.dirtyMap),
+    [draftState.dirtyMap],
+  );
   const hasValidationErrors = Object.keys(draftState.validationErrors).length > 0;
 
   const handleDraftChange = useCallback(
@@ -216,10 +219,7 @@ export function ConfigPanel() {
   }, [actions.config, descriptorMap, dirtyCount, draftState, hasValidationErrors]);
 
   return (
-    <div
-      className={`panel${shell.activeTab === 'config' ? ' active' : ''}`}
-      id="panel-config"
-    >
+    <div className={`panel${shell.activeTab === 'config' ? ' active' : ''}`} id="panel-config">
       <div id="config-panel">
         {config.configLoading || isInitialConfigLoading ? (
           <div className="loading">
@@ -293,7 +293,9 @@ export function ConfigPanel() {
                 </div>
                 <div className="backend-status-row">
                   <span>Connection</span>
-                  <span className={`backend-status-pill ${config.connected ? 'online' : 'offline'}`}>
+                  <span
+                    className={`backend-status-pill ${config.connected ? 'online' : 'offline'}`}
+                  >
                     {config.connected ? 'ONLINE' : 'OFFLINE'}
                   </span>
                 </div>

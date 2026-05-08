@@ -1,33 +1,119 @@
 name: GitHub Mirror Validation
 
 on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+      - automation/upstream-sync-and-release-readiness
+      - upstream/sync-openai-codex-app-server
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: github-mirror-validation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+  PNPM_VERSION: '10.33.0'
+
 jobs:
-  verify:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+  cheap-gates:
+    name: Cheap Gates
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
-          version: 10.33.0
+          fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
-          node-version: 22
-          cache: pnpm
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Enable pnpm
+        run: |
+          set -euo pipefail
+          corepack enable
+          corepack prepare pnpm@${PNPM_VERSION} --activate
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Validate official manifest
+      - name: Install workflow security tools
+        run: |
+          set -euo pipefail
+          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+          go install github.com/gitleaks/gitleaks/v8@v8.30.1
+          python3 -m pip install --user zizmor==1.24.1
+          echo "${HOME}/go/bin" >> "${GITHUB_PATH}"
+          echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Repository hygiene
+        run: pnpm repo:hygiene:check
+
+      - name: Protocol manifest
         run: pnpm protocol:manifest:check
+
+      - name: Protocol drift
+        run: pnpm protocol:drift:check -- --base-ref origin/main
+
+      - name: Workflow lint
+        run: actionlint
+
+      - name: Workflow security scan
+        run: zizmor --offline .
+
+      - name: Secret scan
+        run: gitleaks detect --no-git --redact --source . --exit-code 1
+
+      - name: Fast unit subset
+        run: pnpm test -- tests/unit/protocol.test.ts tests/unit/rate-limit.test.ts tests/unit/terminal-output.test.ts
+
+  full-validation:
+    name: Full Validation
+    needs: cheap-gates
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Enable pnpm
+        run: |
+          set -euo pipefail
+          corepack enable
+          corepack prepare pnpm@${PNPM_VERSION} --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Typecheck
         run: pnpm typecheck
@@ -38,23 +124,91 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Start mock Codex backend
+      - name: Browser smoke
         run: |
-          MOCK_CODEX_PORT=41000 MOCK_SEND_APPROVAL=1 node scripts/mock-codex-app-server.mjs > ci-mock.log 2>&1 &
-          sleep 2
+          set -euo pipefail
+          cleanup() {
+            if [ -n "${ui_pid:-}" ]; then kill "${ui_pid}" 2>/dev/null || true; fi
+            if [ -n "${mock_pid:-}" ]; then kill "${mock_pid}" 2>/dev/null || true; fi
+          }
+          trap cleanup EXIT
 
-      - name: Start UI server
-        run: |
-          CODEX_PORT=41000 pnpm start:ui > ci-ui.log 2>&1 &
-          for i in {1..60}; do
+          MOCK_CODEX_PORT=41000 MOCK_SEND_APPROVAL=1 node scripts/mock-codex-app-server.mjs > ci-mock.log 2>&1 &
+          mock_pid=$!
+          PORT=1989 PORT_FALLBACK=1990 CODEX_PORT=41000 pnpm start:ui > ci-ui.log 2>&1 &
+          ui_pid=$!
+
+          ready=false
+          for _ in $(seq 1 60); do
             if curl -fsS http://127.0.0.1:1989 >/dev/null; then
-              exit 0
+              ready=true
+              break
             fi
             sleep 2
           done
-          cat ci-ui.log
-          cat ci-mock.log
-          exit 1
 
-      - name: Browser smoke
-        run: SMOKE_APPROVAL=1 pnpm smoke
+          if [ "${ready}" != "true" ]; then
+            cat ci-ui.log
+            cat ci-mock.log
+            exit 1
+          fi
+
+          SMOKE_APPROVAL=1 pnpm smoke
+
+  codeql:
+    name: CodeQL
+    needs: cheap-gates
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@5e316336eb4f107009e477d4bfbfff13d7250fae
+        with:
+          languages: javascript-typescript
+          queries: security-extended
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@5e316336eb4f107009e477d4bfbfff13d7250fae
+
+  filesystem-security:
+    name: Filesystem Security
+    needs: cheap-gates
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install Trivy
+        run: |
+          set -euo pipefail
+          version="0.70.0"
+          archive="trivy_${version}_Linux-64bit.tar.gz"
+          base_url="https://github.com/aquasecurity/trivy/releases/download/v${version}"
+          curl -fsSLO "${base_url}/${archive}"
+          curl -fsSLO "${base_url}/trivy_${version}_checksums.txt"
+          grep " ${archive}$" "trivy_${version}_checksums.txt" | sha256sum --check -
+          mkdir -p "${HOME}/.local/bin"
+          tar -xzf "${archive}" trivy
+          mv trivy "${HOME}/.local/bin/trivy"
+          echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
+
+      - name: Trivy filesystem scan
+        run: trivy fs --scanners vuln,secret,misconfig --skip-dirs node_modules --skip-dirs .git --exit-code 1 .

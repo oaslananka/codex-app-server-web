@@ -9,7 +9,10 @@ export function getExperimentalFeatureKey(
   return feature.key || feature.id || feature.name || `feature-${fallbackIndex}`;
 }
 
-export function getExperimentalFeatureDisplayName(feature: ExperimentalFeatureSummary, key: string) {
+export function getExperimentalFeatureDisplayName(
+  feature: ExperimentalFeatureSummary,
+  key: string,
+) {
   return feature.displayName || feature.name || key;
 }
 

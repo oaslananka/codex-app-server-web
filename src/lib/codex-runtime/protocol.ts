@@ -8,7 +8,9 @@ import {
 
 export const OFFICIAL_REQUEST_METHODS: readonly string[] = [...GENERATED_REQUEST_METHODS];
 export const OFFICIAL_NOTIFICATION_METHODS: readonly string[] = [...GENERATED_NOTIFICATION_METHODS];
-export const OFFICIAL_SERVER_REQUEST_METHODS: readonly string[] = [...GENERATED_SERVER_REQUEST_METHODS];
+export const OFFICIAL_SERVER_REQUEST_METHODS: readonly string[] = [
+  ...GENERATED_SERVER_REQUEST_METHODS,
+];
 
 export const OFFICIAL_CONFIG_FIELDS = OFFICIAL_CONFIG_FIELD_SCHEMAS as Record<
   string,

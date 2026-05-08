@@ -5,7 +5,11 @@ import { sanitizeTerminalOutput } from '../terminal-output';
 const MAX_TERMINAL_LINES = 800;
 
 type ServiceDeps = {
-  requestCompat: <T = unknown>(canonicalMethod: string, params?: unknown, fallbacks?: readonly string[]) => Promise<T>;
+  requestCompat: <T = unknown>(
+    canonicalMethod: string,
+    params?: unknown,
+    fallbacks?: readonly string[],
+  ) => Promise<T>;
   markRequestSupported(method: string): void;
   markRequestUnsupported(method: string): void;
   toast(message: string, type?: 'info' | 'success' | 'error'): void;
@@ -75,8 +79,10 @@ export class TerminalService {
         terminalSize: state.terminalSize,
       })) as Record<string, unknown>;
 
-      if (typeof response.stdout === 'string' && response.stdout) this.appendOutput(response.stdout, 'stdout');
-      if (typeof response.stderr === 'string' && response.stderr) this.appendOutput(response.stderr, 'stderr');
+      if (typeof response.stdout === 'string' && response.stdout)
+        this.appendOutput(response.stdout, 'stdout');
+      if (typeof response.stderr === 'string' && response.stderr)
+        this.appendOutput(response.stderr, 'stderr');
       this.appendOutput(`\n[Exit: ${String(response.exitCode ?? 'unknown')}]\n`, 'exit');
       this.deps.markRequestSupported('command/exec');
     } catch (error) {

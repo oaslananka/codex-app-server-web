@@ -7,8 +7,17 @@
   "main": "server.cjs",
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "format:check": "prettier --check .",
     "protocol:manifest:generate": "node scripts/generate-codex-manifest.mjs",
     "protocol:manifest:check": "node scripts/generate-codex-manifest.mjs --check",
+    "protocol:drift:check": "node scripts/check-codex-protocol-drift.mjs",
+    "protocol:sync:upstream": "node scripts/sync-codex-upstream.mjs",
+    "repo:hygiene:check": "node scripts/check-repository-hygiene.mjs",
+    "security:actions": "actionlint && zizmor --offline .",
+    "security:secrets": "gitleaks detect --no-git --redact --config .gitleaks.toml --source . --exit-code 1",
+    "security:trivy": "trivy fs --scanners vuln,secret,misconfig --skip-dirs node_modules --skip-dirs .git --exit-code 1 .",
+    "security:scan": "pnpm repo:hygiene:check && pnpm security:actions && pnpm security:secrets && pnpm security:trivy",
+    "release:state": "node scripts/check-release-state.mjs",
     "sync:vendor": "node scripts/sync-public-vendor-assets.mjs",
     "postinstall": "node scripts/sync-public-vendor-assets.mjs",
     "start": "node scripts/sync-public-vendor-assets.mjs && cross-env NODE_ENV=production PORT=1989 PORT_FALLBACK=1990 SHOW_LAN_URLS=1 UI_COMMAND=\"node server.cjs\" node start-all.cjs",
@@ -30,8 +39,8 @@
     "@fastify/helmet": "^13.0.2",
     "@fastify/rate-limit": "^10.3.0",
     "@highlightjs/cdn-assets": "11.11.1",
-    "dompurify": "3.3.3",
-    "fastify": "^5.8.4",
+    "dompurify": "3.4.2",
+    "fastify": "^5.8.5",
     "highlight.js": "11.11.1",
     "marked": "17.0.6",
     "next": "^16.2.3",
@@ -40,8 +49,13 @@
     "ws": "^8.20.0"
   },
   "engines": {
-    "node": ">=20.0.0",
-    "pnpm": ">=9.0.0"
+    "node": ">=20.9.0",
+    "pnpm": ">=10.33.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "postcss": "8.5.14"
+    }
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.2",
@@ -53,7 +67,7 @@
     "cross-env": "^10.1.0",
     "happy-dom": "^20.8.9",
     "playwright": "^1.59.1",
-    "postcss": "^8.5.8",
+    "postcss": "^8.5.14",
     "prettier": "^3.8.1",
     "tailwindcss": "^4.2.2",
     "typescript": "^6.0.2",

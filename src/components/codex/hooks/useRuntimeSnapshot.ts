@@ -21,12 +21,7 @@ export function shallowEqual<T>(left: T, right: T) {
     return true;
   }
 
-  if (
-    typeof left !== 'object' ||
-    left === null ||
-    typeof right !== 'object' ||
-    right === null
-  ) {
+  if (typeof left !== 'object' || left === null || typeof right !== 'object' || right === null) {
     return false;
   }
 
@@ -38,8 +33,7 @@ export function shallowEqual<T>(left: T, right: T) {
 
   return leftEntries.every(
     ([key, value]) =>
-      Object.prototype.hasOwnProperty.call(rightRecord, key) &&
-      Object.is(value, rightRecord[key]),
+      Object.prototype.hasOwnProperty.call(rightRecord, key) && Object.is(value, rightRecord[key]),
   );
 }
 

@@ -21,11 +21,24 @@ const assets = [
     target: path.join(vendorDir, 'purify.min.js'),
   },
   {
-    source: path.join(projectRoot, 'node_modules', '@highlightjs', 'cdn-assets', 'highlight.min.js'),
+    source: path.join(
+      projectRoot,
+      'node_modules',
+      '@highlightjs',
+      'cdn-assets',
+      'highlight.min.js',
+    ),
     target: path.join(vendorDir, 'highlight.min.js'),
   },
   {
-    source: path.join(projectRoot, 'node_modules', '@highlightjs', 'cdn-assets', 'styles', 'github-dark.min.css'),
+    source: path.join(
+      projectRoot,
+      'node_modules',
+      '@highlightjs',
+      'cdn-assets',
+      'styles',
+      'github-dark.min.css',
+    ),
     target: path.join(vendorDir, 'github-dark.min.css'),
   },
 ];

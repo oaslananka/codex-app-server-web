@@ -3,11 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FileTreeNode } from '../../../lib/codex-ui-runtime';
 import { Modal, Skeleton } from '../../ui';
-import {
-  useControlCenterActions,
-  useFilesState,
-  useShellState,
-} from '../ControlCenterContext';
+import { useControlCenterActions, useFilesState, useShellState } from '../ControlCenterContext';
 
 function formatTimestamp(value?: string | number) {
   if (!value) return '';

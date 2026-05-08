@@ -36,20 +36,10 @@ describe('Modal', () => {
     act(() => {
       root.render(
         <>
-          <Modal
-            isOpen
-            onClose={() => undefined}
-            layer="settings"
-            overlayId="settings-overlay"
-          >
+          <Modal isOpen onClose={() => undefined} layer="settings" overlayId="settings-overlay">
             <div>Settings</div>
           </Modal>
-          <Modal
-            isOpen
-            onClose={() => undefined}
-            layer="approval"
-            overlayId="approval-overlay"
-          >
+          <Modal isOpen onClose={() => undefined} layer="approval" overlayId="approval-overlay">
             <div>Approval</div>
           </Modal>
         </>,

@@ -21,13 +21,18 @@ function asArray<T = unknown>(value: unknown): T[] {
 }
 
 function joinAbsoluteRootPath(root: unknown, path: unknown) {
-  const normalizedPath = String(path ?? '').replace(/\\/g, '/').trim();
+  const normalizedPath = String(path ?? '')
+    .replace(/\\/g, '/')
+    .trim();
   if (!normalizedPath) return '';
   if (normalizedPath.startsWith('/') || /^[A-Za-z]:($|\/)/.test(normalizedPath)) {
     return normalizedPath;
   }
 
-  const normalizedRoot = String(root ?? '').replace(/\\/g, '/').replace(/\/+$/, '').trim();
+  const normalizedRoot = String(root ?? '')
+    .replace(/\\/g, '/')
+    .replace(/\/+$/, '')
+    .trim();
   if (!normalizedRoot) {
     return normalizedPath;
   }
@@ -208,8 +213,7 @@ export function normalizeExperimentalFeatures(response: unknown): ExperimentalFe
       displayName: typeof item.displayName === 'string' ? item.displayName : undefined,
       description: typeof item.description === 'string' ? item.description : undefined,
       stage: typeof item.stage === 'string' ? item.stage : undefined,
-      defaultEnabled:
-        typeof item.defaultEnabled === 'boolean' ? item.defaultEnabled : undefined,
+      defaultEnabled: typeof item.defaultEnabled === 'boolean' ? item.defaultEnabled : undefined,
       enabled: typeof item.enabled === 'boolean' ? item.enabled : undefined,
       value: typeof item.value === 'boolean' ? item.value : undefined,
     };
@@ -469,10 +473,7 @@ export function normalizeFileEntries(response: unknown, rootPath = '') {
     return {
       name: entryName.split('/').filter(Boolean).pop() || entryName,
       path: joinAbsoluteRootPath(rootPath, item.path ?? item.filePath ?? entryName),
-      type:
-        item.type === 'directory' || item.isDirectory === true
-          ? 'directory'
-          : 'file',
+      type: item.type === 'directory' || item.isDirectory === true ? 'directory' : 'file',
     } as const;
   });
 }

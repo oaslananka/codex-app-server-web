@@ -99,19 +99,13 @@ function createNodeLogger(scope, inheritedSettings) {
     prefixParts.push(normalizedScope);
 
     const renderedPrefix = [
-      settings.timestamps
-        ? colorize(prefixParts[0], ANSI_DIM, settings)
-        : null,
+      settings.timestamps ? colorize(prefixParts[0], ANSI_DIM, settings) : null,
       colorize(
         settings.timestamps ? prefixParts[1] : prefixParts[0],
         getLevelColor(level),
         settings,
       ),
-      colorize(
-        settings.timestamps ? prefixParts[2] : prefixParts[1],
-        ANSI_MAGENTA,
-        settings,
-      ),
+      colorize(settings.timestamps ? prefixParts[2] : prefixParts[1], ANSI_MAGENTA, settings),
     ]
       .filter(Boolean)
       .join(' ');

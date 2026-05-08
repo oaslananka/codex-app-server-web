@@ -230,7 +230,9 @@ function getClipboardImageFiles(event: ClipboardEvent<HTMLTextAreaElement>) {
   const clipboardData = event.clipboardData;
   if (!clipboardData) return [] as File[];
 
-  const files = Array.from(clipboardData.files || []).filter((file) => file.type.startsWith('image/'));
+  const files = Array.from(clipboardData.files || []).filter((file) =>
+    file.type.startsWith('image/'),
+  );
   if (files.length > 0) {
     return files;
   }
@@ -516,21 +518,15 @@ export function ChatPanel() {
   );
   const serviceTier =
     chat.selectedServiceTier ||
-    (typeof chat.configData?.service_tier === 'string'
-      ? chat.configData.service_tier
-      : '');
+    (typeof chat.configData?.service_tier === 'string' ? chat.configData.service_tier : '');
   const sandboxMode =
     chat.selectedSandboxMode ||
-    (typeof chat.configData?.sandbox_mode === 'string'
-      ? chat.configData.sandbox_mode
-      : '');
+    (typeof chat.configData?.sandbox_mode === 'string' ? chat.configData.sandbox_mode : '');
 
   const setScrollState = useCallback((isPinned: boolean, hasUnreadMessages: boolean) => {
     autoScrollPinnedRef.current = isPinned;
     unreadMessagesRef.current = hasUnreadMessages;
-    setShowJumpToLatest((current) =>
-      current === hasUnreadMessages ? current : hasUnreadMessages,
-    );
+    setShowJumpToLatest((current) => (current === hasUnreadMessages ? current : hasUnreadMessages));
   }, []);
 
   const scrollToBottom = useCallback(
@@ -625,15 +621,11 @@ export function ChatPanel() {
       className={`panel${shell.activeTab === 'chat' ? ' active' : ''}${!thread.activeThread ? ' is-empty-state' : ''}`}
       id="panel-chat"
     >
-      <div
-        id="connection-banner"
-        className={shell.connectionBanner.visible ? 'is-visible' : ''}
-      >
+      <div id="connection-banner" className={shell.connectionBanner.visible ? 'is-visible' : ''}>
         <div className="connection-banner-copy">
           <div className="connection-banner-title">Codex backend connection issue</div>
           <div className="connection-banner-body" id="connection-banner-body">
-            {shell.connectionBanner.message ||
-              `Target: ${shell.connectionBanner.target}`}
+            {shell.connectionBanner.message || `Target: ${shell.connectionBanner.target}`}
           </div>
         </div>
         <button
@@ -651,7 +643,9 @@ export function ChatPanel() {
           <div className="empty-state">
             <div className="empty-icon">⟡</div>
             <div className="empty-title">Start a new session</div>
-            <div className="empty-text">Write a message below to start a new thread, or pick one from the sidebar.</div>
+            <div className="empty-text">
+              Write a message below to start a new thread, or pick one from the sidebar.
+            </div>
           </div>
         ) : visibleEntries.length === 0 ? (
           <div className="empty-state">
@@ -782,9 +776,7 @@ export function ChatPanel() {
               <strong>Session controls</strong>
               <span>
                 {chat.selectedModel || 'default'} ·{' '}
-                {chat.selectedEffort
-                  ? formatReasoningEffortLabel(chat.selectedEffort)
-                  : 'Default'}{' '}
+                {chat.selectedEffort ? formatReasoningEffortLabel(chat.selectedEffort) : 'Default'}{' '}
                 · {serviceTier ? formatServiceTierLabel(serviceTier) : 'Default'}
               </span>
             </span>
@@ -795,7 +787,10 @@ export function ChatPanel() {
           </button>
 
           <div id="session-controls-body" className="session-controls-body">
-            <div className="quick-controls quick-controls--primary" aria-label="Quick session controls">
+            <div
+              className="quick-controls quick-controls--primary"
+              aria-label="Quick session controls"
+            >
               <label className="quick-field quick-field--mode">
                 <span className="quick-label">Mode</span>
                 <select
@@ -848,7 +843,10 @@ export function ChatPanel() {
               </label>
             </div>
 
-            <div className="quick-controls quick-controls--secondary" aria-label="Quick session controls">
+            <div
+              className="quick-controls quick-controls--secondary"
+              aria-label="Quick session controls"
+            >
               <label className="quick-field">
                 <span className="quick-label">Speed</span>
                 <select
@@ -1005,9 +1003,7 @@ export function ChatPanel() {
               id="btn-send"
               title={hasInterruptibleTurn ? 'Steer current turn' : 'Send message'}
               aria-label={hasInterruptibleTurn ? 'Steer current turn' : 'Send message'}
-              disabled={
-                chat.attachmentUploadInProgress
-              }
+              disabled={chat.attachmentUploadInProgress}
               onClick={() =>
                 hasInterruptibleTurn ? actions.chat.steerTurn() : actions.chat.sendMessage()
               }

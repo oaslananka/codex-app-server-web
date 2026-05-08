@@ -287,12 +287,7 @@ export function Sidebar({
         aria-hidden="true"
       />
 
-      <nav
-        id="sidebar"
-        ref={sidebarRef}
-        className={isOpen ? 'open' : ''}
-        aria-label="Thread list"
-      >
+      <nav id="sidebar" ref={sidebarRef} className={isOpen ? 'open' : ''} aria-label="Thread list">
         <div className="sr-only" aria-live="polite">
           {liveMessage}
         </div>
@@ -366,11 +361,7 @@ export function Sidebar({
               Start a new session above.
             </div>
           ) : (
-            <>
-              {orderedThreads.map((thread, index) =>
-                renderThreadItem(thread, index),
-              )}
-            </>
+            <>{orderedThreads.map((thread, index) => renderThreadItem(thread, index))}</>
           )}
         </div>
       </nav>

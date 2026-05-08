@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeModelList, normalizePluginDetail, normalizeThread, normalizeThreadsResponse } from '../../src/lib/codex-runtime/normalizers';
+import {
+  normalizeModelList,
+  normalizePluginDetail,
+  normalizeThread,
+  normalizeThreadsResponse,
+} from '../../src/lib/codex-runtime/normalizers';
 
 describe('runtime normalizers', () => {
   it('normalizes thread records from mixed payload shapes', () => {

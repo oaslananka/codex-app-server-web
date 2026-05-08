@@ -1,16 +1,16 @@
 import { normalizeError } from './errors';
 import { normalizeFuzzyResults } from './normalizers';
 import { createBrowserLogger } from '../logging/browser-logger';
-import {
-  type OfficialNotificationMethod,
-  type OfficialServerRequestMethod,
-} from './protocol';
+import { type OfficialNotificationMethod, type OfficialServerRequestMethod } from './protocol';
 import type { RuntimeState } from './types';
 import { RuntimeStore } from './store';
 import { WebsocketRpcClient } from './transport/websocket-client';
 
 type ApprovalServiceLike = {
-  requestApproval: (method: OfficialServerRequestMethod, payload: Record<string, unknown>) => Promise<unknown>;
+  requestApproval: (
+    method: OfficialServerRequestMethod,
+    payload: Record<string, unknown>,
+  ) => Promise<unknown>;
   cancelPending: (reason?: string) => void;
 };
 
@@ -274,11 +274,8 @@ function registerNotifications({
     'item/autoApprovalReview/completed',
     (payload) => turnService.handleThreadRealtime(payload, 'auto-approval-completed'),
   );
-  registerNotificationHandler(
-    client,
-    updateCapability,
-    'command/exec/outputDelta',
-    (payload) => terminalService.handleExecOutputDelta(payload),
+  registerNotificationHandler(client, updateCapability, 'command/exec/outputDelta', (payload) =>
+    terminalService.handleExecOutputDelta(payload),
   );
   registerNotificationHandler(client, updateCapability, 'account/updated', async () =>
     authService.loadAccount(),
@@ -308,18 +305,23 @@ function registerNotifications({
   registerNotificationHandler(client, updateCapability, 'serverRequest/resolved', (payload) =>
     turnService.handleThreadRealtime(payload, 'server-request-resolved'),
   );
-  registerNotificationHandler(client, updateCapability, 'fuzzyFileSearch/sessionUpdated', (payload) => {
-    const nextResults = normalizeFuzzyResults(payload);
-    if (nextResults.length > 0) {
-      store.patch({
-        fuzzySearch: {
-          ...store.getState().fuzzySearch,
-          loading: true,
-          results: nextResults,
-        },
-      });
-    }
-  });
+  registerNotificationHandler(
+    client,
+    updateCapability,
+    'fuzzyFileSearch/sessionUpdated',
+    (payload) => {
+      const nextResults = normalizeFuzzyResults(payload);
+      if (nextResults.length > 0) {
+        store.patch({
+          fuzzySearch: {
+            ...store.getState().fuzzySearch,
+            loading: true,
+            results: nextResults,
+          },
+        });
+      }
+    },
+  );
   registerNotificationHandler(
     client,
     updateCapability,
@@ -331,11 +333,8 @@ function registerNotifications({
   registerNotificationHandler(client, updateCapability, 'thread/realtime/started', (payload) =>
     turnService.handleThreadRealtime(payload, 'realtime-started'),
   );
-  registerNotificationHandler(
-    client,
-    updateCapability,
-    'thread/realtime/itemAdded',
-    (payload) => turnService.handleThreadRealtime(payload, 'realtime-item'),
+  registerNotificationHandler(client, updateCapability, 'thread/realtime/itemAdded', (payload) =>
+    turnService.handleThreadRealtime(payload, 'realtime-item'),
   );
   registerNotificationHandler(
     client,
@@ -349,11 +348,8 @@ function registerNotifications({
   registerNotificationHandler(client, updateCapability, 'thread/realtime/closed', (payload) =>
     turnService.handleThreadRealtime(payload, 'realtime-closed'),
   );
-  registerNotificationHandler(
-    client,
-    updateCapability,
-    'windows/worldWritableWarning',
-    (payload) => turnService.handleThreadRealtime(payload, 'windows-warning'),
+  registerNotificationHandler(client, updateCapability, 'windows/worldWritableWarning', (payload) =>
+    turnService.handleThreadRealtime(payload, 'windows-warning'),
   );
   registerNotificationHandler(
     client,

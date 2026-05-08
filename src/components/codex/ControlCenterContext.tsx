@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  createContext,
-  type Context,
-  type PropsWithChildren,
-  useContext,
-  useMemo,
-} from 'react';
+import { createContext, type Context, type PropsWithChildren, useContext, useMemo } from 'react';
 import type { CollaborationModeValue } from '../../lib/codex-runtime/collaboration';
 import type { BrowserLogSettings } from '../../lib/logging/shared';
 import type { RuntimeSnapshot, ThreadSummary } from '../../lib/codex-ui-runtime';

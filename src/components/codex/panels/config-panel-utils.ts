@@ -162,10 +162,7 @@ export function getConfigFieldMeta(
   return meta;
 }
 
-export function serializeConfigDraftValue(
-  value: unknown,
-  meta: ConfigFieldMeta,
-): ConfigDraftValue {
+export function serializeConfigDraftValue(value: unknown, meta: ConfigFieldMeta): ConfigDraftValue {
   if (meta.type === 'boolean') {
     return Boolean(value);
   }

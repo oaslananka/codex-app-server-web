@@ -6,11 +6,7 @@ import {
   getRecentBrowserLogs,
   updateBrowserLogSettings,
 } from '../../src/lib/logging/browser-logger';
-import {
-  formatLogTimestamp,
-  normalizeLogLevel,
-  shouldLog,
-} from '../../src/lib/logging/shared';
+import { formatLogTimestamp, normalizeLogLevel, shouldLog } from '../../src/lib/logging/shared';
 
 const originalSettings = getBrowserLogSettings();
 

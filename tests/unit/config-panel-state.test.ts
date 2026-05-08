@@ -38,11 +38,7 @@ describe('config panel draft state', () => {
       throw new Error('Expected model descriptor');
     }
 
-    const dirtyState = applyConfigDraftChange(
-      initialDraftState,
-      modelDescriptor,
-      'gpt-deep',
-    );
+    const dirtyState = applyConfigDraftChange(initialDraftState, modelDescriptor, 'gpt-deep');
 
     const refreshedSections = buildConfigFieldSections(
       {

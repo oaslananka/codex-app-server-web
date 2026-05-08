@@ -44,7 +44,8 @@ export class WebsocketRpcClient {
   private readonly wsUrl: string;
 
   constructor(wsUrl?: string) {
-    const wsScheme = typeof location !== 'undefined' && location.protocol === 'https:' ? 'wss' : 'ws';
+    const wsScheme =
+      typeof location !== 'undefined' && location.protocol === 'https:' ? 'wss' : 'ws';
     this.wsUrl = wsUrl ?? `${wsScheme}://${location.host}/ws`;
   }
 
@@ -60,7 +61,9 @@ export class WebsocketRpcClient {
       logger.debug('Opening websocket connection', { url: this.wsUrl });
     } catch (error) {
       logger.error('Failed to create websocket connection', error);
-      this.emitControl('error', { message: error instanceof Error ? error.message : 'Failed to connect' });
+      this.emitControl('error', {
+        message: error instanceof Error ? error.message : 'Failed to connect',
+      });
       return;
     }
 
@@ -102,7 +105,9 @@ export class WebsocketRpcClient {
         this.handleMessage(message);
       } catch (error) {
         logger.error('Malformed websocket payload', error);
-        this.emitControl('error', { message: error instanceof Error ? error.message : 'Malformed websocket payload' });
+        this.emitControl('error', {
+          message: error instanceof Error ? error.message : 'Malformed websocket payload',
+        });
       }
     };
 
@@ -181,7 +186,10 @@ export class WebsocketRpcClient {
   }
 
   private handleMessage(message: Record<string, unknown>) {
-    if (typeof message.id === 'number' && (Reflect.has(message, 'result') || Reflect.has(message, 'error'))) {
+    if (
+      typeof message.id === 'number' &&
+      (Reflect.has(message, 'result') || Reflect.has(message, 'error'))
+    ) {
       if (message.id === this.initializeRequestId) {
         this.initializeRequestId = null;
         if (message.error) {
@@ -223,7 +231,10 @@ export class WebsocketRpcClient {
         const error =
           errorPayload.code === -32601
             ? new RpcMethodUnavailableError(pending.method, messageText)
-            : Object.assign(new Error(messageText), { code: errorPayload.code, data: errorPayload.data });
+            : Object.assign(new Error(messageText), {
+                code: errorPayload.code,
+                data: errorPayload.data,
+              });
         pending.reject(error);
         return;
       }
@@ -260,7 +271,10 @@ export class WebsocketRpcClient {
           this.sendRaw({
             jsonrpc: '2.0',
             id: message.id,
-            error: { code: -32000, message: error instanceof Error ? error.message : 'Server request failed' },
+            error: {
+              code: -32000,
+              message: error instanceof Error ? error.message : 'Server request failed',
+            },
           });
         });
       return;
@@ -268,7 +282,9 @@ export class WebsocketRpcClient {
 
     if (typeof message.method === 'string') {
       logger.trace('Dispatching notification', { method: message.method });
-      this.notificationHandlers.get(message.method)?.forEach((handler) => handler((message.params ?? {}) as Record<string, unknown>));
+      this.notificationHandlers
+        .get(message.method)
+        ?.forEach((handler) => handler((message.params ?? {}) as Record<string, unknown>));
     }
   }
 

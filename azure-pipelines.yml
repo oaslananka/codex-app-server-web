@@ -17,12 +17,12 @@ pr:
       - main
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: ubuntu-24.04
 
 variables:
-  NODE_VERSION: "22"
-  PNPM_VERSION: "10.33.0"
-  CODEX_PORT: "41000"
+  NODE_VERSION: '24'
+  PNPM_VERSION: '10.33.0'
+  CODEX_PORT: '41000'
   REPO_ROOT: $(Pipeline.Workspace)/self
   GITHUB_MIRROR_PATH: github-mirror
 
@@ -33,15 +33,15 @@ jobs:
       clean: all
     steps:
       - checkout: self
-        clean: "true"
-        fetchDepth: "0"
-        persistCredentials: "true"
+        clean: 'true'
+        fetchDepth: '0'
+        persistCredentials: 'true'
         path: self
 
       - checkout: githubMirror
-        clean: "true"
-        fetchDepth: "0"
-        persistCredentials: "true"
+        clean: 'true'
+        fetchDepth: '0'
+        persistCredentials: 'true'
         path: $(GITHUB_MIRROR_PATH)
         condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
 
@@ -51,6 +51,7 @@ jobs:
           versionSpec: $(NODE_VERSION)
 
       - script: |
+          set -euo pipefail
           corepack enable
           corepack prepare pnpm@$(PNPM_VERSION) --activate
         displayName: Enable pnpm
@@ -60,12 +61,27 @@ jobs:
         displayName: Install dependencies
         workingDirectory: $(REPO_ROOT)
 
+      - script: pnpm format:check
+        displayName: Format check
+        workingDirectory: $(REPO_ROOT)
+
+      - script: pnpm repo:hygiene:check
+        displayName: Repository hygiene
+        workingDirectory: $(REPO_ROOT)
+
       - script: pnpm exec playwright install --with-deps chromium
         displayName: Install Playwright browsers
         workingDirectory: $(REPO_ROOT)
 
       - script: pnpm protocol:manifest:check
         displayName: Validate official manifest
+        workingDirectory: $(REPO_ROOT)
+
+      - script: |
+          set -euo pipefail
+          git fetch origin main --depth=1
+          pnpm protocol:drift:check -- --base-ref origin/main
+        displayName: Validate protocol drift
         workingDirectory: $(REPO_ROOT)
 
       - script: pnpm typecheck
@@ -81,6 +97,7 @@ jobs:
         workingDirectory: $(REPO_ROOT)
 
       - script: |
+          set -euo pipefail
           MOCK_CODEX_PORT=$(CODEX_PORT) MOCK_SEND_APPROVAL=1 node scripts/mock-codex-app-server.mjs > ci-mock.log 2>&1 &
           echo $! > ci-mock.pid
           sleep 2
@@ -88,6 +105,7 @@ jobs:
         workingDirectory: $(REPO_ROOT)
 
       - script: |
+          set -euo pipefail
           PORT=1989 PORT_FALLBACK=1990 CODEX_PORT=$(CODEX_PORT) pnpm start:ui > ci-ui.log 2>&1 &
           echo $! > ci-ui.pid
           for i in {1..60}; do

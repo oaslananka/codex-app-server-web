@@ -28,6 +28,15 @@
         "null"
       ]
     },
+    "tags": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
     "threadId": {
       "type": [
         "string",

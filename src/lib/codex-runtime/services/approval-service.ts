@@ -47,8 +47,7 @@ function mapQuestions(rawQuestions: unknown): ApprovalQuestion[] {
               if (typeof value.label !== 'string') return null;
               return {
                 label: value.label,
-                description:
-                  typeof value.description === 'string' ? value.description : undefined,
+                description: typeof value.description === 'string' ? value.description : undefined,
               };
             })
             .filter((option): option is NonNullable<typeof option> => Boolean(option))
@@ -86,8 +85,7 @@ function resolveAlternateLabel(availableDecisions: unknown[]) {
       (decision) =>
         decision &&
         typeof decision === 'object' &&
-        ('acceptWithExecpolicyAmendment' in decision ||
-          'applyNetworkPolicyAmendment' in decision),
+        ('acceptWithExecpolicyAmendment' in decision || 'applyNetworkPolicyAmendment' in decision),
     )
   ) {
     return 'Apply suggested policy';
@@ -313,8 +311,7 @@ export class ApprovalService {
           variant: 'mcp',
           title: 'MCP server request',
           badge: 'MCP',
-          detail:
-            typeof payload.message === 'string' ? payload.message : stringifyPayload(payload),
+          detail: typeof payload.message === 'string' ? payload.message : stringifyPayload(payload),
           confirmLabel: 'Submit',
           denyLabel: 'Cancel',
           needsTextInput: true,

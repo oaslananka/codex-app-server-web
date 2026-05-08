@@ -170,7 +170,11 @@ export function readPersistedRuntimeState(): PersistedRuntimeState {
 
     const version = Reflect.get(parsed, 'version');
     const persistedState = Reflect.get(parsed, 'state');
-    if (version !== PERSISTED_RUNTIME_VERSION || !persistedState || typeof persistedState !== 'object') {
+    if (
+      version !== PERSISTED_RUNTIME_VERSION ||
+      !persistedState ||
+      typeof persistedState !== 'object'
+    ) {
       return {};
     }
 
@@ -250,7 +254,7 @@ export function applyPersistedRuntimeState(
   const restoredActiveThread =
     state.threads.find((thread) => thread.id === restoredActiveThreadId) ?? state.activeThread;
   const restoredChatEntries = restoredActiveThreadId
-    ? state.threadEntries[restoredActiveThreadId] ?? state.chatEntries
+    ? (state.threadEntries[restoredActiveThreadId] ?? state.chatEntries)
     : state.chatEntries;
 
   return {

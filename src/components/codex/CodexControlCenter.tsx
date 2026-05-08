@@ -213,17 +213,20 @@ export function CodexControlCenter() {
     [setShellActiveTab],
   );
 
-  const openInputModal = useCallback((config: InputModalConfig) => {
-    closeSettings();
-    setInputModal({
-      isOpen: true,
-      ...config,
-      onConfirm: (value) => {
-        config.onConfirm(value);
-        setInputModal(null);
-      },
-    });
-  }, [closeSettings]);
+  const openInputModal = useCallback(
+    (config: InputModalConfig) => {
+      closeSettings();
+      setInputModal({
+        isOpen: true,
+        ...config,
+        onConfirm: (value) => {
+          config.onConfirm(value);
+          setInputModal(null);
+        },
+      });
+    },
+    [closeSettings],
+  );
 
   const closeInputModal = useCallback(() => {
     setInputModal(null);

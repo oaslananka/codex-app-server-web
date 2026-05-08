@@ -162,6 +162,8 @@ describe('InfoPanel', () => {
 
     const markup = renderToStaticMarkup(<InfoPanel />);
 
-    expect(markup).toContain('The Apps directory is currently being blocked by the upstream service.');
+    expect(markup).toContain(
+      'The Apps directory is currently being blocked by the upstream service.',
+    );
   });
 });

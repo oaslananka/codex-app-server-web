@@ -4,7 +4,8 @@
   "description": "Start filesystem watch notifications for an absolute path.",
   "type": "object",
   "required": [
-    "path"
+    "path",
+    "watchId"
   ],
   "properties": {
     "path": {
@@ -14,6 +15,10 @@
           "$ref": "#/definitions/AbsolutePathBuf"
         }
       ]
+    },
+    "watchId": {
+      "description": "Connection-scoped watch identifier used for `fs/unwatch` and `fs/changed`.",
+      "type": "string"
     }
   },
   "definitions": {

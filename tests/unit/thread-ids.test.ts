@@ -4,10 +4,7 @@ import {
   buildInitialState,
   buildPersistedRuntimeState,
 } from '../../src/lib/codex-runtime/runtime-state';
-import {
-  isBackendThreadId,
-  sanitizeBackendThreadId,
-} from '../../src/lib/codex-runtime/thread-ids';
+import { isBackendThreadId, sanitizeBackendThreadId } from '../../src/lib/codex-runtime/thread-ids';
 
 describe('thread id safeguards', () => {
   it('accepts canonical backend thread ids and rejects synthetic ids', () => {

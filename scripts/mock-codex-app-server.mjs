@@ -6,10 +6,7 @@ import nodeLoggerModule from '../src/lib/logging/node-logger.cjs';
 const { createNodeLogger } = nodeLoggerModule;
 
 const logger = createNodeLogger('script:mock-codex');
-const port = Number.parseInt(
-  process.env.MOCK_CODEX_PORT || process.env.CODEX_PORT || '41000',
-  10,
-);
+const port = Number.parseInt(process.env.MOCK_CODEX_PORT || process.env.CODEX_PORT || '41000', 10);
 const shouldSendApproval = process.env.MOCK_SEND_APPROVAL === '1';
 const approvalDelayMs = Number.parseInt(process.env.MOCK_APPROVAL_DELAY_MS || '900', 10);
 

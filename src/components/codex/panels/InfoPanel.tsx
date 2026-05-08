@@ -47,8 +47,7 @@ export function InfoPanel() {
     (warning) => warning.context === 'info',
   );
   const hasBackendThreadId = Boolean(sanitizeBackendThreadId(thread.activeThread?.id));
-  const isInitialInfoLoading =
-    shell.activeTab === 'info' && !info.infoHydrated && !info.infoError;
+  const isInitialInfoLoading = shell.activeTab === 'info' && !info.infoHydrated && !info.infoError;
   const [searchQuery, setSearchQuery] = useState('');
   const [browserLogs, setBrowserLogs] = useState<BrowserLogEntry[]>(getRecentBrowserLogs);
   const [logFilter, setLogFilter] = useState<LogLevel>('trace');
@@ -150,8 +149,10 @@ export function InfoPanel() {
     { id: 'integrations', label: 'Integrations' },
     { id: 'settings', label: 'Settings' },
   ];
-  const { documented: documentedExperimentalFeatures, backendOnly: backendOnlyExperimentalFeatures } =
-    splitExperimentalFeatures(info.experimentalFeatures);
+  const {
+    documented: documentedExperimentalFeatures,
+    backendOnly: backendOnlyExperimentalFeatures,
+  } = splitExperimentalFeatures(info.experimentalFeatures);
   const appsAvailabilityHint = getAppsAvailabilityHint(integrationWarnings);
   const appsPendingMessage = getAppsPendingMessage(info.appsHydrated, info.appsLoading);
   const showAppsEmptyState = shouldShowAppsEmptyState(
@@ -414,9 +415,7 @@ export function InfoPanel() {
                       Search
                     </button>
                   </div>
-                  {info.fuzzySearch.loading ? (
-                    <div className="config-help">Searching…</div>
-                  ) : null}
+                  {info.fuzzySearch.loading ? <div className="config-help">Searching…</div> : null}
                   {info.fuzzySearch.error ? (
                     <div className="config-help">{info.fuzzySearch.error}</div>
                   ) : null}
@@ -600,8 +599,8 @@ export function InfoPanel() {
                     <div className="info-card">
                       <div className="info-card-name">How skills work in Codex</div>
                       <div className="info-card-sub">
-                        Skills package instructions, optional resources, and helper scripts so
-                        Codex can apply repeatable workflows in the app, CLI, and IDE extension.
+                        Skills package instructions, optional resources, and helper scripts so Codex
+                        can apply repeatable workflows in the app, CLI, and IDE extension.
                       </div>
                       <div className="capability-list">
                         <span className="info-tag active">SKILL.md</span>
@@ -704,7 +703,9 @@ export function InfoPanel() {
                                   </div>
                                   <div className="info-card-meta">
                                     {feature.stage ? (
-                                      <span className="info-tag">{feature.stage.toUpperCase()}</span>
+                                      <span className="info-tag">
+                                        {feature.stage.toUpperCase()}
+                                      </span>
                                     ) : null}
                                     {typeof feature.defaultEnabled === 'boolean' ? (
                                       <span className="info-tag">
@@ -747,7 +748,9 @@ export function InfoPanel() {
                           <>
                             <div
                               className="info-card-name"
-                              style={{ marginTop: documentedExperimentalFeatures.length ? '14px' : 0 }}
+                              style={{
+                                marginTop: documentedExperimentalFeatures.length ? '14px' : 0,
+                              }}
                             >
                               Backend-only entries
                             </div>
@@ -772,7 +775,9 @@ export function InfoPanel() {
                                     <span className="info-tag">BACKEND ONLY</span>
                                     <span className="info-tag">{featureKey}</span>
                                     {feature.stage ? (
-                                      <span className="info-tag">{feature.stage.toUpperCase()}</span>
+                                      <span className="info-tag">
+                                        {feature.stage.toUpperCase()}
+                                      </span>
                                     ) : null}
                                   </div>
                                 </div>
@@ -820,7 +825,10 @@ export function InfoPanel() {
                       Captures client-side Codex UI and runtime events. Server logs still flow to
                       the terminal via <code>CODEX_LOG_LEVEL</code>.
                     </div>
-                    <div className="stack-actions" style={{ marginTop: '10px', marginBottom: '10px' }}>
+                    <div
+                      className="stack-actions"
+                      style={{ marginTop: '10px', marginBottom: '10px' }}
+                    >
                       <select
                         className="config-value"
                         style={{ maxWidth: '180px' }}

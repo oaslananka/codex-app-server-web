@@ -1,12 +1,5 @@
-import {
-  getErrorTelemetry,
-  isInitializationPendingError,
-  normalizeError,
-} from '../errors';
-import {
-  normalizeCollaborationModes,
-  sanitizeCollaborationMode,
-} from '../collaboration';
+import { getErrorTelemetry, isInitializationPendingError, normalizeError } from '../errors';
+import { normalizeCollaborationModes, sanitizeCollaborationMode } from '../collaboration';
 import { createBrowserLogger } from '../../logging/browser-logger';
 import { sanitizeSelectedEffort } from '../reasoning';
 import {
@@ -66,10 +59,7 @@ export class FeatureService {
       (warning) => warning.context === 'info' && warning.source === 'apps',
     );
     const nextWarnings = retainedAppsWarning
-      ? [
-          ...warnings.filter((warning) => warning.source !== 'apps'),
-          retainedAppsWarning,
-        ]
+      ? [...warnings.filter((warning) => warning.source !== 'apps'), retainedAppsWarning]
       : warnings;
     this.patchIntegrationWarnings('info', nextWarnings);
   }
@@ -314,10 +304,7 @@ export class FeatureService {
         features.status === 'fulfilled' ? normalizeExperimentalFeatures(features.value) : [],
       plugins: plugins.status === 'fulfilled' ? normalizePluginList(plugins.value) : [],
       collaborationModes: nextModes,
-      collaborationMode: sanitizeCollaborationMode(
-        nextModes,
-        currentState.collaborationMode,
-      ),
+      collaborationMode: sanitizeCollaborationMode(nextModes, currentState.collaborationMode),
       infoError: allRejected && !initializationPending ? 'Failed to load info panels' : '',
     });
     this.patchInfoWarnings(warnings);
@@ -370,7 +357,10 @@ export class FeatureService {
     }));
 
     try {
-      const response = await this.deps.requestCompat('app/list', force ? { forceRefetch: true } : {});
+      const response = await this.deps.requestCompat(
+        'app/list',
+        force ? { forceRefetch: true } : {},
+      );
       this.store.patch({
         apps: normalizeApps(response),
         appsHydrated: true,

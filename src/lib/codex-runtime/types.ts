@@ -5,10 +5,7 @@ import type {
   OfficialServerRequestMethod,
   ProtocolCoverage,
 } from './protocol';
-import type {
-  CollaborationModeOption,
-  CollaborationModeValue,
-} from './collaboration';
+import type { CollaborationModeOption, CollaborationModeValue } from './collaboration';
 
 export type ThreadStatus = {
   type: string;

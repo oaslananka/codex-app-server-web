@@ -25,10 +25,7 @@ export function MainPanels() {
   return (
     <main id="main">
       <ThreadHeader />
-      <AccountLoginBanner
-        loggedIn={account.loggedIn}
-        loginInProgress={account.loginInProgress}
-      />
+      <AccountLoginBanner loggedIn={account.loggedIn} loginInProgress={account.loginInProgress} />
       <ContentTabs />
       <div id="content-area">{activePanel}</div>
     </main>

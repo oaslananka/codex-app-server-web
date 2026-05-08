@@ -143,5 +143,9 @@ export function isDirectoryPathError(error: unknown) {
       : error && typeof error === 'object'
         ? String(Reflect.get(error, 'message') || '')
         : String(error || '');
-  return /is a directory/i.test(message) || /\bos error 21\b/i.test(message) || /\beisdir\b/i.test(message);
+  return (
+    /is a directory/i.test(message) ||
+    /\bos error 21\b/i.test(message) ||
+    /\beisdir\b/i.test(message)
+  );
 }

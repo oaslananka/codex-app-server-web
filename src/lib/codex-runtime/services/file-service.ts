@@ -4,7 +4,11 @@ import type { RuntimeStore } from '../store';
 import type { RuntimeState } from '../types';
 
 type ServiceDeps = {
-  requestCompat: <T = unknown>(canonicalMethod: string, params?: unknown, fallbacks?: readonly string[]) => Promise<T>;
+  requestCompat: <T = unknown>(
+    canonicalMethod: string,
+    params?: unknown,
+    fallbacks?: readonly string[],
+  ) => Promise<T>;
   markRequestSupported(method: string): void;
   markRequestUnsupported(method: string): void;
   toast(message: string, type?: 'info' | 'success' | 'error'): void;
@@ -41,7 +45,9 @@ function parentPath(path: string) {
   segments.pop();
   if (!segments.length) return '/';
   if (/^[A-Za-z]:$/.test(segments[0] ?? '')) {
-    return segments.length === 1 ? `${segments[0]}/` : `${segments[0]}/${segments.slice(1).join('/')}`;
+    return segments.length === 1
+      ? `${segments[0]}/`
+      : `${segments[0]}/${segments.slice(1).join('/')}`;
   }
   return `/${segments.join('/')}`;
 }
@@ -55,12 +61,11 @@ function resolvePathAgainstBase(base: string, target: string) {
 
   const baseSegments = normalizedBase.split('/').filter(Boolean);
   const targetSegments = normalizedTarget.split('/').filter(Boolean);
-  const segments =
-    normalizedTarget.startsWith('/')
+  const segments = normalizedTarget.startsWith('/')
+    ? []
+    : /^[A-Za-z]:($|\/)/.test(normalizedTarget)
       ? []
-      : /^[A-Za-z]:($|\/)/.test(normalizedTarget)
-        ? []
-        : baseSegments;
+      : baseSegments;
 
   for (const segment of targetSegments) {
     if (segment === '.') {
@@ -361,7 +366,7 @@ export class FileService {
       }> = [
         {
           path,
-          name: isRoot ? path : path.split('/').filter(Boolean).pop() ?? path,
+          name: isRoot ? path : (path.split('/').filter(Boolean).pop() ?? path),
           type: 'directory' as const,
           depth,
           expanded: expanded.has(path),

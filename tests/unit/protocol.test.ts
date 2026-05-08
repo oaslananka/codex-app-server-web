@@ -36,9 +36,12 @@ describe('protocol coverage helpers', () => {
 
   it('includes docs-driven overrides and config schema metadata', () => {
     expect(OFFICIAL_REQUEST_METHODS).toContain('collaborationMode/list');
+    expect(OFFICIAL_REQUEST_METHODS).toContain('mcpServer/tool/call');
+    expect(OFFICIAL_REQUEST_METHODS).toContain('thread/inject_items');
+    expect(OFFICIAL_NOTIFICATION_METHODS).toContain('thread/realtime/transcript/delta');
+    expect(OFFICIAL_NOTIFICATION_METHODS).toContain('thread/realtime/transcript/done');
+    expect(OFFICIAL_NOTIFICATION_METHODS).not.toContain('thread/realtime/transcriptUpdated');
     expect(OFFICIAL_CONFIG_FIELDS.approval_policy?.enumValues).toContain('on-request');
-    expect(OFFICIAL_CONFIG_FIELDS.approvals_reviewer?.enumValues).toContain(
-      'guardian_subagent',
-    );
+    expect(OFFICIAL_CONFIG_FIELDS.approvals_reviewer?.enumValues).toContain('guardian_subagent');
   });
 });

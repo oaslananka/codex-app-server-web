@@ -149,8 +149,7 @@ export function applyConfigDraftChange(
     ...current.drafts,
     [descriptor.configKey]: nextValue,
   };
-  const baselineValue =
-    current.baselineDrafts[descriptor.configKey] ?? descriptor.serializedValue;
+  const baselineValue = current.baselineDrafts[descriptor.configKey] ?? descriptor.serializedValue;
   const nextDirtyMap = { ...current.dirtyMap };
   if (nextValue === baselineValue) {
     delete nextDirtyMap[descriptor.configKey];
