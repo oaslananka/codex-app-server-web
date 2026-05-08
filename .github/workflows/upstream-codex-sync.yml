@@ -58,7 +58,7 @@ jobs:
         run: |
           set -euo pipefail
           corepack enable
-          corepack prepare pnpm@${PNPM_VERSION} --activate
+          corepack prepare "pnpm@${PNPM_VERSION}" --activate
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
