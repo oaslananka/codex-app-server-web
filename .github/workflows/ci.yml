@@ -1,4 +1,4 @@
-name: GitHub Mirror Validation
+name: Org CI Validation
 
 on:
   pull_request:
@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: github-mirror-validation-${{ github.workflow }}-${{ github.ref }}
+  group: org-ci-validation-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -78,7 +78,7 @@ jobs:
         run: zizmor --offline .
 
       - name: Secret scan
-        run: gitleaks detect --no-git --redact --source . --exit-code 1
+        run: pnpm security:secrets
 
       - name: Fast unit subset
         run: pnpm test -- tests/unit/protocol.test.ts tests/unit/rate-limit.test.ts tests/unit/terminal-output.test.ts

@@ -8,7 +8,12 @@ This project is independent and community-maintained. It is not affiliated with,
 
 The goal of this repository is to make Codex app-server workflows easier to inspect and operate from the browser without changing the backend protocol. It is designed for developer-facing use cases where you want a practical UI for session management, approvals, diagnostics, and workspace interaction, while keeping protocol compatibility and schema-driven behavior intact.
 
-Azure DevOps is the source of truth for CI/CD, release validation, and the primary delivery workflow. GitHub is maintained as the public open-source mirror for discoverability, issue tracking, and community contributions.
+The personal GitHub repository is the source repository:
+`https://github.com/oaslananka/codex-app-server-web`.
+The organization repository is the CI/CD mirror:
+`https://github.com/oaslananka-lab/codex-app-server-web`.
+Both repositories should carry the same content refs, while GitHub Actions run
+from the organization mirror.
 
 **Core Capabilities**
 
@@ -38,7 +43,8 @@ Azure DevOps is the source of truth for CI/CD, release validation, and the prima
 - [`src/styles/`](./src/styles): Control center styling, responsive behavior, and overlay/panel presentation
 - [`scripts/`](./scripts): Manifest generation, smoke tooling, vendor sync, and local backend helpers
 - [`tests/unit/`](./tests/unit): Unit coverage for runtime behavior, protocol handling, overlays, and panel utilities
-- [`azure-pipelines.yml`](./azure-pipelines.yml): Primary CI/CD pipeline definition
+- [`.github/workflows/ci.yml`](./.github/workflows/ci.yml): Organization mirror CI/CD validation workflow
+- [`azure-pipelines.yml`](./azure-pipelines.yml): Legacy-compatible Azure validation pipeline
 - [`TECH_DEBT.md`](./TECH_DEBT.md): Explicitly accepted debt and known boundaries
 
 **Local Development**
@@ -79,11 +85,13 @@ pnpm repo:hygiene:check
 pnpm smoke
 ```
 
-**CI/CD**
+**CI/CD and Repository Mirror**
 
-- Azure DevOps is the authoritative pipeline and release path for this project.
-- [`azure-pipelines.yml`](./azure-pipelines.yml) defines the primary validation and delivery flow.
-- The GitHub mirror is intentionally secondary and does not replace Azure DevOps as the release source of truth.
+- The personal repository at `oaslananka/codex-app-server-web` is the source repository.
+- The organization repository at `oaslananka-lab/codex-app-server-web` is kept in sync and is the GitHub Actions CI/CD execution target.
+- Branches, tags, releases, and active PR state should be mirrored between the personal and organization repositories when repository automation changes are made.
+- Azure remains supported through [`azure-pipelines.yml`](./azure-pipelines.yml), but it is not the GitHub Actions execution target for this mirror model.
+- The mirror procedure is documented in [`docs/automation/repository-mirror.md`](./docs/automation/repository-mirror.md).
 - Protocol metadata can be validated locally with `pnpm protocol:manifest:check` before opening a change.
 - Protocol drift is gated with `pnpm protocol:drift:check`; upstream artifact sync is documented in [`docs/automation/upstream-codex-sync.md`](./docs/automation/upstream-codex-sync.md).
 - Dependency updates are grouped by Dependabot for npm and GitHub Actions through [`.github/dependabot.yml`](./.github/dependabot.yml).

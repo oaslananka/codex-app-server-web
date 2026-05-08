@@ -12,8 +12,9 @@ pnpm release:state
 ```
 
 The check is intentionally blocking when no configured production publish target
-exists. A safe production path should be added as an explicit guarded CI or Azure
-release stage before publishing, with:
+exists. A safe production path should be added as an explicit guarded release
+job in the organization GitHub Actions mirror, or as another documented guarded
+release stage, before publishing, with:
 
 - validation gates that already passed from clean source,
 - least-privilege credentials stored in the CI provider,
