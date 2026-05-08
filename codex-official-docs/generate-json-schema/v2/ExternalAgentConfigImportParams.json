@@ -32,15 +32,15 @@
         "itemType"
       ],
       "properties": {
+        "description": {
+          "type": "string"
+        },
         "cwd": {
           "description": "Null or empty means home-scoped migration; non-empty means repo-scoped migration.",
           "type": [
             "string",
             "null"
           ]
-        },
-        "description": {
-          "type": "string"
         },
         "details": {
           "anyOf": [
@@ -97,43 +97,43 @@
       "type": "object",
       "properties": {
         "commands": {
-          "default": [],
           "type": "array",
+          "default": [],
           "items": {
             "$ref": "#/definitions/CommandMigration"
           }
         },
         "hooks": {
-          "default": [],
           "type": "array",
+          "default": [],
           "items": {
             "$ref": "#/definitions/HookMigration"
           }
         },
         "mcpServers": {
-          "default": [],
           "type": "array",
+          "default": [],
           "items": {
             "$ref": "#/definitions/McpServerMigration"
           }
         },
         "plugins": {
-          "default": [],
           "type": "array",
+          "default": [],
           "items": {
             "$ref": "#/definitions/PluginsMigration"
           }
         },
         "sessions": {
-          "default": [],
           "type": "array",
+          "default": [],
           "items": {
             "$ref": "#/definitions/SessionMigration"
           }
         },
         "subagents": {
-          "default": [],
           "type": "array",
+          "default": [],
           "items": {
             "$ref": "#/definitions/SubagentMigration"
           }
@@ -165,17 +165,17 @@
         "path"
       ],
       "properties": {
-        "cwd": {
-          "type": "string"
-        },
-        "path": {
-          "type": "string"
-        },
         "title": {
           "type": [
             "string",
             "null"
           ]
+        },
+        "cwd": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
         }
       }
     },

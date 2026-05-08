@@ -33,12 +33,12 @@
         "end": {
           "type": "integer",
           "format": "uint",
-          "minimum": 0.0
+          "minimum": 0
         },
         "start": {
           "type": "integer",
           "format": "uint",
-          "minimum": 0.0
+          "minimum": 0
         }
       }
     },
@@ -68,34 +68,35 @@
     "UserInput": {
       "oneOf": [
         {
+          "title": "TextUserInput",
           "type": "object",
           "required": [
             "text",
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "TextUserInputType",
+              "type": "string",
+              "enum": [
+                "text"
+              ]
+            },
             "text": {
               "type": "string"
             },
             "text_elements": {
               "description": "UI-defined spans within `text` used to render or persist special elements.",
-              "default": [],
               "type": "array",
+              "default": [],
               "items": {
                 "$ref": "#/definitions/TextElement"
               }
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "text"
-              ],
-              "title": "TextUserInputType"
             }
-          },
-          "title": "TextUserInput"
+          }
         },
         {
+          "title": "ImageUserInput",
           "type": "object",
           "required": [
             "type",
@@ -103,39 +104,39 @@
           ],
           "properties": {
             "type": {
+              "title": "ImageUserInputType",
               "type": "string",
               "enum": [
                 "image"
-              ],
-              "title": "ImageUserInputType"
+              ]
             },
             "url": {
               "type": "string"
             }
-          },
-          "title": "ImageUserInput"
+          }
         },
         {
+          "title": "LocalImageUserInput",
           "type": "object",
           "required": [
             "path",
             "type"
           ],
           "properties": {
-            "path": {
-              "type": "string"
-            },
             "type": {
+              "title": "LocalImageUserInputType",
               "type": "string",
               "enum": [
                 "localImage"
-              ],
-              "title": "LocalImageUserInputType"
+              ]
+            },
+            "path": {
+              "type": "string"
             }
-          },
-          "title": "LocalImageUserInput"
+          }
         },
         {
+          "title": "SkillUserInput",
           "type": "object",
           "required": [
             "name",
@@ -143,23 +144,23 @@
             "type"
           ],
           "properties": {
-            "name": {
-              "type": "string"
-            },
-            "path": {
-              "type": "string"
-            },
             "type": {
+              "title": "SkillUserInputType",
               "type": "string",
               "enum": [
                 "skill"
-              ],
-              "title": "SkillUserInputType"
+              ]
+            },
+            "name": {
+              "type": "string"
+            },
+            "path": {
+              "type": "string"
             }
-          },
-          "title": "SkillUserInput"
+          }
         },
         {
+          "title": "MentionUserInput",
           "type": "object",
           "required": [
             "name",
@@ -167,21 +168,20 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "MentionUserInputType",
+              "type": "string",
+              "enum": [
+                "mention"
+              ]
+            },
             "name": {
               "type": "string"
             },
             "path": {
               "type": "string"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "mention"
-              ],
-              "title": "MentionUserInputType"
             }
-          },
-          "title": "MentionUserInput"
+          }
         }
       ]
     }

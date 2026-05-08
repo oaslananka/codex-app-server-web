@@ -3,20 +3,20 @@
   "title": "ClientNotification",
   "oneOf": [
     {
+      "title": "InitializedNotification",
       "type": "object",
       "required": [
         "method"
       ],
       "properties": {
         "method": {
+          "title": "InitializedNotificationMethod",
           "type": "string",
           "enum": [
             "initialized"
-          ],
-          "title": "InitializedNotificationMethod"
+          ]
         }
-      },
-      "title": "InitializedNotification"
+      }
     }
   ]
 }

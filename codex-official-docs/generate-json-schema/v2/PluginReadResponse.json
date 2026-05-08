@@ -81,17 +81,17 @@
         "summary"
       ],
       "properties": {
-        "apps": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/AppSummary"
-          }
-        },
         "description": {
           "type": [
             "string",
             "null"
           ]
+        },
+        "apps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AppSummary"
+          }
         },
         "marketplaceName": {
           "type": "string"
@@ -287,32 +287,40 @@
     "PluginSource": {
       "oneOf": [
         {
+          "title": "LocalPluginSource",
           "type": "object",
           "required": [
             "path",
             "type"
           ],
           "properties": {
-            "path": {
-              "$ref": "#/definitions/AbsolutePathBuf"
-            },
             "type": {
+              "title": "LocalPluginSourceType",
               "type": "string",
               "enum": [
                 "local"
-              ],
-              "title": "LocalPluginSourceType"
+              ]
+            },
+            "path": {
+              "$ref": "#/definitions/AbsolutePathBuf"
             }
-          },
-          "title": "LocalPluginSource"
+          }
         },
         {
+          "title": "GitPluginSource",
           "type": "object",
           "required": [
             "type",
             "url"
           ],
           "properties": {
+            "type": {
+              "title": "GitPluginSourceType",
+              "type": "string",
+              "enum": [
+                "git"
+              ]
+            },
             "path": {
               "type": [
                 "string",
@@ -331,20 +339,13 @@
                 "null"
               ]
             },
-            "type": {
-              "type": "string",
-              "enum": [
-                "git"
-              ],
-              "title": "GitPluginSourceType"
-            },
             "url": {
               "type": "string"
             }
-          },
-          "title": "GitPluginSource"
+          }
         },
         {
+          "title": "RemotePluginSource",
           "description": "The plugin is available in the remote catalog. Download metadata is kept server-side and is not exposed through the app-server API.",
           "type": "object",
           "required": [
@@ -352,14 +353,13 @@
           ],
           "properties": {
             "type": {
+              "title": "RemotePluginSourceType",
               "type": "string",
               "enum": [
                 "remote"
-              ],
-              "title": "RemotePluginSourceType"
+              ]
             }
-          },
-          "title": "RemotePluginSource"
+          }
         }
       ]
     },
@@ -410,8 +410,8 @@
           ]
         },
         "keywords": {
-          "default": [],
           "type": "array",
+          "default": [],
           "items": {
             "type": "string"
           }

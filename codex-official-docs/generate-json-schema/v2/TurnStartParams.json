@@ -29,9 +29,6 @@
         }
       ]
     },
-    "threadId": {
-      "type": "string"
-    },
     "cwd": {
       "description": "Override the working directory for this turn and subsequent turns.",
       "type": [
@@ -44,17 +41,6 @@
       "anyOf": [
         {
           "$ref": "#/definitions/ReasoningEffort"
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
-    "summary": {
-      "description": "Override the reasoning summary for this turn and subsequent turns.",
-      "anyOf": [
-        {
-          "$ref": "#/definitions/ReasoningSummary"
         },
         {
           "type": "null"
@@ -77,22 +63,22 @@
     "outputSchema": {
       "description": "Optional JSON Schema used to constrain the final assistant message for this turn."
     },
-    "sandboxPolicy": {
-      "description": "Override the sandbox policy for this turn and subsequent turns.",
+    "personality": {
+      "description": "Override the personality for this turn and subsequent turns.",
       "anyOf": [
         {
-          "$ref": "#/definitions/SandboxPolicy"
+          "$ref": "#/definitions/Personality"
         },
         {
           "type": "null"
         }
       ]
     },
-    "personality": {
-      "description": "Override the personality for this turn and subsequent turns.",
+    "sandboxPolicy": {
+      "description": "Override the sandbox policy for this turn and subsequent turns.",
       "anyOf": [
         {
-          "$ref": "#/definitions/Personality"
+          "$ref": "#/definitions/SandboxPolicy"
         },
         {
           "type": "null"
@@ -105,6 +91,20 @@
         "string",
         "null"
       ]
+    },
+    "summary": {
+      "description": "Override the reasoning summary for this turn and subsequent turns.",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ReasoningSummary"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "threadId": {
+      "type": "string"
     }
   },
   "definitions": {
@@ -133,6 +133,7 @@
           ]
         },
         {
+          "title": "GranularAskForApproval",
           "type": "object",
           "required": [
             "granular"
@@ -150,8 +151,8 @@
                   "type": "boolean"
                 },
                 "request_permissions": {
-                  "default": false,
-                  "type": "boolean"
+                  "type": "boolean",
+                  "default": false
                 },
                 "rules": {
                   "type": "boolean"
@@ -160,14 +161,13 @@
                   "type": "boolean"
                 },
                 "skill_approval": {
-                  "default": false,
-                  "type": "boolean"
+                  "type": "boolean",
+                  "default": false
                 }
               }
             }
           },
-          "additionalProperties": false,
-          "title": "GranularAskForApproval"
+          "additionalProperties": false
         }
       ]
     },
@@ -181,12 +181,12 @@
         "end": {
           "type": "integer",
           "format": "uint",
-          "minimum": 0.0
+          "minimum": 0
         },
         "start": {
           "type": "integer",
           "format": "uint",
-          "minimum": 0.0
+          "minimum": 0
         }
       }
     },
@@ -224,6 +224,7 @@
     "PermissionProfileModificationParams": {
       "oneOf": [
         {
+          "title": "AdditionalWritableRootPermissionProfileModificationParams",
           "description": "Additional concrete directory that should be writable.",
           "type": "object",
           "required": [
@@ -231,24 +232,24 @@
             "type"
           ],
           "properties": {
-            "path": {
-              "$ref": "#/definitions/AbsolutePathBuf"
-            },
             "type": {
+              "title": "AdditionalWritableRootPermissionProfileModificationParamsType",
               "type": "string",
               "enum": [
                 "additionalWritableRoot"
-              ],
-              "title": "AdditionalWritableRootPermissionProfileModificationParamsType"
+              ]
+            },
+            "path": {
+              "$ref": "#/definitions/AbsolutePathBuf"
             }
-          },
-          "title": "AdditionalWritableRootPermissionProfileModificationParams"
+          }
         }
       ]
     },
     "PermissionProfileSelectionParams": {
       "oneOf": [
         {
+          "title": "ProfilePermissionProfileSelectionParams",
           "description": "Select a named built-in or user-defined profile and optionally apply bounded modifications that Codex knows how to validate.",
           "type": "object",
           "required": [
@@ -256,6 +257,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ProfilePermissionProfileSelectionParamsType",
+              "type": "string",
+              "enum": [
+                "profile"
+              ]
+            },
             "id": {
               "type": "string"
             },
@@ -267,16 +275,8 @@
               "items": {
                 "$ref": "#/definitions/PermissionProfileModificationParams"
               }
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "profile"
-              ],
-              "title": "ProfilePermissionProfileSelectionParamsType"
             }
-          },
-          "title": "ProfilePermissionProfileSelectionParams"
+          }
         }
       ]
     },
@@ -323,47 +323,55 @@
     "SandboxPolicy": {
       "oneOf": [
         {
+          "title": "DangerFullAccessSandboxPolicy",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
             "type": {
+              "title": "DangerFullAccessSandboxPolicyType",
               "type": "string",
               "enum": [
                 "dangerFullAccess"
-              ],
-              "title": "DangerFullAccessSandboxPolicyType"
+              ]
             }
-          },
-          "title": "DangerFullAccessSandboxPolicy"
+          }
         },
         {
+          "title": "ReadOnlySandboxPolicy",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
-            "networkAccess": {
-              "default": false,
-              "type": "boolean"
-            },
             "type": {
+              "title": "ReadOnlySandboxPolicyType",
               "type": "string",
               "enum": [
                 "readOnly"
-              ],
-              "title": "ReadOnlySandboxPolicyType"
+              ]
+            },
+            "networkAccess": {
+              "type": "boolean",
+              "default": false
             }
-          },
-          "title": "ReadOnlySandboxPolicy"
+          }
         },
         {
+          "title": "ExternalSandboxSandboxPolicy",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ExternalSandboxSandboxPolicyType",
+              "type": "string",
+              "enum": [
+                "externalSandbox"
+              ]
+            },
             "networkAccess": {
               "default": "restricted",
               "allOf": [
@@ -371,51 +379,43 @@
                   "$ref": "#/definitions/NetworkAccess"
                 }
               ]
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "externalSandbox"
-              ],
-              "title": "ExternalSandboxSandboxPolicyType"
             }
-          },
-          "title": "ExternalSandboxSandboxPolicy"
+          }
         },
         {
+          "title": "WorkspaceWriteSandboxPolicy",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
-            "excludeSlashTmp": {
-              "default": false,
-              "type": "boolean"
-            },
-            "excludeTmpdirEnvVar": {
-              "default": false,
-              "type": "boolean"
-            },
-            "networkAccess": {
-              "default": false,
-              "type": "boolean"
-            },
             "type": {
+              "title": "WorkspaceWriteSandboxPolicyType",
               "type": "string",
               "enum": [
                 "workspaceWrite"
-              ],
-              "title": "WorkspaceWriteSandboxPolicyType"
+              ]
+            },
+            "excludeSlashTmp": {
+              "type": "boolean",
+              "default": false
+            },
+            "excludeTmpdirEnvVar": {
+              "type": "boolean",
+              "default": false
+            },
+            "networkAccess": {
+              "type": "boolean",
+              "default": false
             },
             "writableRoots": {
-              "default": [],
               "type": "array",
+              "default": [],
               "items": {
                 "$ref": "#/definitions/AbsolutePathBuf"
               }
             }
-          },
-          "title": "WorkspaceWriteSandboxPolicy"
+          }
         }
       ]
     },
@@ -488,34 +488,35 @@
     "UserInput": {
       "oneOf": [
         {
+          "title": "TextUserInput",
           "type": "object",
           "required": [
             "text",
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "TextUserInputType",
+              "type": "string",
+              "enum": [
+                "text"
+              ]
+            },
             "text": {
               "type": "string"
             },
             "text_elements": {
               "description": "UI-defined spans within `text` used to render or persist special elements.",
-              "default": [],
               "type": "array",
+              "default": [],
               "items": {
                 "$ref": "#/definitions/TextElement"
               }
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "text"
-              ],
-              "title": "TextUserInputType"
             }
-          },
-          "title": "TextUserInput"
+          }
         },
         {
+          "title": "ImageUserInput",
           "type": "object",
           "required": [
             "type",
@@ -523,39 +524,39 @@
           ],
           "properties": {
             "type": {
+              "title": "ImageUserInputType",
               "type": "string",
               "enum": [
                 "image"
-              ],
-              "title": "ImageUserInputType"
+              ]
             },
             "url": {
               "type": "string"
             }
-          },
-          "title": "ImageUserInput"
+          }
         },
         {
+          "title": "LocalImageUserInput",
           "type": "object",
           "required": [
             "path",
             "type"
           ],
           "properties": {
-            "path": {
-              "type": "string"
-            },
             "type": {
+              "title": "LocalImageUserInputType",
               "type": "string",
               "enum": [
                 "localImage"
-              ],
-              "title": "LocalImageUserInputType"
+              ]
+            },
+            "path": {
+              "type": "string"
             }
-          },
-          "title": "LocalImageUserInput"
+          }
         },
         {
+          "title": "SkillUserInput",
           "type": "object",
           "required": [
             "name",
@@ -563,23 +564,23 @@
             "type"
           ],
           "properties": {
-            "name": {
-              "type": "string"
-            },
-            "path": {
-              "type": "string"
-            },
             "type": {
+              "title": "SkillUserInputType",
               "type": "string",
               "enum": [
                 "skill"
-              ],
-              "title": "SkillUserInputType"
+              ]
+            },
+            "name": {
+              "type": "string"
+            },
+            "path": {
+              "type": "string"
             }
-          },
-          "title": "SkillUserInput"
+          }
         },
         {
+          "title": "MentionUserInput",
           "type": "object",
           "required": [
             "name",
@@ -587,21 +588,20 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "MentionUserInputType",
+              "type": "string",
+              "enum": [
+                "mention"
+              ]
+            },
             "name": {
               "type": "string"
             },
             "path": {
               "type": "string"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "mention"
-              ],
-              "title": "MentionUserInputType"
             }
-          },
-          "title": "MentionUserInput"
+          }
         }
       ]
     }

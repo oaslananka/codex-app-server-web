@@ -59,12 +59,12 @@
           "type": "string"
         },
         "isOther": {
-          "default": false,
-          "type": "boolean"
+          "type": "boolean",
+          "default": false
         },
         "isSecret": {
-          "default": false,
-          "type": "boolean"
+          "type": "boolean",
+          "default": false
         },
         "options": {
           "type": [

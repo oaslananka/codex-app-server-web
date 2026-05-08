@@ -42,6 +42,7 @@
           ]
         },
         {
+          "title": "HttpConnectionFailedCodexErrorInfo",
           "type": "object",
           "required": [
             "httpConnectionFailed"
@@ -56,15 +57,15 @@
                     "null"
                   ],
                   "format": "uint16",
-                  "minimum": 0.0
+                  "minimum": 0
                 }
               }
             }
           },
-          "additionalProperties": false,
-          "title": "HttpConnectionFailedCodexErrorInfo"
+          "additionalProperties": false
         },
         {
+          "title": "ResponseStreamConnectionFailedCodexErrorInfo",
           "description": "Failed to connect to the response SSE stream.",
           "type": "object",
           "required": [
@@ -80,15 +81,15 @@
                     "null"
                   ],
                   "format": "uint16",
-                  "minimum": 0.0
+                  "minimum": 0
                 }
               }
             }
           },
-          "additionalProperties": false,
-          "title": "ResponseStreamConnectionFailedCodexErrorInfo"
+          "additionalProperties": false
         },
         {
+          "title": "ResponseStreamDisconnectedCodexErrorInfo",
           "description": "The response SSE stream disconnected in the middle of a turn before completion.",
           "type": "object",
           "required": [
@@ -104,15 +105,15 @@
                     "null"
                   ],
                   "format": "uint16",
-                  "minimum": 0.0
+                  "minimum": 0
                 }
               }
             }
           },
-          "additionalProperties": false,
-          "title": "ResponseStreamDisconnectedCodexErrorInfo"
+          "additionalProperties": false
         },
         {
+          "title": "ResponseTooManyFailedAttemptsCodexErrorInfo",
           "description": "Reached the retry limit for responses.",
           "type": "object",
           "required": [
@@ -128,15 +129,15 @@
                     "null"
                   ],
                   "format": "uint16",
-                  "minimum": 0.0
+                  "minimum": 0
                 }
               }
             }
           },
-          "additionalProperties": false,
-          "title": "ResponseTooManyFailedAttemptsCodexErrorInfo"
+          "additionalProperties": false
         },
         {
+          "title": "ActiveTurnNotSteerableCodexErrorInfo",
           "description": "Returned when `turn/start` or `turn/steer` is submitted while the current active turn cannot accept same-turn steering, for example `/review` or manual `/compact`.",
           "type": "object",
           "required": [
@@ -155,8 +156,7 @@
               }
             }
           },
-          "additionalProperties": false,
-          "title": "ActiveTurnNotSteerableCodexErrorInfo"
+          "additionalProperties": false
         }
       ]
     },
@@ -174,11 +174,11 @@
       ],
       "properties": {
         "additionalDetails": {
-          "default": null,
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "default": null
         },
         "codexErrorInfo": {
           "anyOf": [

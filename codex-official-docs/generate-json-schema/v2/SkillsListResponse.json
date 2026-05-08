@@ -106,6 +106,9 @@
         "scope"
       ],
       "properties": {
+        "description": {
+          "type": "string"
+        },
         "dependencies": {
           "anyOf": [
             {
@@ -115,9 +118,6 @@
               "type": "null"
             }
           ]
-        },
-        "description": {
-          "type": "string"
         },
         "enabled": {
           "type": "boolean"
@@ -166,13 +166,16 @@
         "value"
       ],
       "properties": {
-        "command": {
+        "description": {
           "type": [
             "string",
             "null"
           ]
         },
-        "description": {
+        "type": {
+          "type": "string"
+        },
+        "command": {
           "type": [
             "string",
             "null"
@@ -183,9 +186,6 @@
             "string",
             "null"
           ]
-        },
-        "type": {
-          "type": "string"
         },
         "url": {
           "type": [

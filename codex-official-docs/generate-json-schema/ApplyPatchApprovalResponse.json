@@ -44,6 +44,7 @@
           ]
         },
         {
+          "title": "ApprovedExecpolicyAmendmentReviewDecision",
           "description": "User has approved this command and wants to apply the proposed execpolicy amendment so future matching commands are permitted.",
           "type": "object",
           "required": [
@@ -65,8 +66,7 @@
               }
             }
           },
-          "additionalProperties": false,
-          "title": "ApprovedExecpolicyAmendmentReviewDecision"
+          "additionalProperties": false
         },
         {
           "description": "User has approved this request and wants future prompts in the same session-scoped approval cache to be automatically approved for the remainder of the session.",
@@ -76,6 +76,7 @@
           ]
         },
         {
+          "title": "NetworkPolicyAmendmentReviewDecision",
           "description": "User chose to persist a network policy rule (allow/deny) for future requests to the same host.",
           "type": "object",
           "required": [
@@ -94,8 +95,7 @@
               }
             }
           },
-          "additionalProperties": false,
-          "title": "NetworkPolicyAmendmentReviewDecision"
+          "additionalProperties": false
         },
         {
           "description": "User has denied this command and the agent should not execute it, but it should continue the session and try something else.",

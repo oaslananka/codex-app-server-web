@@ -25,12 +25,12 @@
         "end": {
           "type": "integer",
           "format": "uint",
-          "minimum": 0.0
+          "minimum": 0
         },
         "start": {
           "type": "integer",
           "format": "uint",
-          "minimum": 0.0
+          "minimum": 0
         }
       }
     },
@@ -53,6 +53,7 @@
           ]
         },
         {
+          "title": "HttpConnectionFailedCodexErrorInfo",
           "type": "object",
           "required": [
             "httpConnectionFailed"
@@ -67,15 +68,15 @@
                     "null"
                   ],
                   "format": "uint16",
-                  "minimum": 0.0
+                  "minimum": 0
                 }
               }
             }
           },
-          "additionalProperties": false,
-          "title": "HttpConnectionFailedCodexErrorInfo"
+          "additionalProperties": false
         },
         {
+          "title": "ResponseStreamConnectionFailedCodexErrorInfo",
           "description": "Failed to connect to the response SSE stream.",
           "type": "object",
           "required": [
@@ -91,15 +92,15 @@
                     "null"
                   ],
                   "format": "uint16",
-                  "minimum": 0.0
+                  "minimum": 0
                 }
               }
             }
           },
-          "additionalProperties": false,
-          "title": "ResponseStreamConnectionFailedCodexErrorInfo"
+          "additionalProperties": false
         },
         {
+          "title": "ResponseStreamDisconnectedCodexErrorInfo",
           "description": "The response SSE stream disconnected in the middle of a turn before completion.",
           "type": "object",
           "required": [
@@ -115,15 +116,15 @@
                     "null"
                   ],
                   "format": "uint16",
-                  "minimum": 0.0
+                  "minimum": 0
                 }
               }
             }
           },
-          "additionalProperties": false,
-          "title": "ResponseStreamDisconnectedCodexErrorInfo"
+          "additionalProperties": false
         },
         {
+          "title": "ResponseTooManyFailedAttemptsCodexErrorInfo",
           "description": "Reached the retry limit for responses.",
           "type": "object",
           "required": [
@@ -139,15 +140,15 @@
                     "null"
                   ],
                   "format": "uint16",
-                  "minimum": 0.0
+                  "minimum": 0
                 }
               }
             }
           },
-          "additionalProperties": false,
-          "title": "ResponseTooManyFailedAttemptsCodexErrorInfo"
+          "additionalProperties": false
         },
         {
+          "title": "ActiveTurnNotSteerableCodexErrorInfo",
           "description": "Returned when `turn/start` or `turn/steer` is submitted while the current active turn cannot accept same-turn steering, for example `/review` or manual `/compact`.",
           "type": "object",
           "required": [
@@ -166,8 +167,7 @@
               }
             }
           },
-          "additionalProperties": false,
-          "title": "ActiveTurnNotSteerableCodexErrorInfo"
+          "additionalProperties": false
         }
       ]
     },
@@ -221,6 +221,7 @@
     "CommandAction": {
       "oneOf": [
         {
+          "title": "ReadCommandAction",
           "type": "object",
           "required": [
             "command",
@@ -229,6 +230,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ReadCommandActionType",
+              "type": "string",
+              "enum": [
+                "read"
+              ]
+            },
             "command": {
               "type": "string"
             },
@@ -237,24 +245,24 @@
             },
             "path": {
               "$ref": "#/definitions/AbsolutePathBuf"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "read"
-              ],
-              "title": "ReadCommandActionType"
             }
-          },
-          "title": "ReadCommandAction"
+          }
         },
         {
+          "title": "ListFilesCommandAction",
           "type": "object",
           "required": [
             "command",
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ListFilesCommandActionType",
+              "type": "string",
+              "enum": [
+                "listFiles"
+              ]
+            },
             "command": {
               "type": "string"
             },
@@ -263,24 +271,24 @@
                 "string",
                 "null"
               ]
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "listFiles"
-              ],
-              "title": "ListFilesCommandActionType"
             }
-          },
-          "title": "ListFilesCommandAction"
+          }
         },
         {
+          "title": "SearchCommandAction",
           "type": "object",
           "required": [
             "command",
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "SearchCommandActionType",
+              "type": "string",
+              "enum": [
+                "search"
+              ]
+            },
             "command": {
               "type": "string"
             },
@@ -295,36 +303,28 @@
                 "string",
                 "null"
               ]
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "search"
-              ],
-              "title": "SearchCommandActionType"
             }
-          },
-          "title": "SearchCommandAction"
+          }
         },
         {
+          "title": "UnknownCommandAction",
           "type": "object",
           "required": [
             "command",
             "type"
           ],
           "properties": {
-            "command": {
-              "type": "string"
-            },
             "type": {
+              "title": "UnknownCommandActionType",
               "type": "string",
               "enum": [
                 "unknown"
-              ],
-              "title": "UnknownCommandActionType"
+              ]
+            },
+            "command": {
+              "type": "string"
             }
-          },
-          "title": "UnknownCommandAction"
+          }
         }
       ]
     },
@@ -349,44 +349,44 @@
     "DynamicToolCallOutputContentItem": {
       "oneOf": [
         {
+          "title": "InputTextDynamicToolCallOutputContentItem",
           "type": "object",
           "required": [
             "text",
             "type"
           ],
           "properties": {
-            "text": {
-              "type": "string"
-            },
             "type": {
+              "title": "InputTextDynamicToolCallOutputContentItemType",
               "type": "string",
               "enum": [
                 "inputText"
-              ],
-              "title": "InputTextDynamicToolCallOutputContentItemType"
+              ]
+            },
+            "text": {
+              "type": "string"
             }
-          },
-          "title": "InputTextDynamicToolCallOutputContentItem"
+          }
         },
         {
+          "title": "InputImageDynamicToolCallOutputContentItem",
           "type": "object",
           "required": [
             "imageUrl",
             "type"
           ],
           "properties": {
-            "imageUrl": {
-              "type": "string"
-            },
             "type": {
+              "title": "InputImageDynamicToolCallOutputContentItemType",
               "type": "string",
               "enum": [
                 "inputImage"
-              ],
-              "title": "InputImageDynamicToolCallOutputContentItemType"
+              ]
+            },
+            "imageUrl": {
+              "type": "string"
             }
-          },
-          "title": "InputImageDynamicToolCallOutputContentItem"
+          }
         }
       ]
     },
@@ -498,12 +498,12 @@
         "lineEnd": {
           "type": "integer",
           "format": "uint32",
-          "minimum": 0.0
+          "minimum": 0
         },
         "lineStart": {
           "type": "integer",
           "format": "uint32",
-          "minimum": 0.0
+          "minimum": 0
         },
         "note": {
           "type": "string"
@@ -551,58 +551,58 @@
     "PatchChangeKind": {
       "oneOf": [
         {
+          "title": "AddPatchChangeKind",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
             "type": {
+              "title": "AddPatchChangeKindType",
               "type": "string",
               "enum": [
                 "add"
-              ],
-              "title": "AddPatchChangeKindType"
+              ]
             }
-          },
-          "title": "AddPatchChangeKind"
+          }
         },
         {
+          "title": "DeletePatchChangeKind",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
             "type": {
+              "title": "DeletePatchChangeKindType",
               "type": "string",
               "enum": [
                 "delete"
-              ],
-              "title": "DeletePatchChangeKindType"
+              ]
             }
-          },
-          "title": "DeletePatchChangeKind"
+          }
         },
         {
+          "title": "UpdatePatchChangeKind",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "UpdatePatchChangeKindType",
+              "type": "string",
+              "enum": [
+                "update"
+              ]
+            },
             "move_path": {
               "type": [
                 "string",
                 "null"
               ]
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "update"
-              ],
-              "title": "UpdatePatchChangeKindType"
             }
-          },
-          "title": "UpdatePatchChangeKind"
+          }
         }
       ]
     },
@@ -644,6 +644,7 @@
     "ThreadItem": {
       "oneOf": [
         {
+          "title": "UserMessageThreadItem",
           "type": "object",
           "required": [
             "content",
@@ -651,6 +652,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "UserMessageThreadItemType",
+              "type": "string",
+              "enum": [
+                "userMessage"
+              ]
+            },
             "content": {
               "type": "array",
               "items": {
@@ -659,18 +667,11 @@
             },
             "id": {
               "type": "string"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "userMessage"
-              ],
-              "title": "UserMessageThreadItemType"
             }
-          },
-          "title": "UserMessageThreadItem"
+          }
         },
         {
+          "title": "HookPromptThreadItem",
           "type": "object",
           "required": [
             "fragments",
@@ -678,6 +679,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "HookPromptThreadItemType",
+              "type": "string",
+              "enum": [
+                "hookPrompt"
+              ]
+            },
             "fragments": {
               "type": "array",
               "items": {
@@ -686,18 +694,11 @@
             },
             "id": {
               "type": "string"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "hookPrompt"
-              ],
-              "title": "HookPromptThreadItemType"
             }
-          },
-          "title": "HookPromptThreadItem"
+          }
         },
         {
+          "title": "AgentMessageThreadItem",
           "type": "object",
           "required": [
             "id",
@@ -705,6 +706,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "AgentMessageThreadItemType",
+              "type": "string",
+              "enum": [
+                "agentMessage"
+              ]
+            },
             "id": {
               "type": "string"
             },
@@ -732,18 +740,11 @@
             },
             "text": {
               "type": "string"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "agentMessage"
-              ],
-              "title": "AgentMessageThreadItemType"
             }
-          },
-          "title": "AgentMessageThreadItem"
+          }
         },
         {
+          "title": "PlanThreadItem",
           "description": "EXPERIMENTAL - proposed plan item content. The completed plan item is authoritative and may not match the concatenation of `PlanDelta` text.",
           "type": "object",
           "required": [
@@ -752,32 +753,39 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "PlanThreadItemType",
+              "type": "string",
+              "enum": [
+                "plan"
+              ]
+            },
             "id": {
               "type": "string"
             },
             "text": {
               "type": "string"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "plan"
-              ],
-              "title": "PlanThreadItemType"
             }
-          },
-          "title": "PlanThreadItem"
+          }
         },
         {
+          "title": "ReasoningThreadItem",
           "type": "object",
           "required": [
             "id",
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ReasoningThreadItemType",
+              "type": "string",
+              "enum": [
+                "reasoning"
+              ]
+            },
             "content": {
-              "default": [],
               "type": "array",
+              "default": [],
               "items": {
                 "type": "string"
               }
@@ -786,23 +794,16 @@
               "type": "string"
             },
             "summary": {
-              "default": [],
               "type": "array",
+              "default": [],
               "items": {
                 "type": "string"
               }
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "reasoning"
-              ],
-              "title": "ReasoningThreadItemType"
             }
-          },
-          "title": "ReasoningThreadItem"
+          }
         },
         {
+          "title": "CommandExecutionThreadItem",
           "type": "object",
           "required": [
             "command",
@@ -813,6 +814,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "CommandExecutionThreadItemType",
+              "type": "string",
+              "enum": [
+                "commandExecution"
+              ]
+            },
             "aggregatedOutput": {
               "description": "The command's output, aggregated from stdout and stderr.",
               "type": [
@@ -875,18 +883,11 @@
             },
             "status": {
               "$ref": "#/definitions/CommandExecutionStatus"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "commandExecution"
-              ],
-              "title": "CommandExecutionThreadItemType"
             }
-          },
-          "title": "CommandExecutionThreadItem"
+          }
         },
         {
+          "title": "FileChangeThreadItem",
           "type": "object",
           "required": [
             "changes",
@@ -895,6 +896,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "FileChangeThreadItemType",
+              "type": "string",
+              "enum": [
+                "fileChange"
+              ]
+            },
             "changes": {
               "type": "array",
               "items": {
@@ -906,18 +914,11 @@
             },
             "status": {
               "$ref": "#/definitions/PatchApplyStatus"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "fileChange"
-              ],
-              "title": "FileChangeThreadItemType"
             }
-          },
-          "title": "FileChangeThreadItem"
+          }
         },
         {
+          "title": "McpToolCallThreadItem",
           "type": "object",
           "required": [
             "arguments",
@@ -928,6 +929,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "McpToolCallThreadItemType",
+              "type": "string",
+              "enum": [
+                "mcpToolCall"
+              ]
+            },
             "arguments": true,
             "durationMs": {
               "description": "The duration of the MCP tool call in milliseconds.",
@@ -974,18 +982,11 @@
             },
             "tool": {
               "type": "string"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "mcpToolCall"
-              ],
-              "title": "McpToolCallThreadItemType"
             }
-          },
-          "title": "McpToolCallThreadItem"
+          }
         },
         {
+          "title": "DynamicToolCallThreadItem",
           "type": "object",
           "required": [
             "arguments",
@@ -995,6 +996,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "DynamicToolCallThreadItemType",
+              "type": "string",
+              "enum": [
+                "dynamicToolCall"
+              ]
+            },
             "arguments": true,
             "contentItems": {
               "type": [
@@ -1033,18 +1041,11 @@
             },
             "tool": {
               "type": "string"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "dynamicToolCall"
-              ],
-              "title": "DynamicToolCallThreadItemType"
             }
-          },
-          "title": "DynamicToolCallThreadItem"
+          }
         },
         {
+          "title": "CollabAgentToolCallThreadItem",
           "type": "object",
           "required": [
             "agentsStates",
@@ -1056,6 +1057,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "CollabAgentToolCallThreadItemType",
+              "type": "string",
+              "enum": [
+                "collabAgentToolCall"
+              ]
+            },
             "agentsStates": {
               "description": "Last known status of the target agents, when available.",
               "type": "object",
@@ -1118,18 +1126,11 @@
                   "$ref": "#/definitions/CollabAgentTool"
                 }
               ]
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "collabAgentToolCall"
-              ],
-              "title": "CollabAgentToolCallThreadItemType"
             }
-          },
-          "title": "CollabAgentToolCallThreadItem"
+          }
         },
         {
+          "title": "WebSearchThreadItem",
           "type": "object",
           "required": [
             "id",
@@ -1137,6 +1138,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "WebSearchThreadItemType",
+              "type": "string",
+              "enum": [
+                "webSearch"
+              ]
+            },
             "action": {
               "anyOf": [
                 {
@@ -1152,18 +1160,11 @@
             },
             "query": {
               "type": "string"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "webSearch"
-              ],
-              "title": "WebSearchThreadItemType"
             }
-          },
-          "title": "WebSearchThreadItem"
+          }
         },
         {
+          "title": "ImageViewThreadItem",
           "type": "object",
           "required": [
             "id",
@@ -1171,23 +1172,23 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ImageViewThreadItemType",
+              "type": "string",
+              "enum": [
+                "imageView"
+              ]
+            },
             "id": {
               "type": "string"
             },
             "path": {
               "$ref": "#/definitions/AbsolutePathBuf"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "imageView"
-              ],
-              "title": "ImageViewThreadItemType"
             }
-          },
-          "title": "ImageViewThreadItem"
+          }
         },
         {
+          "title": "ImageGenerationThreadItem",
           "type": "object",
           "required": [
             "id",
@@ -1196,6 +1197,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ImageGenerationThreadItemType",
+              "type": "string",
+              "enum": [
+                "imageGeneration"
+              ]
+            },
             "id": {
               "type": "string"
             },
@@ -1220,18 +1228,11 @@
             },
             "status": {
               "type": "string"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "imageGeneration"
-              ],
-              "title": "ImageGenerationThreadItemType"
             }
-          },
-          "title": "ImageGenerationThreadItem"
+          }
         },
         {
+          "title": "EnteredReviewModeThreadItem",
           "type": "object",
           "required": [
             "id",
@@ -1239,23 +1240,23 @@
             "type"
           ],
           "properties": {
-            "id": {
-              "type": "string"
-            },
-            "review": {
-              "type": "string"
-            },
             "type": {
+              "title": "EnteredReviewModeThreadItemType",
               "type": "string",
               "enum": [
                 "enteredReviewMode"
-              ],
-              "title": "EnteredReviewModeThreadItemType"
+              ]
+            },
+            "id": {
+              "type": "string"
+            },
+            "review": {
+              "type": "string"
             }
-          },
-          "title": "EnteredReviewModeThreadItem"
+          }
         },
         {
+          "title": "ExitedReviewModeThreadItem",
           "type": "object",
           "required": [
             "id",
@@ -1263,41 +1264,40 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ExitedReviewModeThreadItemType",
+              "type": "string",
+              "enum": [
+                "exitedReviewMode"
+              ]
+            },
             "id": {
               "type": "string"
             },
             "review": {
               "type": "string"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "exitedReviewMode"
-              ],
-              "title": "ExitedReviewModeThreadItemType"
             }
-          },
-          "title": "ExitedReviewModeThreadItem"
+          }
         },
         {
+          "title": "ContextCompactionThreadItem",
           "type": "object",
           "required": [
             "id",
             "type"
           ],
           "properties": {
-            "id": {
-              "type": "string"
-            },
             "type": {
+              "title": "ContextCompactionThreadItemType",
               "type": "string",
               "enum": [
                 "contextCompaction"
-              ],
-              "title": "ContextCompactionThreadItemType"
+              ]
+            },
+            "id": {
+              "type": "string"
             }
-          },
-          "title": "ContextCompactionThreadItem"
+          }
         }
       ]
     },
@@ -1309,6 +1309,13 @@
         "status"
       ],
       "properties": {
+        "items": {
+          "description": "Thread items currently included in this turn payload.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ThreadItem"
+          }
+        },
         "completedAt": {
           "description": "Unix timestamp (in seconds) when the turn completed.",
           "type": [
@@ -1339,13 +1346,6 @@
         "id": {
           "type": "string"
         },
-        "items": {
-          "description": "Thread items currently included in this turn payload.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ThreadItem"
-          }
-        },
         "itemsView": {
           "description": "Describes how much of `items` has been loaded for this turn.",
           "default": "full",
@@ -1375,11 +1375,11 @@
       ],
       "properties": {
         "additionalDetails": {
-          "default": null,
           "type": [
             "string",
             "null"
-          ]
+          ],
+          "default": null
         },
         "codexErrorInfo": {
           "anyOf": [
@@ -1433,34 +1433,35 @@
     "UserInput": {
       "oneOf": [
         {
+          "title": "TextUserInput",
           "type": "object",
           "required": [
             "text",
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "TextUserInputType",
+              "type": "string",
+              "enum": [
+                "text"
+              ]
+            },
             "text": {
               "type": "string"
             },
             "text_elements": {
               "description": "UI-defined spans within `text` used to render or persist special elements.",
-              "default": [],
               "type": "array",
+              "default": [],
               "items": {
                 "$ref": "#/definitions/TextElement"
               }
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "text"
-              ],
-              "title": "TextUserInputType"
             }
-          },
-          "title": "TextUserInput"
+          }
         },
         {
+          "title": "ImageUserInput",
           "type": "object",
           "required": [
             "type",
@@ -1468,39 +1469,39 @@
           ],
           "properties": {
             "type": {
+              "title": "ImageUserInputType",
               "type": "string",
               "enum": [
                 "image"
-              ],
-              "title": "ImageUserInputType"
+              ]
             },
             "url": {
               "type": "string"
             }
-          },
-          "title": "ImageUserInput"
+          }
         },
         {
+          "title": "LocalImageUserInput",
           "type": "object",
           "required": [
             "path",
             "type"
           ],
           "properties": {
-            "path": {
-              "type": "string"
-            },
             "type": {
+              "title": "LocalImageUserInputType",
               "type": "string",
               "enum": [
                 "localImage"
-              ],
-              "title": "LocalImageUserInputType"
+              ]
+            },
+            "path": {
+              "type": "string"
             }
-          },
-          "title": "LocalImageUserInput"
+          }
         },
         {
+          "title": "SkillUserInput",
           "type": "object",
           "required": [
             "name",
@@ -1508,23 +1509,23 @@
             "type"
           ],
           "properties": {
-            "name": {
-              "type": "string"
-            },
-            "path": {
-              "type": "string"
-            },
             "type": {
+              "title": "SkillUserInputType",
               "type": "string",
               "enum": [
                 "skill"
-              ],
-              "title": "SkillUserInputType"
+              ]
+            },
+            "name": {
+              "type": "string"
+            },
+            "path": {
+              "type": "string"
             }
-          },
-          "title": "SkillUserInput"
+          }
         },
         {
+          "title": "MentionUserInput",
           "type": "object",
           "required": [
             "name",
@@ -1532,32 +1533,39 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "MentionUserInputType",
+              "type": "string",
+              "enum": [
+                "mention"
+              ]
+            },
             "name": {
               "type": "string"
             },
             "path": {
               "type": "string"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "mention"
-              ],
-              "title": "MentionUserInputType"
             }
-          },
-          "title": "MentionUserInput"
+          }
         }
       ]
     },
     "WebSearchAction": {
       "oneOf": [
         {
+          "title": "SearchWebSearchAction",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "SearchWebSearchActionType",
+              "type": "string",
+              "enum": [
+                "search"
+              ]
+            },
             "queries": {
               "type": [
                 "array",
@@ -1572,29 +1580,22 @@
                 "string",
                 "null"
               ]
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "search"
-              ],
-              "title": "SearchWebSearchActionType"
             }
-          },
-          "title": "SearchWebSearchAction"
+          }
         },
         {
+          "title": "OpenPageWebSearchAction",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
             "type": {
+              "title": "OpenPageWebSearchActionType",
               "type": "string",
               "enum": [
                 "openPage"
-              ],
-              "title": "OpenPageWebSearchActionType"
+              ]
             },
             "url": {
               "type": [
@@ -1602,52 +1603,51 @@
                 "null"
               ]
             }
-          },
-          "title": "OpenPageWebSearchAction"
+          }
         },
         {
+          "title": "FindInPageWebSearchAction",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "FindInPageWebSearchActionType",
+              "type": "string",
+              "enum": [
+                "findInPage"
+              ]
+            },
             "pattern": {
               "type": [
                 "string",
                 "null"
               ]
             },
-            "type": {
-              "type": "string",
-              "enum": [
-                "findInPage"
-              ],
-              "title": "FindInPageWebSearchActionType"
-            },
             "url": {
               "type": [
                 "string",
                 "null"
               ]
             }
-          },
-          "title": "FindInPageWebSearchAction"
+          }
         },
         {
+          "title": "OtherWebSearchAction",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
             "type": {
+              "title": "OtherWebSearchActionType",
               "type": "string",
               "enum": [
                 "other"
-              ],
-              "title": "OtherWebSearchActionType"
+              ]
             }
-          },
-          "title": "OtherWebSearchAction"
+          }
         }
       ]
     }

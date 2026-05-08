@@ -69,8 +69,8 @@
           ]
         },
         "enabled": {
-          "default": true,
-          "type": "boolean"
+          "type": "boolean",
+          "default": true
         },
         "open_world_enabled": {
           "type": [
@@ -151,16 +151,16 @@
       "type": "object",
       "properties": {
         "destructive_enabled": {
-          "default": true,
-          "type": "boolean"
+          "type": "boolean",
+          "default": true
         },
         "enabled": {
-          "default": true,
-          "type": "boolean"
+          "type": "boolean",
+          "default": true
         },
         "open_world_enabled": {
-          "default": true,
-          "type": "boolean"
+          "type": "boolean",
+          "default": true
         }
       }
     },
@@ -176,6 +176,7 @@
           ]
         },
         {
+          "title": "GranularAskForApproval",
           "type": "object",
           "required": [
             "granular"
@@ -193,8 +194,8 @@
                   "type": "boolean"
                 },
                 "request_permissions": {
-                  "default": false,
-                  "type": "boolean"
+                  "type": "boolean",
+                  "default": false
                 },
                 "rules": {
                   "type": "boolean"
@@ -203,14 +204,13 @@
                   "type": "boolean"
                 },
                 "skill_approval": {
-                  "default": false,
-                  "type": "boolean"
+                  "type": "boolean",
+                  "default": false
                 }
               }
             }
           },
-          "additionalProperties": false,
-          "title": "GranularAskForApproval"
+          "additionalProperties": false
         }
       ]
     },
@@ -242,16 +242,6 @@
           "anyOf": [
             {
               "$ref": "#/definitions/ApprovalsReviewer"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "web_search": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/WebSearchMode"
             },
             {
               "type": "null"
@@ -355,8 +345,8 @@
           ]
         },
         "profiles": {
-          "default": {},
           "type": "object",
+          "default": {},
           "additionalProperties": {
             "$ref": "#/definitions/ProfileV2"
           }
@@ -397,6 +387,16 @@
           "anyOf": [
             {
               "$ref": "#/definitions/ToolsV2"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "web_search": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/WebSearchMode"
             },
             {
               "type": "null"
@@ -447,6 +447,7 @@
     "ConfigLayerSource": {
       "oneOf": [
         {
+          "title": "MdmConfigLayerSource",
           "description": "Managed preferences layer delivered by MDM (macOS only).",
           "type": "object",
           "required": [
@@ -455,23 +456,23 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "MdmConfigLayerSourceType",
+              "type": "string",
+              "enum": [
+                "mdm"
+              ]
+            },
             "domain": {
               "type": "string"
             },
             "key": {
               "type": "string"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "mdm"
-              ],
-              "title": "MdmConfigLayerSourceType"
             }
-          },
-          "title": "MdmConfigLayerSource"
+          }
         },
         {
+          "title": "SystemConfigLayerSource",
           "description": "Managed config layer from a file (usually `managed_config.toml`).",
           "type": "object",
           "required": [
@@ -479,6 +480,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "SystemConfigLayerSourceType",
+              "type": "string",
+              "enum": [
+                "system"
+              ]
+            },
             "file": {
               "description": "This is the path to the system config.toml file, though it is not guaranteed to exist.",
               "allOf": [
@@ -486,18 +494,11 @@
                   "$ref": "#/definitions/AbsolutePathBuf"
                 }
               ]
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "system"
-              ],
-              "title": "SystemConfigLayerSourceType"
             }
-          },
-          "title": "SystemConfigLayerSource"
+          }
         },
         {
+          "title": "UserConfigLayerSource",
           "description": "User config layer from $CODEX_HOME/config.toml. This layer is special in that it is expected to be: - writable by the user - generally outside the workspace directory",
           "type": "object",
           "required": [
@@ -505,6 +506,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "UserConfigLayerSourceType",
+              "type": "string",
+              "enum": [
+                "user"
+              ]
+            },
             "file": {
               "description": "This is the path to the user's config.toml file, though it is not guaranteed to exist.",
               "allOf": [
@@ -512,18 +520,11 @@
                   "$ref": "#/definitions/AbsolutePathBuf"
                 }
               ]
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "user"
-              ],
-              "title": "UserConfigLayerSourceType"
             }
-          },
-          "title": "UserConfigLayerSource"
+          }
         },
         {
+          "title": "ProjectConfigLayerSource",
           "description": "Path to a .codex/ folder within a project. There could be multiple of these between `cwd` and the project/repo root.",
           "type": "object",
           "required": [
@@ -531,20 +532,20 @@
             "type"
           ],
           "properties": {
-            "dotCodexFolder": {
-              "$ref": "#/definitions/AbsolutePathBuf"
-            },
             "type": {
+              "title": "ProjectConfigLayerSourceType",
               "type": "string",
               "enum": [
                 "project"
-              ],
-              "title": "ProjectConfigLayerSourceType"
+              ]
+            },
+            "dotCodexFolder": {
+              "$ref": "#/definitions/AbsolutePathBuf"
             }
-          },
-          "title": "ProjectConfigLayerSource"
+          }
         },
         {
+          "title": "SessionFlagsConfigLayerSource",
           "description": "Session-layer overrides supplied via `-c`/`--config`.",
           "type": "object",
           "required": [
@@ -552,16 +553,16 @@
           ],
           "properties": {
             "type": {
+              "title": "SessionFlagsConfigLayerSourceType",
               "type": "string",
               "enum": [
                 "sessionFlags"
-              ],
-              "title": "SessionFlagsConfigLayerSourceType"
+              ]
             }
-          },
-          "title": "SessionFlagsConfigLayerSource"
+          }
         },
         {
+          "title": "LegacyManagedConfigTomlFromFileConfigLayerSource",
           "description": "`managed_config.toml` was designed to be a config that was loaded as the last layer on top of everything else. This scheme did not quite work out as intended, but we keep this variant as a \"best effort\" while we phase out `managed_config.toml` in favor of `requirements.toml`.",
           "type": "object",
           "required": [
@@ -569,34 +570,33 @@
             "type"
           ],
           "properties": {
-            "file": {
-              "$ref": "#/definitions/AbsolutePathBuf"
-            },
             "type": {
+              "title": "LegacyManagedConfigTomlFromFileConfigLayerSourceType",
               "type": "string",
               "enum": [
                 "legacyManagedConfigTomlFromFile"
-              ],
-              "title": "LegacyManagedConfigTomlFromFileConfigLayerSourceType"
+              ]
+            },
+            "file": {
+              "$ref": "#/definitions/AbsolutePathBuf"
             }
-          },
-          "title": "LegacyManagedConfigTomlFromFileConfigLayerSource"
+          }
         },
         {
+          "title": "LegacyManagedConfigTomlFromMdmConfigLayerSource",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
             "type": {
+              "title": "LegacyManagedConfigTomlFromMdmConfigLayerSourceType",
               "type": "string",
               "enum": [
                 "legacyManagedConfigTomlFromMdm"
-              ],
-              "title": "LegacyManagedConfigTomlFromMdmConfigLayerSourceType"
+              ]
             }
-          },
-          "title": "LegacyManagedConfigTomlFromMdmConfigLayerSource"
+          }
         }
       ]
     },
@@ -752,20 +752,20 @@
       "type": "object",
       "properties": {
         "exclude_slash_tmp": {
-          "default": false,
-          "type": "boolean"
+          "type": "boolean",
+          "default": false
         },
         "exclude_tmpdir_env_var": {
-          "default": false,
-          "type": "boolean"
+          "type": "boolean",
+          "default": false
         },
         "network_access": {
-          "default": false,
-          "type": "boolean"
+          "type": "boolean",
+          "default": false
         },
         "writable_roots": {
-          "default": [],
           "type": "array",
+          "default": [],
           "items": {
             "type": "string"
           }

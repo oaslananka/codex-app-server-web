@@ -37,6 +37,7 @@
           ]
         },
         {
+          "title": "GranularAskForApproval",
           "type": "object",
           "required": [
             "granular"
@@ -54,8 +55,8 @@
                   "type": "boolean"
                 },
                 "request_permissions": {
-                  "default": false,
-                  "type": "boolean"
+                  "type": "boolean",
+                  "default": false
                 },
                 "rules": {
                   "type": "boolean"
@@ -64,14 +65,13 @@
                   "type": "boolean"
                 },
                 "skill_approval": {
-                  "default": false,
-                  "type": "boolean"
+                  "type": "boolean",
+                  "default": false
                 }
               }
             }
           },
-          "additionalProperties": false,
-          "title": "GranularAskForApproval"
+          "additionalProperties": false
         }
       ]
     },
@@ -85,15 +85,6 @@
           ],
           "items": {
             "$ref": "#/definitions/AskForApproval"
-          }
-        },
-        "featureRequirements": {
-          "type": [
-            "object",
-            "null"
-          ],
-          "additionalProperties": {
-            "type": "boolean"
           }
         },
         "allowedSandboxModes": {
@@ -123,12 +114,22 @@
               "type": "null"
             }
           ]
+        },
+        "featureRequirements": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": "boolean"
+          }
         }
       }
     },
     "ConfiguredHookHandler": {
       "oneOf": [
         {
+          "title": "CommandConfiguredHookHandler",
           "type": "object",
           "required": [
             "async",
@@ -136,6 +137,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "CommandConfiguredHookHandlerType",
+              "type": "string",
+              "enum": [
+                "command"
+              ]
+            },
             "async": {
               "type": "boolean"
             },
@@ -154,49 +162,41 @@
                 "null"
               ],
               "format": "uint64",
-              "minimum": 0.0
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "command"
-              ],
-              "title": "CommandConfiguredHookHandlerType"
+              "minimum": 0
             }
-          },
-          "title": "CommandConfiguredHookHandler"
+          }
         },
         {
+          "title": "PromptConfiguredHookHandler",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
             "type": {
+              "title": "PromptConfiguredHookHandlerType",
               "type": "string",
               "enum": [
                 "prompt"
-              ],
-              "title": "PromptConfiguredHookHandlerType"
+              ]
             }
-          },
-          "title": "PromptConfiguredHookHandler"
+          }
         },
         {
+          "title": "AgentConfiguredHookHandler",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
             "type": {
+              "title": "AgentConfiguredHookHandlerType",
               "type": "string",
               "enum": [
                 "agent"
-              ],
-              "title": "AgentConfiguredHookHandlerType"
+              ]
             }
-          },
-          "title": "AgentConfiguredHookHandler"
+          }
         }
       ]
     },
@@ -381,7 +381,7 @@
             "null"
           ],
           "format": "uint16",
-          "minimum": 0.0
+          "minimum": 0
         },
         "managedAllowedDomainsOnly": {
           "description": "When true, only managed allowlist entries are respected while managed network enforcement is active.",
@@ -396,7 +396,7 @@
             "null"
           ],
           "format": "uint16",
-          "minimum": 0.0
+          "minimum": 0
         },
         "unixSockets": {
           "description": "Canonical unix socket permission map for `experimental_network`.",

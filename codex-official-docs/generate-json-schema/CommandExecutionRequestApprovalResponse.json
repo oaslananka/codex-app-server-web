@@ -28,6 +28,7 @@
           ]
         },
         {
+          "title": "AcceptWithExecpolicyAmendmentCommandExecutionApprovalDecision",
           "description": "User approved the command, and wants to apply the proposed execpolicy amendment so future matching commands can run without prompting.",
           "type": "object",
           "required": [
@@ -49,10 +50,10 @@
               }
             }
           },
-          "additionalProperties": false,
-          "title": "AcceptWithExecpolicyAmendmentCommandExecutionApprovalDecision"
+          "additionalProperties": false
         },
         {
+          "title": "ApplyNetworkPolicyAmendmentCommandExecutionApprovalDecision",
           "description": "User chose a persistent network policy rule (allow/deny) for this host.",
           "type": "object",
           "required": [
@@ -71,8 +72,7 @@
               }
             }
           },
-          "additionalProperties": false,
-          "title": "ApplyNetworkPolicyAmendmentCommandExecutionApprovalDecision"
+          "additionalProperties": false
         },
         {
           "description": "User denied the command. The agent will continue the turn.",

@@ -24,22 +24,23 @@
     "Account": {
       "oneOf": [
         {
+          "title": "ApiKeyAccount",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
             "type": {
+              "title": "ApiKeyAccountType",
               "type": "string",
               "enum": [
                 "apiKey"
-              ],
-              "title": "ApiKeyAccountType"
+              ]
             }
-          },
-          "title": "ApiKeyAccount"
+          }
         },
         {
+          "title": "ChatgptAccount",
           "type": "object",
           "required": [
             "email",
@@ -47,37 +48,36 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ChatgptAccountType",
+              "type": "string",
+              "enum": [
+                "chatgpt"
+              ]
+            },
             "email": {
               "type": "string"
             },
             "planType": {
               "$ref": "#/definitions/PlanType"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "chatgpt"
-              ],
-              "title": "ChatgptAccountType"
             }
-          },
-          "title": "ChatgptAccount"
+          }
         },
         {
+          "title": "AmazonBedrockAccount",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
             "type": {
+              "title": "AmazonBedrockAccountType",
               "type": "string",
               "enum": [
                 "amazonBedrock"
-              ],
-              "title": "AmazonBedrockAccountType"
+              ]
             }
-          },
-          "title": "AmazonBedrockAccount"
+          }
         }
       ]
     },

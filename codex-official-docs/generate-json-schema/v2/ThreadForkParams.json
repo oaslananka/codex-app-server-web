@@ -56,9 +56,6 @@
     "ephemeral": {
       "type": "boolean"
     },
-    "threadId": {
-      "type": "string"
-    },
     "model": {
       "description": "Configuration overrides for the forked thread, if any.",
       "type": [
@@ -87,6 +84,9 @@
         "string",
         "null"
       ]
+    },
+    "threadId": {
+      "type": "string"
     },
     "threadSource": {
       "description": "Optional client-supplied analytics source classification for this forked thread.",
@@ -126,6 +126,7 @@
           ]
         },
         {
+          "title": "GranularAskForApproval",
           "type": "object",
           "required": [
             "granular"
@@ -143,8 +144,8 @@
                   "type": "boolean"
                 },
                 "request_permissions": {
-                  "default": false,
-                  "type": "boolean"
+                  "type": "boolean",
+                  "default": false
                 },
                 "rules": {
                   "type": "boolean"
@@ -153,20 +154,20 @@
                   "type": "boolean"
                 },
                 "skill_approval": {
-                  "default": false,
-                  "type": "boolean"
+                  "type": "boolean",
+                  "default": false
                 }
               }
             }
           },
-          "additionalProperties": false,
-          "title": "GranularAskForApproval"
+          "additionalProperties": false
         }
       ]
     },
     "PermissionProfileModificationParams": {
       "oneOf": [
         {
+          "title": "AdditionalWritableRootPermissionProfileModificationParams",
           "description": "Additional concrete directory that should be writable.",
           "type": "object",
           "required": [
@@ -174,24 +175,24 @@
             "type"
           ],
           "properties": {
-            "path": {
-              "$ref": "#/definitions/AbsolutePathBuf"
-            },
             "type": {
+              "title": "AdditionalWritableRootPermissionProfileModificationParamsType",
               "type": "string",
               "enum": [
                 "additionalWritableRoot"
-              ],
-              "title": "AdditionalWritableRootPermissionProfileModificationParamsType"
+              ]
+            },
+            "path": {
+              "$ref": "#/definitions/AbsolutePathBuf"
             }
-          },
-          "title": "AdditionalWritableRootPermissionProfileModificationParams"
+          }
         }
       ]
     },
     "PermissionProfileSelectionParams": {
       "oneOf": [
         {
+          "title": "ProfilePermissionProfileSelectionParams",
           "description": "Select a named built-in or user-defined profile and optionally apply bounded modifications that Codex knows how to validate.",
           "type": "object",
           "required": [
@@ -199,6 +200,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ProfilePermissionProfileSelectionParamsType",
+              "type": "string",
+              "enum": [
+                "profile"
+              ]
+            },
             "id": {
               "type": "string"
             },
@@ -210,16 +218,8 @@
               "items": {
                 "$ref": "#/definitions/PermissionProfileModificationParams"
               }
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "profile"
-              ],
-              "title": "ProfilePermissionProfileSelectionParamsType"
             }
-          },
-          "title": "ProfilePermissionProfileSelectionParams"
+          }
         }
       ]
     },

@@ -21,44 +21,44 @@
     "DynamicToolCallOutputContentItem": {
       "oneOf": [
         {
+          "title": "InputTextDynamicToolCallOutputContentItem",
           "type": "object",
           "required": [
             "text",
             "type"
           ],
           "properties": {
-            "text": {
-              "type": "string"
-            },
             "type": {
+              "title": "InputTextDynamicToolCallOutputContentItemType",
               "type": "string",
               "enum": [
                 "inputText"
-              ],
-              "title": "InputTextDynamicToolCallOutputContentItemType"
+              ]
+            },
+            "text": {
+              "type": "string"
             }
-          },
-          "title": "InputTextDynamicToolCallOutputContentItem"
+          }
         },
         {
+          "title": "InputImageDynamicToolCallOutputContentItem",
           "type": "object",
           "required": [
             "imageUrl",
             "type"
           ],
           "properties": {
-            "imageUrl": {
-              "type": "string"
-            },
             "type": {
+              "title": "InputImageDynamicToolCallOutputContentItemType",
               "type": "string",
               "enum": [
                 "inputImage"
-              ],
-              "title": "InputImageDynamicToolCallOutputContentItemType"
+              ]
+            },
+            "imageUrl": {
+              "type": "string"
             }
-          },
-          "title": "InputImageDynamicToolCallOutputContentItem"
+          }
         }
       ]
     }

@@ -25,75 +25,75 @@
     "ThreadStatus": {
       "oneOf": [
         {
+          "title": "NotLoadedThreadStatus",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
             "type": {
+              "title": "NotLoadedThreadStatusType",
               "type": "string",
               "enum": [
                 "notLoaded"
-              ],
-              "title": "NotLoadedThreadStatusType"
+              ]
             }
-          },
-          "title": "NotLoadedThreadStatus"
+          }
         },
         {
+          "title": "IdleThreadStatus",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
             "type": {
+              "title": "IdleThreadStatusType",
               "type": "string",
               "enum": [
                 "idle"
-              ],
-              "title": "IdleThreadStatusType"
+              ]
             }
-          },
-          "title": "IdleThreadStatus"
+          }
         },
         {
+          "title": "SystemErrorThreadStatus",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
             "type": {
+              "title": "SystemErrorThreadStatusType",
               "type": "string",
               "enum": [
                 "systemError"
-              ],
-              "title": "SystemErrorThreadStatusType"
+              ]
             }
-          },
-          "title": "SystemErrorThreadStatus"
+          }
         },
         {
+          "title": "ActiveThreadStatus",
           "type": "object",
           "required": [
             "activeFlags",
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ActiveThreadStatusType",
+              "type": "string",
+              "enum": [
+                "active"
+              ]
+            },
             "activeFlags": {
               "type": "array",
               "items": {
                 "$ref": "#/definitions/ThreadActiveFlag"
               }
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "active"
-              ],
-              "title": "ActiveThreadStatusType"
             }
-          },
-          "title": "ActiveThreadStatus"
+          }
         }
       ]
     }

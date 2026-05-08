@@ -49,43 +49,10 @@
         "null"
       ]
     },
-    "serviceName": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "serviceTier": {
-      "type": [
-        "string",
-        "null"
-      ]
-    },
     "ephemeral": {
       "type": [
         "boolean",
         "null"
-      ]
-    },
-    "personality": {
-      "anyOf": [
-        {
-          "$ref": "#/definitions/Personality"
-        },
-        {
-          "type": "null"
-        }
-      ]
-    },
-    "threadSource": {
-      "description": "Optional client-supplied analytics source classification for this thread.",
-      "anyOf": [
-        {
-          "$ref": "#/definitions/ThreadSource"
-        },
-        {
-          "type": "null"
-        }
       ]
     },
     "model": {
@@ -100,6 +67,16 @@
         "null"
       ]
     },
+    "personality": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Personality"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "sandbox": {
       "anyOf": [
         {
@@ -110,10 +87,33 @@
         }
       ]
     },
+    "serviceName": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "serviceTier": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "sessionStartSource": {
       "anyOf": [
         {
           "$ref": "#/definitions/ThreadStartSource"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "threadSource": {
+      "description": "Optional client-supplied analytics source classification for this thread.",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ThreadSource"
         },
         {
           "type": "null"
@@ -147,6 +147,7 @@
           ]
         },
         {
+          "title": "GranularAskForApproval",
           "type": "object",
           "required": [
             "granular"
@@ -164,8 +165,8 @@
                   "type": "boolean"
                 },
                 "request_permissions": {
-                  "default": false,
-                  "type": "boolean"
+                  "type": "boolean",
+                  "default": false
                 },
                 "rules": {
                   "type": "boolean"
@@ -174,14 +175,13 @@
                   "type": "boolean"
                 },
                 "skill_approval": {
-                  "default": false,
-                  "type": "boolean"
+                  "type": "boolean",
+                  "default": false
                 }
               }
             }
           },
-          "additionalProperties": false,
-          "title": "GranularAskForApproval"
+          "additionalProperties": false
         }
       ]
     },
@@ -193,11 +193,11 @@
         "name"
       ],
       "properties": {
-        "deferLoading": {
-          "type": "boolean"
-        },
         "description": {
           "type": "string"
+        },
+        "deferLoading": {
+          "type": "boolean"
         },
         "inputSchema": true,
         "name": {
@@ -214,6 +214,7 @@
     "PermissionProfileModificationParams": {
       "oneOf": [
         {
+          "title": "AdditionalWritableRootPermissionProfileModificationParams",
           "description": "Additional concrete directory that should be writable.",
           "type": "object",
           "required": [
@@ -221,24 +222,24 @@
             "type"
           ],
           "properties": {
-            "path": {
-              "$ref": "#/definitions/AbsolutePathBuf"
-            },
             "type": {
+              "title": "AdditionalWritableRootPermissionProfileModificationParamsType",
               "type": "string",
               "enum": [
                 "additionalWritableRoot"
-              ],
-              "title": "AdditionalWritableRootPermissionProfileModificationParamsType"
+              ]
+            },
+            "path": {
+              "$ref": "#/definitions/AbsolutePathBuf"
             }
-          },
-          "title": "AdditionalWritableRootPermissionProfileModificationParams"
+          }
         }
       ]
     },
     "PermissionProfileSelectionParams": {
       "oneOf": [
         {
+          "title": "ProfilePermissionProfileSelectionParams",
           "description": "Select a named built-in or user-defined profile and optionally apply bounded modifications that Codex knows how to validate.",
           "type": "object",
           "required": [
@@ -246,6 +247,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ProfilePermissionProfileSelectionParamsType",
+              "type": "string",
+              "enum": [
+                "profile"
+              ]
+            },
             "id": {
               "type": "string"
             },
@@ -257,16 +265,8 @@
               "items": {
                 "$ref": "#/definitions/PermissionProfileModificationParams"
               }
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "profile"
-              ],
-              "title": "ProfilePermissionProfileSelectionParamsType"
             }
-          },
-          "title": "ProfilePermissionProfileSelectionParams"
+          }
         }
       ]
     },

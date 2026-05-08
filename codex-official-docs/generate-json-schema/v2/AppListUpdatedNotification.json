@@ -65,6 +65,12 @@
         "name"
       ],
       "properties": {
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "appMetadata": {
           "anyOf": [
             {
@@ -85,12 +91,6 @@
             }
           ]
         },
-        "description": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
         "distributionChannel": {
           "type": [
             "string",
@@ -107,13 +107,13 @@
           ]
         },
         "isAccessible": {
-          "default": false,
-          "type": "boolean"
+          "type": "boolean",
+          "default": false
         },
         "isEnabled": {
           "description": "Whether this app is enabled in config.toml. Example: ```toml [apps.bad_app] enabled = false ```",
-          "default": true,
-          "type": "boolean"
+          "type": "boolean",
+          "default": true
         },
         "labels": {
           "type": [
@@ -140,8 +140,8 @@
           "type": "string"
         },
         "pluginDisplayNames": {
-          "default": [],
           "type": "array",
+          "default": [],
           "items": {
             "type": "string"
           }

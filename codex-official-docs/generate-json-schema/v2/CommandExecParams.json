@@ -49,11 +49,7 @@
         "null"
       ],
       "format": "uint",
-      "minimum": 0.0
-    },
-    "tty": {
-      "description": "Enable PTY mode.\n\nThis implies `streamStdin` and `streamStdoutStderr`.",
-      "type": "boolean"
+      "minimum": 0
     },
     "processId": {
       "description": "Optional client-supplied, connection-scoped process id.\n\nRequired for `tty`, `streamStdin`, `streamStdoutStderr`, and follow-up `command/exec/write`, `command/exec/resize`, and `command/exec/terminate` calls. When omitted, buffered execution gets an internal id that is not exposed to the client.",
@@ -99,6 +95,10 @@
         "null"
       ],
       "format": "int64"
+    },
+    "tty": {
+      "description": "Enable PTY mode.\n\nThis implies `streamStdin` and `streamStdoutStderr`.",
+      "type": "boolean"
     }
   },
   "definitions": {
@@ -118,13 +118,13 @@
           "description": "Terminal width in character cells.",
           "type": "integer",
           "format": "uint16",
-          "minimum": 0.0
+          "minimum": 0
         },
         "rows": {
           "description": "Terminal height in character cells.",
           "type": "integer",
           "format": "uint16",
-          "minimum": 0.0
+          "minimum": 0
         }
       }
     },
@@ -139,46 +139,47 @@
     "FileSystemPath": {
       "oneOf": [
         {
+          "title": "PathFileSystemPath",
           "type": "object",
           "required": [
             "path",
             "type"
           ],
           "properties": {
-            "path": {
-              "$ref": "#/definitions/AbsolutePathBuf"
-            },
             "type": {
+              "title": "PathFileSystemPathType",
               "type": "string",
               "enum": [
                 "path"
-              ],
-              "title": "PathFileSystemPathType"
+              ]
+            },
+            "path": {
+              "$ref": "#/definitions/AbsolutePathBuf"
             }
-          },
-          "title": "PathFileSystemPath"
+          }
         },
         {
+          "title": "GlobPatternFileSystemPath",
           "type": "object",
           "required": [
             "pattern",
             "type"
           ],
           "properties": {
-            "pattern": {
-              "type": "string"
-            },
             "type": {
+              "title": "GlobPatternFileSystemPathType",
               "type": "string",
               "enum": [
                 "glob_pattern"
-              ],
-              "title": "GlobPatternFileSystemPathType"
+              ]
+            },
+            "pattern": {
+              "type": "string"
             }
-          },
-          "title": "GlobPatternFileSystemPath"
+          }
         },
         {
+          "title": "SpecialFileSystemPath",
           "type": "object",
           "required": [
             "type",
@@ -186,17 +187,16 @@
           ],
           "properties": {
             "type": {
+              "title": "SpecialFileSystemPathType",
               "type": "string",
               "enum": [
                 "special"
-              ],
-              "title": "SpecialFileSystemPathType"
+              ]
             },
             "value": {
               "$ref": "#/definitions/FileSystemSpecialPath"
             }
-          },
-          "title": "SpecialFileSystemPath"
+          }
         }
       ]
     },
@@ -218,6 +218,7 @@
     "FileSystemSpecialPath": {
       "oneOf": [
         {
+          "title": "RootFileSystemSpecialPath",
           "type": "object",
           "required": [
             "kind"
@@ -229,10 +230,10 @@
                 "root"
               ]
             }
-          },
-          "title": "RootFileSystemSpecialPath"
+          }
         },
         {
+          "title": "MinimalFileSystemSpecialPath",
           "type": "object",
           "required": [
             "kind"
@@ -244,10 +245,10 @@
                 "minimal"
               ]
             }
-          },
-          "title": "MinimalFileSystemSpecialPath"
+          }
         },
         {
+          "title": "KindFileSystemSpecialPath",
           "type": "object",
           "required": [
             "kind"
@@ -265,10 +266,10 @@
                 "null"
               ]
             }
-          },
-          "title": "KindFileSystemSpecialPath"
+          }
         },
         {
+          "title": "TmpdirFileSystemSpecialPath",
           "type": "object",
           "required": [
             "kind"
@@ -280,10 +281,10 @@
                 "tmpdir"
               ]
             }
-          },
-          "title": "TmpdirFileSystemSpecialPath"
+          }
         },
         {
+          "title": "SlashTmpFileSystemSpecialPath",
           "type": "object",
           "required": [
             "kind"
@@ -295,8 +296,7 @@
                 "slash_tmp"
               ]
             }
-          },
-          "title": "SlashTmpFileSystemSpecialPath"
+          }
         },
         {
           "type": "object",
@@ -334,6 +334,7 @@
     "PermissionProfile": {
       "oneOf": [
         {
+          "title": "ManagedPermissionProfile",
           "description": "Codex owns sandbox construction for this profile.",
           "type": "object",
           "required": [
@@ -342,23 +343,23 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ManagedPermissionProfileType",
+              "type": "string",
+              "enum": [
+                "managed"
+              ]
+            },
             "fileSystem": {
               "$ref": "#/definitions/PermissionProfileFileSystemPermissions"
             },
             "network": {
               "$ref": "#/definitions/PermissionProfileNetworkPermissions"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "managed"
-              ],
-              "title": "ManagedPermissionProfileType"
             }
-          },
-          "title": "ManagedPermissionProfile"
+          }
         },
         {
+          "title": "DisabledPermissionProfile",
           "description": "Do not apply an outer sandbox.",
           "type": "object",
           "required": [
@@ -366,16 +367,16 @@
           ],
           "properties": {
             "type": {
+              "title": "DisabledPermissionProfileType",
               "type": "string",
               "enum": [
                 "disabled"
-              ],
-              "title": "DisabledPermissionProfileType"
+              ]
             }
-          },
-          "title": "DisabledPermissionProfile"
+          }
         },
         {
+          "title": "ExternalPermissionProfile",
           "description": "Filesystem isolation is enforced by an external caller.",
           "type": "object",
           "required": [
@@ -383,30 +384,37 @@
             "type"
           ],
           "properties": {
-            "network": {
-              "$ref": "#/definitions/PermissionProfileNetworkPermissions"
-            },
             "type": {
+              "title": "ExternalPermissionProfileType",
               "type": "string",
               "enum": [
                 "external"
-              ],
-              "title": "ExternalPermissionProfileType"
+              ]
+            },
+            "network": {
+              "$ref": "#/definitions/PermissionProfileNetworkPermissions"
             }
-          },
-          "title": "ExternalPermissionProfile"
+          }
         }
       ]
     },
     "PermissionProfileFileSystemPermissions": {
       "oneOf": [
         {
+          "title": "RestrictedPermissionProfileFileSystemPermissions",
           "type": "object",
           "required": [
             "entries",
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "RestrictedPermissionProfileFileSystemPermissionsType",
+              "type": "string",
+              "enum": [
+                "restricted"
+              ]
+            },
             "entries": {
               "type": "array",
               "items": {
@@ -419,33 +427,25 @@
                 "null"
               ],
               "format": "uint",
-              "minimum": 1.0
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "restricted"
-              ],
-              "title": "RestrictedPermissionProfileFileSystemPermissionsType"
+              "minimum": 1
             }
-          },
-          "title": "RestrictedPermissionProfileFileSystemPermissions"
+          }
         },
         {
+          "title": "UnrestrictedPermissionProfileFileSystemPermissions",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
             "type": {
+              "title": "UnrestrictedPermissionProfileFileSystemPermissionsType",
               "type": "string",
               "enum": [
                 "unrestricted"
-              ],
-              "title": "UnrestrictedPermissionProfileFileSystemPermissionsType"
+              ]
             }
-          },
-          "title": "UnrestrictedPermissionProfileFileSystemPermissions"
+          }
         }
       ]
     },
@@ -463,47 +463,55 @@
     "SandboxPolicy": {
       "oneOf": [
         {
+          "title": "DangerFullAccessSandboxPolicy",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
             "type": {
+              "title": "DangerFullAccessSandboxPolicyType",
               "type": "string",
               "enum": [
                 "dangerFullAccess"
-              ],
-              "title": "DangerFullAccessSandboxPolicyType"
+              ]
             }
-          },
-          "title": "DangerFullAccessSandboxPolicy"
+          }
         },
         {
+          "title": "ReadOnlySandboxPolicy",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
-            "networkAccess": {
-              "default": false,
-              "type": "boolean"
-            },
             "type": {
+              "title": "ReadOnlySandboxPolicyType",
               "type": "string",
               "enum": [
                 "readOnly"
-              ],
-              "title": "ReadOnlySandboxPolicyType"
+              ]
+            },
+            "networkAccess": {
+              "type": "boolean",
+              "default": false
             }
-          },
-          "title": "ReadOnlySandboxPolicy"
+          }
         },
         {
+          "title": "ExternalSandboxSandboxPolicy",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ExternalSandboxSandboxPolicyType",
+              "type": "string",
+              "enum": [
+                "externalSandbox"
+              ]
+            },
             "networkAccess": {
               "default": "restricted",
               "allOf": [
@@ -511,51 +519,43 @@
                   "$ref": "#/definitions/NetworkAccess"
                 }
               ]
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "externalSandbox"
-              ],
-              "title": "ExternalSandboxSandboxPolicyType"
             }
-          },
-          "title": "ExternalSandboxSandboxPolicy"
+          }
         },
         {
+          "title": "WorkspaceWriteSandboxPolicy",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
-            "excludeSlashTmp": {
-              "default": false,
-              "type": "boolean"
-            },
-            "excludeTmpdirEnvVar": {
-              "default": false,
-              "type": "boolean"
-            },
-            "networkAccess": {
-              "default": false,
-              "type": "boolean"
-            },
             "type": {
+              "title": "WorkspaceWriteSandboxPolicyType",
               "type": "string",
               "enum": [
                 "workspaceWrite"
-              ],
-              "title": "WorkspaceWriteSandboxPolicyType"
+              ]
+            },
+            "excludeSlashTmp": {
+              "type": "boolean",
+              "default": false
+            },
+            "excludeTmpdirEnvVar": {
+              "type": "boolean",
+              "default": false
+            },
+            "networkAccess": {
+              "type": "boolean",
+              "default": false
             },
             "writableRoots": {
-              "default": [],
               "type": "array",
+              "default": [],
               "items": {
                 "$ref": "#/definitions/AbsolutePathBuf"
               }
             }
-          },
-          "title": "WorkspaceWriteSandboxPolicy"
+          }
         }
       ]
     }

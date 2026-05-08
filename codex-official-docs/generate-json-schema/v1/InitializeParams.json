@@ -28,14 +28,14 @@
         "version"
       ],
       "properties": {
-        "name": {
-          "type": "string"
-        },
         "title": {
           "type": [
             "string",
             "null"
           ]
+        },
+        "name": {
+          "type": "string"
         },
         "version": {
           "type": "string"
@@ -48,8 +48,8 @@
       "properties": {
         "experimentalApi": {
           "description": "Opt into receiving experimental API methods and fields.",
-          "default": false,
-          "type": "boolean"
+          "type": "boolean",
+          "default": false
         },
         "optOutNotificationMethods": {
           "description": "Exact notification method names that should be suppressed for this connection (for example `thread/started`).",

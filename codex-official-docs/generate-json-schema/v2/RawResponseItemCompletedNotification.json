@@ -22,32 +22,40 @@
     "ContentItem": {
       "oneOf": [
         {
+          "title": "InputTextContentItem",
           "type": "object",
           "required": [
             "text",
             "type"
           ],
           "properties": {
-            "text": {
-              "type": "string"
-            },
             "type": {
+              "title": "InputTextContentItemType",
               "type": "string",
               "enum": [
                 "input_text"
-              ],
-              "title": "InputTextContentItemType"
+              ]
+            },
+            "text": {
+              "type": "string"
             }
-          },
-          "title": "InputTextContentItem"
+          }
         },
         {
+          "title": "InputImageContentItem",
           "type": "object",
           "required": [
             "image_url",
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "InputImageContentItemType",
+              "type": "string",
+              "enum": [
+                "input_image"
+              ]
+            },
             "detail": {
               "anyOf": [
                 {
@@ -60,36 +68,28 @@
             },
             "image_url": {
               "type": "string"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "input_image"
-              ],
-              "title": "InputImageContentItemType"
             }
-          },
-          "title": "InputImageContentItem"
+          }
         },
         {
+          "title": "OutputTextContentItem",
           "type": "object",
           "required": [
             "text",
             "type"
           ],
           "properties": {
-            "text": {
-              "type": "string"
-            },
             "type": {
+              "title": "OutputTextContentItemType",
               "type": "string",
               "enum": [
                 "output_text"
-              ],
-              "title": "OutputTextContentItemType"
+              ]
+            },
+            "text": {
+              "type": "string"
             }
-          },
-          "title": "OutputTextContentItem"
+          }
         }
       ]
     },
@@ -110,32 +110,40 @@
       "description": "Responses API compatible content items that can be returned by a tool call. This is a subset of ContentItem with the types we support as function call outputs.",
       "oneOf": [
         {
+          "title": "InputTextFunctionCallOutputContentItem",
           "type": "object",
           "required": [
             "text",
             "type"
           ],
           "properties": {
-            "text": {
-              "type": "string"
-            },
             "type": {
+              "title": "InputTextFunctionCallOutputContentItemType",
               "type": "string",
               "enum": [
                 "input_text"
-              ],
-              "title": "InputTextFunctionCallOutputContentItemType"
+              ]
+            },
+            "text": {
+              "type": "string"
             }
-          },
-          "title": "InputTextFunctionCallOutputContentItem"
+          }
         },
         {
+          "title": "InputImageFunctionCallOutputContentItem",
           "type": "object",
           "required": [
             "image_url",
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "InputImageFunctionCallOutputContentItemType",
+              "type": "string",
+              "enum": [
+                "input_image"
+              ]
+            },
             "detail": {
               "anyOf": [
                 {
@@ -148,16 +156,8 @@
             },
             "image_url": {
               "type": "string"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "input_image"
-              ],
-              "title": "InputImageFunctionCallOutputContentItemType"
             }
-          },
-          "title": "InputImageFunctionCallOutputContentItem"
+          }
         }
       ]
     },
@@ -173,12 +173,20 @@
     "LocalShellAction": {
       "oneOf": [
         {
+          "title": "ExecLocalShellAction",
           "type": "object",
           "required": [
             "command",
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ExecLocalShellActionType",
+              "type": "string",
+              "enum": [
+                "exec"
+              ]
+            },
             "command": {
               "type": "array",
               "items": {
@@ -200,14 +208,7 @@
                 "null"
               ],
               "format": "uint64",
-              "minimum": 0.0
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "exec"
-              ],
-              "title": "ExecLocalShellActionType"
+              "minimum": 0
             },
             "user": {
               "type": [
@@ -221,8 +222,7 @@
                 "null"
               ]
             }
-          },
-          "title": "ExecLocalShellAction"
+          }
         }
       ]
     },
@@ -256,74 +256,75 @@
     "ReasoningItemContent": {
       "oneOf": [
         {
+          "title": "ReasoningTextReasoningItemContent",
           "type": "object",
           "required": [
             "text",
             "type"
           ],
           "properties": {
-            "text": {
-              "type": "string"
-            },
             "type": {
+              "title": "ReasoningTextReasoningItemContentType",
               "type": "string",
               "enum": [
                 "reasoning_text"
-              ],
-              "title": "ReasoningTextReasoningItemContentType"
+              ]
+            },
+            "text": {
+              "type": "string"
             }
-          },
-          "title": "ReasoningTextReasoningItemContent"
+          }
         },
         {
+          "title": "TextReasoningItemContent",
           "type": "object",
           "required": [
             "text",
             "type"
           ],
           "properties": {
-            "text": {
-              "type": "string"
-            },
             "type": {
+              "title": "TextReasoningItemContentType",
               "type": "string",
               "enum": [
                 "text"
-              ],
-              "title": "TextReasoningItemContentType"
+              ]
+            },
+            "text": {
+              "type": "string"
             }
-          },
-          "title": "TextReasoningItemContent"
+          }
         }
       ]
     },
     "ReasoningItemReasoningSummary": {
       "oneOf": [
         {
+          "title": "SummaryTextReasoningItemReasoningSummary",
           "type": "object",
           "required": [
             "text",
             "type"
           ],
           "properties": {
-            "text": {
-              "type": "string"
-            },
             "type": {
+              "title": "SummaryTextReasoningItemReasoningSummaryType",
               "type": "string",
               "enum": [
                 "summary_text"
-              ],
-              "title": "SummaryTextReasoningItemReasoningSummaryType"
+              ]
+            },
+            "text": {
+              "type": "string"
             }
-          },
-          "title": "SummaryTextReasoningItemReasoningSummary"
+          }
         }
       ]
     },
     "ResponseItem": {
       "oneOf": [
         {
+          "title": "MessageResponseItem",
           "type": "object",
           "required": [
             "content",
@@ -331,6 +332,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "MessageResponseItemType",
+              "type": "string",
+              "enum": [
+                "message"
+              ]
+            },
             "content": {
               "type": "array",
               "items": {
@@ -338,11 +346,11 @@
               }
             },
             "id": {
-              "writeOnly": true,
               "type": [
                 "string",
                 "null"
-              ]
+              ],
+              "writeOnly": true
             },
             "phase": {
               "anyOf": [
@@ -356,30 +364,30 @@
             },
             "role": {
               "type": "string"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "message"
-              ],
-              "title": "MessageResponseItemType"
             }
-          },
-          "title": "MessageResponseItem"
+          }
         },
         {
+          "title": "ReasoningResponseItem",
           "type": "object",
           "required": [
             "summary",
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ReasoningResponseItemType",
+              "type": "string",
+              "enum": [
+                "reasoning"
+              ]
+            },
             "content": {
-              "default": null,
               "type": [
                 "array",
                 "null"
               ],
+              "default": null,
               "items": {
                 "$ref": "#/definitions/ReasoningItemContent"
               }
@@ -395,18 +403,11 @@
               "items": {
                 "$ref": "#/definitions/ReasoningItemReasoningSummary"
               }
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "reasoning"
-              ],
-              "title": "ReasoningResponseItemType"
             }
-          },
-          "title": "ReasoningResponseItem"
+          }
         },
         {
+          "title": "LocalShellCallResponseItem",
           "type": "object",
           "required": [
             "action",
@@ -414,6 +415,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "LocalShellCallResponseItemType",
+              "type": "string",
+              "enum": [
+                "local_shell_call"
+              ]
+            },
             "action": {
               "$ref": "#/definitions/LocalShellAction"
             },
@@ -426,26 +434,19 @@
             },
             "id": {
               "description": "Legacy id field retained for compatibility with older payloads.",
-              "writeOnly": true,
               "type": [
                 "string",
                 "null"
-              ]
+              ],
+              "writeOnly": true
             },
             "status": {
               "$ref": "#/definitions/LocalShellStatus"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "local_shell_call"
-              ],
-              "title": "LocalShellCallResponseItemType"
             }
-          },
-          "title": "LocalShellCallResponseItem"
+          }
         },
         {
+          "title": "FunctionCallResponseItem",
           "type": "object",
           "required": [
             "arguments",
@@ -454,6 +455,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "FunctionCallResponseItemType",
+              "type": "string",
+              "enum": [
+                "function_call"
+              ]
+            },
             "arguments": {
               "type": "string"
             },
@@ -461,11 +469,11 @@
               "type": "string"
             },
             "id": {
-              "writeOnly": true,
               "type": [
                 "string",
                 "null"
-              ]
+              ],
+              "writeOnly": true
             },
             "name": {
               "type": "string"
@@ -475,18 +483,11 @@
                 "string",
                 "null"
               ]
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "function_call"
-              ],
-              "title": "FunctionCallResponseItemType"
             }
-          },
-          "title": "FunctionCallResponseItem"
+          }
         },
         {
+          "title": "ToolSearchCallResponseItem",
           "type": "object",
           "required": [
             "arguments",
@@ -494,6 +495,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ToolSearchCallResponseItemType",
+              "type": "string",
+              "enum": [
+                "tool_search_call"
+              ]
+            },
             "arguments": true,
             "call_id": {
               "type": [
@@ -505,29 +513,22 @@
               "type": "string"
             },
             "id": {
-              "writeOnly": true,
               "type": [
                 "string",
                 "null"
-              ]
+              ],
+              "writeOnly": true
             },
             "status": {
               "type": [
                 "string",
                 "null"
               ]
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "tool_search_call"
-              ],
-              "title": "ToolSearchCallResponseItemType"
             }
-          },
-          "title": "ToolSearchCallResponseItem"
+          }
         },
         {
+          "title": "FunctionCallOutputResponseItem",
           "type": "object",
           "required": [
             "call_id",
@@ -535,23 +536,23 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "FunctionCallOutputResponseItemType",
+              "type": "string",
+              "enum": [
+                "function_call_output"
+              ]
+            },
             "call_id": {
               "type": "string"
             },
             "output": {
               "$ref": "#/definitions/FunctionCallOutputBody"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "function_call_output"
-              ],
-              "title": "FunctionCallOutputResponseItemType"
             }
-          },
-          "title": "FunctionCallOutputResponseItem"
+          }
         },
         {
+          "title": "CustomToolCallResponseItem",
           "type": "object",
           "required": [
             "call_id",
@@ -560,15 +561,22 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "CustomToolCallResponseItemType",
+              "type": "string",
+              "enum": [
+                "custom_tool_call"
+              ]
+            },
             "call_id": {
               "type": "string"
             },
             "id": {
-              "writeOnly": true,
               "type": [
                 "string",
                 "null"
-              ]
+              ],
+              "writeOnly": true
             },
             "input": {
               "type": "string"
@@ -581,18 +589,11 @@
                 "string",
                 "null"
               ]
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "custom_tool_call"
-              ],
-              "title": "CustomToolCallResponseItemType"
             }
-          },
-          "title": "CustomToolCallResponseItem"
+          }
         },
         {
+          "title": "CustomToolCallOutputResponseItem",
           "type": "object",
           "required": [
             "call_id",
@@ -600,6 +601,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "CustomToolCallOutputResponseItemType",
+              "type": "string",
+              "enum": [
+                "custom_tool_call_output"
+              ]
+            },
             "call_id": {
               "type": "string"
             },
@@ -611,18 +619,11 @@
             },
             "output": {
               "$ref": "#/definitions/FunctionCallOutputBody"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "custom_tool_call_output"
-              ],
-              "title": "CustomToolCallOutputResponseItemType"
             }
-          },
-          "title": "CustomToolCallOutputResponseItem"
+          }
         },
         {
+          "title": "ToolSearchOutputResponseItem",
           "type": "object",
           "required": [
             "execution",
@@ -631,6 +632,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ToolSearchOutputResponseItemType",
+              "type": "string",
+              "enum": [
+                "tool_search_output"
+              ]
+            },
             "call_id": {
               "type": [
                 "string",
@@ -646,23 +654,23 @@
             "tools": {
               "type": "array",
               "items": true
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "tool_search_output"
-              ],
-              "title": "ToolSearchOutputResponseItemType"
             }
-          },
-          "title": "ToolSearchOutputResponseItem"
+          }
         },
         {
+          "title": "WebSearchCallResponseItem",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "WebSearchCallResponseItemType",
+              "type": "string",
+              "enum": [
+                "web_search_call"
+              ]
+            },
             "action": {
               "anyOf": [
                 {
@@ -674,29 +682,22 @@
               ]
             },
             "id": {
-              "writeOnly": true,
               "type": [
                 "string",
                 "null"
-              ]
+              ],
+              "writeOnly": true
             },
             "status": {
               "type": [
                 "string",
                 "null"
               ]
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "web_search_call"
-              ],
-              "title": "WebSearchCallResponseItemType"
             }
-          },
-          "title": "WebSearchCallResponseItem"
+          }
         },
         {
+          "title": "ImageGenerationCallResponseItem",
           "type": "object",
           "required": [
             "id",
@@ -705,6 +706,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ImageGenerationCallResponseItemType",
+              "type": "string",
+              "enum": [
+                "image_generation_call"
+              ]
+            },
             "id": {
               "type": "string"
             },
@@ -719,85 +727,85 @@
             },
             "status": {
               "type": "string"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "image_generation_call"
-              ],
-              "title": "ImageGenerationCallResponseItemType"
             }
-          },
-          "title": "ImageGenerationCallResponseItem"
+          }
         },
         {
+          "title": "CompactionResponseItem",
           "type": "object",
           "required": [
             "encrypted_content",
             "type"
           ],
           "properties": {
-            "encrypted_content": {
-              "type": "string"
-            },
             "type": {
+              "title": "CompactionResponseItemType",
               "type": "string",
               "enum": [
                 "compaction"
-              ],
-              "title": "CompactionResponseItemType"
+              ]
+            },
+            "encrypted_content": {
+              "type": "string"
             }
-          },
-          "title": "CompactionResponseItem"
+          }
         },
         {
+          "title": "ContextCompactionResponseItem",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ContextCompactionResponseItemType",
+              "type": "string",
+              "enum": [
+                "context_compaction"
+              ]
+            },
             "encrypted_content": {
               "type": [
                 "string",
                 "null"
               ]
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "context_compaction"
-              ],
-              "title": "ContextCompactionResponseItemType"
             }
-          },
-          "title": "ContextCompactionResponseItem"
+          }
         },
         {
+          "title": "OtherResponseItem",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
             "type": {
+              "title": "OtherResponseItemType",
               "type": "string",
               "enum": [
                 "other"
-              ],
-              "title": "OtherResponseItemType"
+              ]
             }
-          },
-          "title": "OtherResponseItem"
+          }
         }
       ]
     },
     "ResponsesApiWebSearchAction": {
       "oneOf": [
         {
+          "title": "SearchResponsesApiWebSearchAction",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "SearchResponsesApiWebSearchActionType",
+              "type": "string",
+              "enum": [
+                "search"
+              ]
+            },
             "queries": {
               "type": [
                 "array",
@@ -812,29 +820,22 @@
                 "string",
                 "null"
               ]
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "search"
-              ],
-              "title": "SearchResponsesApiWebSearchActionType"
             }
-          },
-          "title": "SearchResponsesApiWebSearchAction"
+          }
         },
         {
+          "title": "OpenPageResponsesApiWebSearchAction",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
             "type": {
+              "title": "OpenPageResponsesApiWebSearchActionType",
               "type": "string",
               "enum": [
                 "open_page"
-              ],
-              "title": "OpenPageResponsesApiWebSearchActionType"
+              ]
             },
             "url": {
               "type": [
@@ -842,52 +843,51 @@
                 "null"
               ]
             }
-          },
-          "title": "OpenPageResponsesApiWebSearchAction"
+          }
         },
         {
+          "title": "FindInPageResponsesApiWebSearchAction",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "FindInPageResponsesApiWebSearchActionType",
+              "type": "string",
+              "enum": [
+                "find_in_page"
+              ]
+            },
             "pattern": {
               "type": [
                 "string",
                 "null"
               ]
             },
-            "type": {
-              "type": "string",
-              "enum": [
-                "find_in_page"
-              ],
-              "title": "FindInPageResponsesApiWebSearchActionType"
-            },
             "url": {
               "type": [
                 "string",
                 "null"
               ]
             }
-          },
-          "title": "FindInPageResponsesApiWebSearchAction"
+          }
         },
         {
+          "title": "OtherResponsesApiWebSearchAction",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
             "type": {
+              "title": "OtherResponsesApiWebSearchActionType",
               "type": "string",
               "enum": [
                 "other"
-              ],
-              "title": "OtherResponsesApiWebSearchActionType"
+              ]
             }
-          },
-          "title": "OtherResponsesApiWebSearchAction"
+          }
         }
       ]
     }

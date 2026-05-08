@@ -2,6 +2,25 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "McpServerElicitationRequestParams",
   "type": "object",
+  "required": [
+    "serverName",
+    "threadId"
+  ],
+  "properties": {
+    "serverName": {
+      "type": "string"
+    },
+    "threadId": {
+      "type": "string"
+    },
+    "turnId": {
+      "description": "Active Codex turn when this elicitation was observed, if app-server could correlate one.\n\nThis is nullable because MCP models elicitation as a standalone server-to-client request identified by the MCP server request id. It may be triggered during a turn, but turn context is app-server correlation rather than part of the protocol identity of the elicitation itself.",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
   "oneOf": [
     {
       "type": "object",
@@ -54,25 +73,6 @@
       }
     }
   ],
-  "required": [
-    "serverName",
-    "threadId"
-  ],
-  "properties": {
-    "serverName": {
-      "type": "string"
-    },
-    "threadId": {
-      "type": "string"
-    },
-    "turnId": {
-      "description": "Active Codex turn when this elicitation was observed, if app-server could correlate one.\n\nThis is nullable because MCP models elicitation as a standalone server-to-client request identified by the MCP server request id. It may be triggered during a turn, but turn context is app-server correlation rather than part of the protocol identity of the elicitation itself.",
-      "type": [
-        "string",
-        "null"
-      ]
-    }
-  },
   "definitions": {
     "McpElicitationArrayType": {
       "type": "string",
@@ -86,9 +86,9 @@
         "type"
       ],
       "properties": {
-        "default": {
+        "title": {
           "type": [
-            "boolean",
+            "string",
             "null"
           ]
         },
@@ -98,14 +98,14 @@
             "null"
           ]
         },
-        "title": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
         "type": {
           "$ref": "#/definitions/McpElicitationBooleanType"
+        },
+        "default": {
+          "type": [
+            "boolean",
+            "null"
+          ]
         }
       },
       "additionalProperties": false
@@ -123,10 +123,10 @@
         "title"
       ],
       "properties": {
-        "const": {
+        "title": {
           "type": "string"
         },
-        "title": {
+        "const": {
           "type": "string"
         }
       },
@@ -152,7 +152,7 @@
         "type"
       ],
       "properties": {
-        "default": {
+        "title": {
           "type": [
             "string",
             "null"
@@ -164,11 +164,20 @@
             "null"
           ]
         },
+        "type": {
+          "$ref": "#/definitions/McpElicitationStringType"
+        },
         "enum": {
           "type": "array",
           "items": {
             "type": "string"
           }
+        },
+        "default": {
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "enumNames": {
           "type": [
@@ -178,15 +187,6 @@
           "items": {
             "type": "string"
           }
-        },
-        "title": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "type": {
-          "$ref": "#/definitions/McpElicitationStringType"
         }
       },
       "additionalProperties": false
@@ -207,18 +207,27 @@
         "type"
       ],
       "properties": {
-        "default": {
+        "title": {
           "type": [
-            "number",
+            "string",
             "null"
-          ],
-          "format": "double"
+          ]
         },
         "description": {
           "type": [
             "string",
             "null"
           ]
+        },
+        "type": {
+          "$ref": "#/definitions/McpElicitationNumberType"
+        },
+        "default": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "format": "double"
         },
         "maximum": {
           "type": [
@@ -233,15 +242,6 @@
             "null"
           ],
           "format": "double"
-        },
-        "title": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "type": {
-          "$ref": "#/definitions/McpElicitationNumberType"
         }
       },
       "additionalProperties": false
@@ -289,11 +289,8 @@
             "null"
           ]
         },
-        "properties": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/McpElicitationPrimitiveSchema"
-          }
+        "type": {
+          "$ref": "#/definitions/McpElicitationObjectType"
         },
         "required": {
           "type": [
@@ -304,8 +301,11 @@
             "type": "string"
           }
         },
-        "type": {
-          "$ref": "#/definitions/McpElicitationObjectType"
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/McpElicitationPrimitiveSchema"
+          }
         }
       },
       "additionalProperties": false
@@ -335,13 +335,22 @@
         "type"
       ],
       "properties": {
-        "default": {
+        "title": {
           "type": [
             "string",
             "null"
           ]
         },
         "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type": {
+          "$ref": "#/definitions/McpElicitationStringType"
+        },
+        "default": {
           "type": [
             "string",
             "null"
@@ -363,7 +372,7 @@
             "null"
           ],
           "format": "uint32",
-          "minimum": 0.0
+          "minimum": 0
         },
         "minLength": {
           "type": [
@@ -371,16 +380,7 @@
             "null"
           ],
           "format": "uint32",
-          "minimum": 0.0
-        },
-        "title": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "type": {
-          "$ref": "#/definitions/McpElicitationStringType"
+          "minimum": 0
         }
       },
       "additionalProperties": false
@@ -413,6 +413,21 @@
         "type"
       ],
       "properties": {
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type": {
+          "$ref": "#/definitions/McpElicitationArrayType"
+        },
         "default": {
           "type": [
             "array",
@@ -421,12 +436,6 @@
           "items": {
             "type": "string"
           }
-        },
-        "description": {
-          "type": [
-            "string",
-            "null"
-          ]
         },
         "items": {
           "$ref": "#/definitions/McpElicitationTitledEnumItems"
@@ -437,7 +446,7 @@
             "null"
           ],
           "format": "uint64",
-          "minimum": 0.0
+          "minimum": 0
         },
         "minItems": {
           "type": [
@@ -445,16 +454,7 @@
             "null"
           ],
           "format": "uint64",
-          "minimum": 0.0
-        },
-        "title": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "type": {
-          "$ref": "#/definitions/McpElicitationArrayType"
+          "minimum": 0
         }
       },
       "additionalProperties": false
@@ -466,7 +466,7 @@
         "type"
       ],
       "properties": {
-        "default": {
+        "title": {
           "type": [
             "string",
             "null"
@@ -478,20 +478,20 @@
             "null"
           ]
         },
-        "oneOf": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/McpElicitationConstOption"
-          }
+        "type": {
+          "$ref": "#/definitions/McpElicitationStringType"
         },
-        "title": {
+        "default": {
           "type": [
             "string",
             "null"
           ]
         },
-        "type": {
-          "$ref": "#/definitions/McpElicitationStringType"
+        "oneOf": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/McpElicitationConstOption"
+          }
         }
       },
       "additionalProperties": false
@@ -503,14 +503,14 @@
         "type"
       ],
       "properties": {
+        "type": {
+          "$ref": "#/definitions/McpElicitationStringType"
+        },
         "enum": {
           "type": "array",
           "items": {
             "type": "string"
           }
-        },
-        "type": {
-          "$ref": "#/definitions/McpElicitationStringType"
         }
       },
       "additionalProperties": false
@@ -522,6 +522,21 @@
         "type"
       ],
       "properties": {
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type": {
+          "$ref": "#/definitions/McpElicitationArrayType"
+        },
         "default": {
           "type": [
             "array",
@@ -530,12 +545,6 @@
           "items": {
             "type": "string"
           }
-        },
-        "description": {
-          "type": [
-            "string",
-            "null"
-          ]
         },
         "items": {
           "$ref": "#/definitions/McpElicitationUntitledEnumItems"
@@ -546,7 +555,7 @@
             "null"
           ],
           "format": "uint64",
-          "minimum": 0.0
+          "minimum": 0
         },
         "minItems": {
           "type": [
@@ -554,16 +563,7 @@
             "null"
           ],
           "format": "uint64",
-          "minimum": 0.0
-        },
-        "title": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "type": {
-          "$ref": "#/definitions/McpElicitationArrayType"
+          "minimum": 0
         }
       },
       "additionalProperties": false
@@ -575,7 +575,7 @@
         "type"
       ],
       "properties": {
-        "default": {
+        "title": {
           "type": [
             "string",
             "null"
@@ -587,20 +587,20 @@
             "null"
           ]
         },
+        "type": {
+          "$ref": "#/definitions/McpElicitationStringType"
+        },
         "enum": {
           "type": "array",
           "items": {
             "type": "string"
           }
         },
-        "title": {
+        "default": {
           "type": [
             "string",
             "null"
           ]
-        },
-        "type": {
-          "$ref": "#/definitions/McpElicitationStringType"
         }
       },
       "additionalProperties": false

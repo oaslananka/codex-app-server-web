@@ -8,18 +8,12 @@
     "turnId"
   ],
   "properties": {
-    "turnId": {
-      "type": "string"
-    },
     "approvalId": {
       "description": "Unique identifier for this specific approval callback.\n\nFor regular shell/unified_exec approvals, this is null.\n\nFor zsh-exec-bridge subcommand approvals, multiple callbacks can belong to one parent `itemId`, so `approvalId` is a distinct opaque callback id (a UUID) used to disambiguate routing.",
       "type": [
         "string",
         "null"
       ]
-    },
-    "threadId": {
-      "type": "string"
     },
     "command": {
       "description": "The command to be executed.",
@@ -89,6 +83,12 @@
         "string",
         "null"
       ]
+    },
+    "threadId": {
+      "type": "string"
+    },
+    "turnId": {
+      "type": "string"
     }
   },
   "definitions": {
@@ -114,7 +114,7 @@
             "null"
           ],
           "format": "uint",
-          "minimum": 1.0
+          "minimum": 1
         },
         "read": {
           "description": "This will be removed in favor of `entries`.",
@@ -178,6 +178,7 @@
     "CommandAction": {
       "oneOf": [
         {
+          "title": "ReadCommandAction",
           "type": "object",
           "required": [
             "command",
@@ -186,6 +187,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ReadCommandActionType",
+              "type": "string",
+              "enum": [
+                "read"
+              ]
+            },
             "command": {
               "type": "string"
             },
@@ -194,24 +202,24 @@
             },
             "path": {
               "$ref": "#/definitions/AbsolutePathBuf"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "read"
-              ],
-              "title": "ReadCommandActionType"
             }
-          },
-          "title": "ReadCommandAction"
+          }
         },
         {
+          "title": "ListFilesCommandAction",
           "type": "object",
           "required": [
             "command",
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ListFilesCommandActionType",
+              "type": "string",
+              "enum": [
+                "listFiles"
+              ]
+            },
             "command": {
               "type": "string"
             },
@@ -220,24 +228,24 @@
                 "string",
                 "null"
               ]
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "listFiles"
-              ],
-              "title": "ListFilesCommandActionType"
             }
-          },
-          "title": "ListFilesCommandAction"
+          }
         },
         {
+          "title": "SearchCommandAction",
           "type": "object",
           "required": [
             "command",
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "SearchCommandActionType",
+              "type": "string",
+              "enum": [
+                "search"
+              ]
+            },
             "command": {
               "type": "string"
             },
@@ -252,36 +260,28 @@
                 "string",
                 "null"
               ]
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "search"
-              ],
-              "title": "SearchCommandActionType"
             }
-          },
-          "title": "SearchCommandAction"
+          }
         },
         {
+          "title": "UnknownCommandAction",
           "type": "object",
           "required": [
             "command",
             "type"
           ],
           "properties": {
-            "command": {
-              "type": "string"
-            },
             "type": {
+              "title": "UnknownCommandActionType",
               "type": "string",
               "enum": [
                 "unknown"
-              ],
-              "title": "UnknownCommandActionType"
+              ]
+            },
+            "command": {
+              "type": "string"
             }
-          },
-          "title": "UnknownCommandAction"
+          }
         }
       ]
     },
@@ -302,6 +302,7 @@
           ]
         },
         {
+          "title": "AcceptWithExecpolicyAmendmentCommandExecutionApprovalDecision",
           "description": "User approved the command, and wants to apply the proposed execpolicy amendment so future matching commands can run without prompting.",
           "type": "object",
           "required": [
@@ -323,10 +324,10 @@
               }
             }
           },
-          "additionalProperties": false,
-          "title": "AcceptWithExecpolicyAmendmentCommandExecutionApprovalDecision"
+          "additionalProperties": false
         },
         {
+          "title": "ApplyNetworkPolicyAmendmentCommandExecutionApprovalDecision",
           "description": "User chose a persistent network policy rule (allow/deny) for this host.",
           "type": "object",
           "required": [
@@ -345,8 +346,7 @@
               }
             }
           },
-          "additionalProperties": false,
-          "title": "ApplyNetworkPolicyAmendmentCommandExecutionApprovalDecision"
+          "additionalProperties": false
         },
         {
           "description": "User denied the command. The agent will continue the turn.",
@@ -375,46 +375,47 @@
     "FileSystemPath": {
       "oneOf": [
         {
+          "title": "PathFileSystemPath",
           "type": "object",
           "required": [
             "path",
             "type"
           ],
           "properties": {
-            "path": {
-              "$ref": "#/definitions/AbsolutePathBuf"
-            },
             "type": {
+              "title": "PathFileSystemPathType",
               "type": "string",
               "enum": [
                 "path"
-              ],
-              "title": "PathFileSystemPathType"
+              ]
+            },
+            "path": {
+              "$ref": "#/definitions/AbsolutePathBuf"
             }
-          },
-          "title": "PathFileSystemPath"
+          }
         },
         {
+          "title": "GlobPatternFileSystemPath",
           "type": "object",
           "required": [
             "pattern",
             "type"
           ],
           "properties": {
-            "pattern": {
-              "type": "string"
-            },
             "type": {
+              "title": "GlobPatternFileSystemPathType",
               "type": "string",
               "enum": [
                 "glob_pattern"
-              ],
-              "title": "GlobPatternFileSystemPathType"
+              ]
+            },
+            "pattern": {
+              "type": "string"
             }
-          },
-          "title": "GlobPatternFileSystemPath"
+          }
         },
         {
+          "title": "SpecialFileSystemPath",
           "type": "object",
           "required": [
             "type",
@@ -422,17 +423,16 @@
           ],
           "properties": {
             "type": {
+              "title": "SpecialFileSystemPathType",
               "type": "string",
               "enum": [
                 "special"
-              ],
-              "title": "SpecialFileSystemPathType"
+              ]
             },
             "value": {
               "$ref": "#/definitions/FileSystemSpecialPath"
             }
-          },
-          "title": "SpecialFileSystemPath"
+          }
         }
       ]
     },
@@ -454,6 +454,7 @@
     "FileSystemSpecialPath": {
       "oneOf": [
         {
+          "title": "RootFileSystemSpecialPath",
           "type": "object",
           "required": [
             "kind"
@@ -465,10 +466,10 @@
                 "root"
               ]
             }
-          },
-          "title": "RootFileSystemSpecialPath"
+          }
         },
         {
+          "title": "MinimalFileSystemSpecialPath",
           "type": "object",
           "required": [
             "kind"
@@ -480,10 +481,10 @@
                 "minimal"
               ]
             }
-          },
-          "title": "MinimalFileSystemSpecialPath"
+          }
         },
         {
+          "title": "KindFileSystemSpecialPath",
           "type": "object",
           "required": [
             "kind"
@@ -501,10 +502,10 @@
                 "null"
               ]
             }
-          },
-          "title": "KindFileSystemSpecialPath"
+          }
         },
         {
+          "title": "TmpdirFileSystemSpecialPath",
           "type": "object",
           "required": [
             "kind"
@@ -516,10 +517,10 @@
                 "tmpdir"
               ]
             }
-          },
-          "title": "TmpdirFileSystemSpecialPath"
+          }
         },
         {
+          "title": "SlashTmpFileSystemSpecialPath",
           "type": "object",
           "required": [
             "kind"
@@ -531,8 +532,7 @@
                 "slash_tmp"
               ]
             }
-          },
-          "title": "SlashTmpFileSystemSpecialPath"
+          }
         },
         {
           "type": "object",

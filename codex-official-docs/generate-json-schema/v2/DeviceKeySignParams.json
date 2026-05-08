@@ -20,6 +20,7 @@
       "description": "Structured payloads accepted by `device/key/sign`.",
       "oneOf": [
         {
+          "title": "RemoteControlClientConnectionDeviceKeySignPayload",
           "description": "Payload bound to one remote-control controller websocket `/client` connection challenge.",
           "type": "object",
           "required": [
@@ -36,6 +37,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "RemoteControlClientConnectionDeviceKeySignPayloadType",
+              "type": "string",
+              "enum": [
+                "remoteControlClientConnection"
+              ]
+            },
             "accountUserId": {
               "type": "string"
             },
@@ -75,18 +83,11 @@
             "tokenSha256Base64url": {
               "description": "SHA-256 of the controller-scoped remote-control token, encoded as unpadded base64url.",
               "type": "string"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "remoteControlClientConnection"
-              ],
-              "title": "RemoteControlClientConnectionDeviceKeySignPayloadType"
             }
-          },
-          "title": "RemoteControlClientConnectionDeviceKeySignPayload"
+          }
         },
         {
+          "title": "RemoteControlClientEnrollmentDeviceKeySignPayload",
           "description": "Payload bound to a remote-control client `/client/enroll` ownership challenge.",
           "type": "object",
           "required": [
@@ -102,6 +103,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "RemoteControlClientEnrollmentDeviceKeySignPayloadType",
+              "type": "string",
+              "enum": [
+                "remoteControlClientEnrollment"
+              ]
+            },
             "accountUserId": {
               "type": "string"
             },
@@ -134,16 +142,8 @@
             "targetPath": {
               "description": "HTTP route path that this proof authorizes.",
               "type": "string"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "remoteControlClientEnrollment"
-              ],
-              "title": "RemoteControlClientEnrollmentDeviceKeySignPayloadType"
             }
-          },
-          "title": "RemoteControlClientEnrollmentDeviceKeySignPayload"
+          }
         }
       ]
     },

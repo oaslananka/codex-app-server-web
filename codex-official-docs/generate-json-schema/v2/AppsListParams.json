@@ -22,7 +22,7 @@
         "null"
       ],
       "format": "uint32",
-      "minimum": 0.0
+      "minimum": 0
     },
     "threadId": {
       "description": "Optional thread id used to evaluate app feature gating from that thread's config.",

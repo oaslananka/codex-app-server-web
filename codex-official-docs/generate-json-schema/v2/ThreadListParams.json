@@ -35,7 +35,7 @@
         "null"
       ],
       "format": "uint32",
-      "minimum": 0.0
+      "minimum": 0
     },
     "modelProviders": {
       "description": "Optional provider filter; when set, only sessions recorded under these providers are returned. When present but empty, includes all providers.",

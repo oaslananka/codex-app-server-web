@@ -34,13 +34,13 @@
           "description": "Terminal width in character cells.",
           "type": "integer",
           "format": "uint16",
-          "minimum": 0.0
+          "minimum": 0
         },
         "rows": {
           "description": "Terminal height in character cells.",
           "type": "integer",
           "format": "uint16",
-          "minimum": 0.0
+          "minimum": 0
         }
       }
     }

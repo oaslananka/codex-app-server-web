@@ -191,7 +191,9 @@ function loadConfigFields() {
     const content = tryReadText(candidate);
     if (!content) continue;
     const configSchema = JSON.parse(content);
-    return flattenConfigSchema(configSchema.definitions.Config, configSchema.definitions);
+    return sortRecordByKey(
+      flattenConfigSchema(configSchema.definitions.Config, configSchema.definitions),
+    );
   }
 
   const existing = readConfigFieldsFromExistingManifest();
@@ -201,6 +203,12 @@ function loadConfigFields() {
 
   throw new Error(
     'Unable to load official config schema metadata from codex-official-docs or existing generated manifest.',
+  );
+}
+
+function sortRecordByKey(record) {
+  return Object.fromEntries(
+    Object.entries(record).sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0)),
   );
 }
 

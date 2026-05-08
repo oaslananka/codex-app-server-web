@@ -48,58 +48,58 @@
     "PatchChangeKind": {
       "oneOf": [
         {
+          "title": "AddPatchChangeKind",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
             "type": {
+              "title": "AddPatchChangeKindType",
               "type": "string",
               "enum": [
                 "add"
-              ],
-              "title": "AddPatchChangeKindType"
+              ]
             }
-          },
-          "title": "AddPatchChangeKind"
+          }
         },
         {
+          "title": "DeletePatchChangeKind",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
             "type": {
+              "title": "DeletePatchChangeKindType",
               "type": "string",
               "enum": [
                 "delete"
-              ],
-              "title": "DeletePatchChangeKindType"
+              ]
             }
-          },
-          "title": "DeletePatchChangeKind"
+          }
         },
         {
+          "title": "UpdatePatchChangeKind",
           "type": "object",
           "required": [
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "UpdatePatchChangeKindType",
+              "type": "string",
+              "enum": [
+                "update"
+              ]
+            },
             "move_path": {
               "type": [
                 "string",
                 "null"
               ]
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "update"
-              ],
-              "title": "UpdatePatchChangeKindType"
             }
-          },
-          "title": "UpdatePatchChangeKind"
+          }
         }
       ]
     }

@@ -58,7 +58,7 @@
             "null"
           ],
           "format": "uint",
-          "minimum": 1.0
+          "minimum": 1
         },
         "read": {
           "description": "This will be removed in favor of `entries`.",
@@ -104,46 +104,47 @@
     "FileSystemPath": {
       "oneOf": [
         {
+          "title": "PathFileSystemPath",
           "type": "object",
           "required": [
             "path",
             "type"
           ],
           "properties": {
-            "path": {
-              "$ref": "#/definitions/AbsolutePathBuf"
-            },
             "type": {
+              "title": "PathFileSystemPathType",
               "type": "string",
               "enum": [
                 "path"
-              ],
-              "title": "PathFileSystemPathType"
+              ]
+            },
+            "path": {
+              "$ref": "#/definitions/AbsolutePathBuf"
             }
-          },
-          "title": "PathFileSystemPath"
+          }
         },
         {
+          "title": "GlobPatternFileSystemPath",
           "type": "object",
           "required": [
             "pattern",
             "type"
           ],
           "properties": {
-            "pattern": {
-              "type": "string"
-            },
             "type": {
+              "title": "GlobPatternFileSystemPathType",
               "type": "string",
               "enum": [
                 "glob_pattern"
-              ],
-              "title": "GlobPatternFileSystemPathType"
+              ]
+            },
+            "pattern": {
+              "type": "string"
             }
-          },
-          "title": "GlobPatternFileSystemPath"
+          }
         },
         {
+          "title": "SpecialFileSystemPath",
           "type": "object",
           "required": [
             "type",
@@ -151,17 +152,16 @@
           ],
           "properties": {
             "type": {
+              "title": "SpecialFileSystemPathType",
               "type": "string",
               "enum": [
                 "special"
-              ],
-              "title": "SpecialFileSystemPathType"
+              ]
             },
             "value": {
               "$ref": "#/definitions/FileSystemSpecialPath"
             }
-          },
-          "title": "SpecialFileSystemPath"
+          }
         }
       ]
     },
@@ -183,6 +183,7 @@
     "FileSystemSpecialPath": {
       "oneOf": [
         {
+          "title": "RootFileSystemSpecialPath",
           "type": "object",
           "required": [
             "kind"
@@ -194,10 +195,10 @@
                 "root"
               ]
             }
-          },
-          "title": "RootFileSystemSpecialPath"
+          }
         },
         {
+          "title": "MinimalFileSystemSpecialPath",
           "type": "object",
           "required": [
             "kind"
@@ -209,10 +210,10 @@
                 "minimal"
               ]
             }
-          },
-          "title": "MinimalFileSystemSpecialPath"
+          }
         },
         {
+          "title": "KindFileSystemSpecialPath",
           "type": "object",
           "required": [
             "kind"
@@ -230,10 +231,10 @@
                 "null"
               ]
             }
-          },
-          "title": "KindFileSystemSpecialPath"
+          }
         },
         {
+          "title": "TmpdirFileSystemSpecialPath",
           "type": "object",
           "required": [
             "kind"
@@ -245,10 +246,10 @@
                 "tmpdir"
               ]
             }
-          },
-          "title": "TmpdirFileSystemSpecialPath"
+          }
         },
         {
+          "title": "SlashTmpFileSystemSpecialPath",
           "type": "object",
           "required": [
             "kind"
@@ -260,8 +261,7 @@
                 "slash_tmp"
               ]
             }
-          },
-          "title": "SlashTmpFileSystemSpecialPath"
+          }
         },
         {
           "type": "object",
@@ -330,6 +330,7 @@
     "GuardianApprovalReviewAction": {
       "oneOf": [
         {
+          "title": "CommandGuardianApprovalReviewAction",
           "type": "object",
           "required": [
             "command",
@@ -338,6 +339,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "CommandGuardianApprovalReviewActionType",
+              "type": "string",
+              "enum": [
+                "command"
+              ]
+            },
             "command": {
               "type": "string"
             },
@@ -346,18 +354,11 @@
             },
             "source": {
               "$ref": "#/definitions/GuardianCommandSource"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "command"
-              ],
-              "title": "CommandGuardianApprovalReviewActionType"
             }
-          },
-          "title": "CommandGuardianApprovalReviewAction"
+          }
         },
         {
+          "title": "ExecveGuardianApprovalReviewAction",
           "type": "object",
           "required": [
             "argv",
@@ -367,6 +368,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ExecveGuardianApprovalReviewActionType",
+              "type": "string",
+              "enum": [
+                "execve"
+              ]
+            },
             "argv": {
               "type": "array",
               "items": {
@@ -381,18 +389,11 @@
             },
             "source": {
               "$ref": "#/definitions/GuardianCommandSource"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "execve"
-              ],
-              "title": "ExecveGuardianApprovalReviewActionType"
             }
-          },
-          "title": "ExecveGuardianApprovalReviewAction"
+          }
         },
         {
+          "title": "ApplyPatchGuardianApprovalReviewAction",
           "type": "object",
           "required": [
             "cwd",
@@ -400,6 +401,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ApplyPatchGuardianApprovalReviewActionType",
+              "type": "string",
+              "enum": [
+                "applyPatch"
+              ]
+            },
             "cwd": {
               "$ref": "#/definitions/AbsolutePathBuf"
             },
@@ -408,18 +416,11 @@
               "items": {
                 "$ref": "#/definitions/AbsolutePathBuf"
               }
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "applyPatch"
-              ],
-              "title": "ApplyPatchGuardianApprovalReviewActionType"
             }
-          },
-          "title": "ApplyPatchGuardianApprovalReviewAction"
+          }
         },
         {
+          "title": "NetworkAccessGuardianApprovalReviewAction",
           "type": "object",
           "required": [
             "host",
@@ -429,31 +430,31 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "NetworkAccessGuardianApprovalReviewActionType",
+              "type": "string",
+              "enum": [
+                "networkAccess"
+              ]
+            },
             "host": {
               "type": "string"
             },
             "port": {
               "type": "integer",
               "format": "uint16",
-              "minimum": 0.0
+              "minimum": 0
             },
             "protocol": {
               "$ref": "#/definitions/NetworkApprovalProtocol"
             },
             "target": {
               "type": "string"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "networkAccess"
-              ],
-              "title": "NetworkAccessGuardianApprovalReviewActionType"
             }
-          },
-          "title": "NetworkAccessGuardianApprovalReviewAction"
+          }
         },
         {
+          "title": "McpToolCallGuardianApprovalReviewAction",
           "type": "object",
           "required": [
             "server",
@@ -461,6 +462,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "McpToolCallGuardianApprovalReviewActionType",
+              "type": "string",
+              "enum": [
+                "mcpToolCall"
+              ]
+            },
             "connectorId": {
               "type": [
                 "string",
@@ -484,24 +492,24 @@
                 "string",
                 "null"
               ]
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "mcpToolCall"
-              ],
-              "title": "McpToolCallGuardianApprovalReviewActionType"
             }
-          },
-          "title": "McpToolCallGuardianApprovalReviewAction"
+          }
         },
         {
+          "title": "RequestPermissionsGuardianApprovalReviewAction",
           "type": "object",
           "required": [
             "permissions",
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "RequestPermissionsGuardianApprovalReviewActionType",
+              "type": "string",
+              "enum": [
+                "requestPermissions"
+              ]
+            },
             "permissions": {
               "$ref": "#/definitions/RequestPermissionProfile"
             },
@@ -510,16 +518,8 @@
                 "string",
                 "null"
               ]
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "requestPermissions"
-              ],
-              "title": "RequestPermissionsGuardianApprovalReviewActionType"
             }
-          },
-          "title": "RequestPermissionsGuardianApprovalReviewAction"
+          }
         }
       ]
     },

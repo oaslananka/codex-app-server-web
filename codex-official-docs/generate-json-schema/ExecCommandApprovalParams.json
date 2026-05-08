@@ -50,6 +50,7 @@
     "ParsedCommand": {
       "oneOf": [
         {
+          "title": "ReadParsedCommand",
           "type": "object",
           "required": [
             "cmd",
@@ -58,6 +59,13 @@
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ReadParsedCommandType",
+              "type": "string",
+              "enum": [
+                "read"
+              ]
+            },
             "cmd": {
               "type": "string"
             },
@@ -67,24 +75,24 @@
             "path": {
               "description": "(Best effort) Path to the file being read by the command. When possible, this is an absolute path, though when relative, it should be resolved against the `cwd`` that will be used to run the command to derive the absolute path.",
               "type": "string"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "read"
-              ],
-              "title": "ReadParsedCommandType"
             }
-          },
-          "title": "ReadParsedCommand"
+          }
         },
         {
+          "title": "ListFilesParsedCommand",
           "type": "object",
           "required": [
             "cmd",
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "ListFilesParsedCommandType",
+              "type": "string",
+              "enum": [
+                "list_files"
+              ]
+            },
             "cmd": {
               "type": "string"
             },
@@ -93,24 +101,24 @@
                 "string",
                 "null"
               ]
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "list_files"
-              ],
-              "title": "ListFilesParsedCommandType"
             }
-          },
-          "title": "ListFilesParsedCommand"
+          }
         },
         {
+          "title": "SearchParsedCommand",
           "type": "object",
           "required": [
             "cmd",
             "type"
           ],
           "properties": {
+            "type": {
+              "title": "SearchParsedCommandType",
+              "type": "string",
+              "enum": [
+                "search"
+              ]
+            },
             "cmd": {
               "type": "string"
             },
@@ -125,36 +133,28 @@
                 "string",
                 "null"
               ]
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "search"
-              ],
-              "title": "SearchParsedCommandType"
             }
-          },
-          "title": "SearchParsedCommand"
+          }
         },
         {
+          "title": "UnknownParsedCommand",
           "type": "object",
           "required": [
             "cmd",
             "type"
           ],
           "properties": {
-            "cmd": {
-              "type": "string"
-            },
             "type": {
+              "title": "UnknownParsedCommandType",
               "type": "string",
               "enum": [
                 "unknown"
-              ],
-              "title": "UnknownParsedCommandType"
+              ]
+            },
+            "cmd": {
+              "type": "string"
             }
-          },
-          "title": "UnknownParsedCommand"
+          }
         }
       ]
     },

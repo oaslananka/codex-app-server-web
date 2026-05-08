@@ -74,14 +74,20 @@
         "uri"
       ],
       "properties": {
-        "_meta": true,
-        "annotations": true,
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "description": {
           "type": [
             "string",
             "null"
           ]
         },
+        "_meta": true,
+        "annotations": true,
         "icons": {
           "type": [
             "array",
@@ -105,12 +111,6 @@
           ],
           "format": "int64"
         },
-        "title": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
         "uri": {
           "type": "string"
         }
@@ -124,13 +124,19 @@
         "uriTemplate"
       ],
       "properties": {
-        "annotations": true,
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "description": {
           "type": [
             "string",
             "null"
           ]
         },
+        "annotations": true,
         "mimeType": {
           "type": [
             "string",
@@ -139,12 +145,6 @@
         },
         "name": {
           "type": "string"
-        },
-        "title": {
-          "type": [
-            "string",
-            "null"
-          ]
         },
         "uriTemplate": {
           "type": "string"
@@ -159,14 +159,20 @@
         "name"
       ],
       "properties": {
-        "_meta": true,
-        "annotations": true,
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "description": {
           "type": [
             "string",
             "null"
           ]
         },
+        "_meta": true,
+        "annotations": true,
         "icons": {
           "type": [
             "array",
@@ -178,13 +184,7 @@
         "name": {
           "type": "string"
         },
-        "outputSchema": true,
-        "title": {
-          "type": [
-            "string",
-            "null"
-          ]
-        }
+        "outputSchema": true
       }
     }
   }

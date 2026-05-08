@@ -100,6 +100,73 @@ function writeJson(filePath, value) {
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`);
 }
 
+const schemaKeyOrder = new Map(
+  [
+    '$schema',
+    '$id',
+    'title',
+    'description',
+    'type',
+    'enum',
+    'const',
+    'default',
+    'required',
+    'properties',
+    'additionalProperties',
+    'items',
+    'prefixItems',
+    'anyOf',
+    'oneOf',
+    'allOf',
+    'not',
+    '$ref',
+    'definitions',
+    '$defs',
+  ].map((key, index) => [key, index]),
+);
+
+function compareJsonKeys(left, right) {
+  const leftRank = schemaKeyOrder.get(left);
+  const rightRank = schemaKeyOrder.get(right);
+
+  if (leftRank !== undefined || rightRank !== undefined) {
+    return (leftRank ?? Number.MAX_SAFE_INTEGER) - (rightRank ?? Number.MAX_SAFE_INTEGER);
+  }
+
+  return left < right ? -1 : left > right ? 1 : 0;
+}
+
+function normalizeJsonValue(value) {
+  if (Array.isArray(value)) {
+    return value.map(normalizeJsonValue);
+  }
+
+  if (value === null || typeof value !== 'object') {
+    return value;
+  }
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .sort(([left], [right]) => compareJsonKeys(left, right))
+      .map(([key, entry]) => [key, normalizeJsonValue(entry)]),
+  );
+}
+
+function listJsonFiles(directory) {
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const entryPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) return listJsonFiles(entryPath);
+    return entry.isFile() && entry.name.endsWith('.json') ? [entryPath] : [];
+  });
+}
+
+function normalizeJsonDirectory(directory) {
+  for (const filePath of listJsonFiles(directory)) {
+    const value = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    writeJson(filePath, normalizeJsonValue(value));
+  }
+}
+
 const codexCliVersion = getCodexVersion();
 const defaultRef = `rust-v${codexCliVersion}`;
 const upstreamRef = args.get('upstream-ref') || process.env.UPSTREAM_REF || defaultRef;
@@ -125,6 +192,7 @@ if (experimental) {
 
 runCodex(tsArgs);
 runCodex(jsonArgs);
+normalizeJsonDirectory(path.join(repoRoot, 'codex-official-docs', 'generate-json-schema'));
 run('pnpm', ['protocol:manifest:generate']);
 
 const generationCommands = [

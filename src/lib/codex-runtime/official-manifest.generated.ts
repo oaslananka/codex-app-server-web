@@ -238,22 +238,6 @@ export const OFFICIAL_CONFIG_FIELD_SCHEMAS = {
     "unstable": true,
     "deprecated": false
   },
-  "web_search": {
-    "description": null,
-    "types": [
-      "string",
-      "null"
-    ],
-    "enumValues": [
-      "disabled",
-      "cached",
-      "live"
-    ],
-    "hasObjectShape": false,
-    "hasArrayShape": false,
-    "unstable": false,
-    "deprecated": false
-  },
   "compact_prompt": {
     "description": null,
     "types": [
@@ -655,6 +639,22 @@ export const OFFICIAL_CONFIG_FIELD_SCHEMAS = {
       "null"
     ],
     "enumValues": [],
+    "hasObjectShape": false,
+    "hasArrayShape": false,
+    "unstable": false,
+    "deprecated": false
+  },
+  "web_search": {
+    "description": null,
+    "types": [
+      "string",
+      "null"
+    ],
+    "enumValues": [
+      "disabled",
+      "cached",
+      "live"
+    ],
     "hasObjectShape": false,
     "hasArrayShape": false,
     "unstable": false,

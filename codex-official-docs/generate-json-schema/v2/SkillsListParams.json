@@ -16,11 +16,11 @@
     },
     "perCwdExtraUserRoots": {
       "description": "Optional per-cwd extra roots to scan as user-scoped skills.",
-      "default": null,
       "type": [
         "array",
         "null"
       ],
+      "default": null,
       "items": {
         "$ref": "#/definitions/SkillsListExtraRootsForCwd"
       }

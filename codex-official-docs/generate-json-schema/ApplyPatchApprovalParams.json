@@ -40,70 +40,70 @@
     "FileChange": {
       "oneOf": [
         {
+          "title": "AddFileChange",
           "type": "object",
           "required": [
             "content",
             "type"
           ],
           "properties": {
-            "content": {
-              "type": "string"
-            },
             "type": {
+              "title": "AddFileChangeType",
               "type": "string",
               "enum": [
                 "add"
-              ],
-              "title": "AddFileChangeType"
+              ]
+            },
+            "content": {
+              "type": "string"
             }
-          },
-          "title": "AddFileChange"
+          }
         },
         {
+          "title": "DeleteFileChange",
           "type": "object",
           "required": [
             "content",
             "type"
           ],
           "properties": {
-            "content": {
-              "type": "string"
-            },
             "type": {
+              "title": "DeleteFileChangeType",
               "type": "string",
               "enum": [
                 "delete"
-              ],
-              "title": "DeleteFileChangeType"
+              ]
+            },
+            "content": {
+              "type": "string"
             }
-          },
-          "title": "DeleteFileChange"
+          }
         },
         {
+          "title": "UpdateFileChange",
           "type": "object",
           "required": [
             "type",
             "unified_diff"
           ],
           "properties": {
+            "type": {
+              "title": "UpdateFileChangeType",
+              "type": "string",
+              "enum": [
+                "update"
+              ]
+            },
             "move_path": {
               "type": [
                 "string",
                 "null"
               ]
             },
-            "type": {
-              "type": "string",
-              "enum": [
-                "update"
-              ],
-              "title": "UpdateFileChangeType"
-            },
             "unified_diff": {
               "type": "string"
             }
-          },
-          "title": "UpdateFileChange"
+          }
         }
       ]
     },

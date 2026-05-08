@@ -11,7 +11,7 @@
     "extraCount": {
       "type": "integer",
       "format": "uint",
-      "minimum": 0.0
+      "minimum": 0
     },
     "failedScan": {
       "type": "boolean"

@@ -43,7 +43,7 @@
           "items": {
             "type": "integer",
             "format": "uint32",
-            "minimum": 0.0
+            "minimum": 0
           }
         },
         "match_type": {
@@ -58,7 +58,7 @@
         "score": {
           "type": "integer",
           "format": "uint32",
-          "minimum": 0.0
+          "minimum": 0
         }
       }
     }

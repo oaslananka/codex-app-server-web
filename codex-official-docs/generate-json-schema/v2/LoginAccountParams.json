@@ -3,61 +3,62 @@
   "title": "LoginAccountParams",
   "oneOf": [
     {
+      "title": "ApiKeyv2::LoginAccountParams",
       "type": "object",
       "required": [
         "apiKey",
         "type"
       ],
       "properties": {
-        "apiKey": {
-          "type": "string"
-        },
         "type": {
+          "title": "ApiKeyv2::LoginAccountParamsType",
           "type": "string",
           "enum": [
             "apiKey"
-          ],
-          "title": "ApiKeyv2::LoginAccountParamsType"
+          ]
+        },
+        "apiKey": {
+          "type": "string"
         }
-      },
-      "title": "ApiKeyv2::LoginAccountParams"
+      }
     },
     {
+      "title": "Chatgptv2::LoginAccountParams",
       "type": "object",
       "required": [
         "type"
       ],
       "properties": {
-        "codexStreamlinedLogin": {
-          "type": "boolean"
-        },
         "type": {
+          "title": "Chatgptv2::LoginAccountParamsType",
           "type": "string",
           "enum": [
             "chatgpt"
-          ],
-          "title": "Chatgptv2::LoginAccountParamsType"
+          ]
+        },
+        "codexStreamlinedLogin": {
+          "type": "boolean"
         }
-      },
-      "title": "Chatgptv2::LoginAccountParams"
+      }
     },
     {
+      "title": "ChatgptDeviceCodev2::LoginAccountParams",
       "type": "object",
       "required": [
         "type"
       ],
       "properties": {
         "type": {
+          "title": "ChatgptDeviceCodev2::LoginAccountParamsType",
           "type": "string",
           "enum": [
             "chatgptDeviceCode"
-          ],
-          "title": "ChatgptDeviceCodev2::LoginAccountParamsType"
+          ]
         }
-      },
-      "title": "ChatgptDeviceCodev2::LoginAccountParams"
+      }
     },
     {
+      "title": "ChatgptAuthTokensv2::LoginAccountParams",
       "description": "[UNSTABLE] FOR OPENAI INTERNAL USE ONLY - DO NOT USE. The access token must contain the same scopes that Codex-managed ChatGPT auth tokens have.",
       "type": "object",
       "required": [
@@ -66,6 +67,13 @@
         "type"
       ],
       "properties": {
+        "type": {
+          "title": "ChatgptAuthTokensv2::LoginAccountParamsType",
+          "type": "string",
+          "enum": [
+            "chatgptAuthTokens"
+          ]
+        },
         "accessToken": {
           "description": "Access token (JWT) supplied by the client. This token is used for backend API requests and email extraction.",
           "type": "string"
@@ -80,16 +88,8 @@
             "string",
             "null"
           ]
-        },
-        "type": {
-          "type": "string",
-          "enum": [
-            "chatgptAuthTokens"
-          ],
-          "title": "ChatgptAuthTokensv2::LoginAccountParamsType"
         }
-      },
-      "title": "ChatgptAuthTokensv2::LoginAccountParams"
+      }
     }
   ]
 }

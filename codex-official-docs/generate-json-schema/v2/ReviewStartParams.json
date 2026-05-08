@@ -37,6 +37,7 @@
     "ReviewTarget": {
       "oneOf": [
         {
+          "title": "UncommittedChangesReviewTarget",
           "description": "Review the working tree: staged, unstaged, and untracked files.",
           "type": "object",
           "required": [
@@ -44,16 +45,16 @@
           ],
           "properties": {
             "type": {
+              "title": "UncommittedChangesReviewTargetType",
               "type": "string",
               "enum": [
                 "uncommittedChanges"
-              ],
-              "title": "UncommittedChangesReviewTargetType"
+              ]
             }
-          },
-          "title": "UncommittedChangesReviewTarget"
+          }
         },
         {
+          "title": "BaseBranchReviewTarget",
           "description": "Review changes between the current branch and the given base branch.",
           "type": "object",
           "required": [
@@ -61,20 +62,20 @@
             "type"
           ],
           "properties": {
-            "branch": {
-              "type": "string"
-            },
             "type": {
+              "title": "BaseBranchReviewTargetType",
               "type": "string",
               "enum": [
                 "baseBranch"
-              ],
-              "title": "BaseBranchReviewTargetType"
+              ]
+            },
+            "branch": {
+              "type": "string"
             }
-          },
-          "title": "BaseBranchReviewTarget"
+          }
         },
         {
+          "title": "CommitReviewTarget",
           "description": "Review the changes introduced by a specific commit.",
           "type": "object",
           "required": [
@@ -82,9 +83,6 @@
             "type"
           ],
           "properties": {
-            "sha": {
-              "type": "string"
-            },
             "title": {
               "description": "Optional human-readable label (e.g., commit subject) for UIs.",
               "type": [
@@ -93,16 +91,19 @@
               ]
             },
             "type": {
+              "title": "CommitReviewTargetType",
               "type": "string",
               "enum": [
                 "commit"
-              ],
-              "title": "CommitReviewTargetType"
+              ]
+            },
+            "sha": {
+              "type": "string"
             }
-          },
-          "title": "CommitReviewTarget"
+          }
         },
         {
+          "title": "CustomReviewTarget",
           "description": "Arbitrary instructions, equivalent to the old free-form prompt.",
           "type": "object",
           "required": [
@@ -110,18 +111,17 @@
             "type"
           ],
           "properties": {
-            "instructions": {
-              "type": "string"
-            },
             "type": {
+              "title": "CustomReviewTargetType",
               "type": "string",
               "enum": [
                 "custom"
-              ],
-              "title": "CustomReviewTargetType"
+              ]
+            },
+            "instructions": {
+              "type": "string"
             }
-          },
-          "title": "CustomReviewTarget"
+          }
         }
       ]
     }

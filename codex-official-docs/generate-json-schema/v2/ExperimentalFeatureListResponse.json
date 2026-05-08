@@ -30,6 +30,13 @@
         "stage"
       ],
       "properties": {
+        "description": {
+          "description": "Short summary describing what the feature does. Null when this feature is not in beta.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "announcement": {
           "description": "Announcement copy shown to users when the feature is introduced. Null when this feature is not in beta.",
           "type": [
@@ -40,13 +47,6 @@
         "defaultEnabled": {
           "description": "Whether this feature is enabled by default.",
           "type": "boolean"
-        },
-        "description": {
-          "description": "Short summary describing what the feature does. Null when this feature is not in beta.",
-          "type": [
-            "string",
-            "null"
-          ]
         },
         "displayName": {
           "description": "User-facing display name shown in the experimental features UI. Null when this feature is not in beta.",
