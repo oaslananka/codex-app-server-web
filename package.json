@@ -6,7 +6,7 @@
   "packageManager": "pnpm@10.33.0",
   "main": "server.cjs",
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "format:check": "prettier --check .",
     "protocol:manifest:generate": "node scripts/generate-codex-manifest.mjs",
     "protocol:manifest:check": "node scripts/generate-codex-manifest.mjs --check",
@@ -43,9 +43,9 @@
     "fastify": "^5.8.5",
     "highlight.js": "11.11.1",
     "marked": "17.0.6",
-    "next": "^16.2.3",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
+    "next": "^16.2.6",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
     "ws": "^8.20.0"
   },
   "engines": {
@@ -54,9 +54,9 @@
   },
   "pnpm": {
     "overrides": {
-      "fast-uri": "3.1.1",
-      "vite": "8.0.5",
-      "postcss": "8.5.14"
+      "fast-uri": "3.1.2",
+      "postcss": "8.5.14",
+      "vite": "8.0.11"
     }
   },
   "devDependencies": {
@@ -64,7 +64,7 @@
     "@types/node": "^25.5.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vitest/coverage-v8": "^4.1.2",
+    "@vitest/coverage-v8": "^4.1.5",
     "autoprefixer": "^10.4.27",
     "cross-env": "^10.1.0",
     "happy-dom": "^20.8.9",
@@ -72,7 +72,7 @@
     "postcss": "^8.5.14",
     "prettier": "^3.8.1",
     "tailwindcss": "^4.2.2",
-    "typescript": "^6.0.2",
-    "vitest": "^4.1.2"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5"
   }
 }

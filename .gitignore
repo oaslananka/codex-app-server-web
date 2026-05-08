@@ -30,6 +30,7 @@ coverage/
 dist/
 build/
 .next/
+next-env.d.ts
 out/
 tsconfig.tsbuildinfo
 

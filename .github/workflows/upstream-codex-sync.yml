@@ -37,6 +37,7 @@ env:
 jobs:
   sync:
     name: Sync Protocol Artifacts
+    if: ${{ github.repository == 'oaslananka-lab/codex-app-server-web' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
 

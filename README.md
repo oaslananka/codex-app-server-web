@@ -10,7 +10,7 @@ The goal of this repository is to make Codex app-server workflows easier to insp
 
 The personal GitHub repository is the source repository:
 `https://github.com/oaslananka/codex-app-server-web`.
-The organization repository is the CI/CD mirror:
+The organization repository is the CI/CD and release authority:
 `https://github.com/oaslananka-lab/codex-app-server-web`.
 Both repositories should carry the same content refs, while GitHub Actions run
 from the organization mirror.
@@ -43,8 +43,8 @@ from the organization mirror.
 - [`src/styles/`](./src/styles): Control center styling, responsive behavior, and overlay/panel presentation
 - [`scripts/`](./scripts): Manifest generation, smoke tooling, vendor sync, and local backend helpers
 - [`tests/unit/`](./tests/unit): Unit coverage for runtime behavior, protocol handling, overlays, and panel utilities
-- [`.github/workflows/ci.yml`](./.github/workflows/ci.yml): Organization mirror CI/CD validation workflow
-- [`azure-pipelines.yml`](./azure-pipelines.yml): Legacy-compatible Azure validation pipeline
+- [`.github/workflows/ci.yml`](./.github/workflows/ci.yml): Organization CI/CD and release-authority validation workflow
+- [`azure-pipelines.yml`](./azure-pipelines.yml): Secondary Azure validation pipeline
 - [`TECH_DEBT.md`](./TECH_DEBT.md): Explicitly accepted debt and known boundaries
 
 **Local Development**
@@ -87,10 +87,10 @@ pnpm smoke
 
 **CI/CD and Repository Mirror**
 
-- The personal repository at `oaslananka/codex-app-server-web` is the source repository.
-- The organization repository at `oaslananka-lab/codex-app-server-web` is kept in sync and is the GitHub Actions CI/CD execution target.
+- The personal repository at `oaslananka/codex-app-server-web` is the source/original content repository.
+- The organization repository at `oaslananka-lab/codex-app-server-web` is kept in sync and is the GitHub Actions CI/CD, release, and security-gate authority.
 - Branches, tags, releases, and active PR state should be mirrored between the personal and organization repositories when repository automation changes are made.
-- Azure remains supported through [`azure-pipelines.yml`](./azure-pipelines.yml), but it is not the GitHub Actions execution target for this mirror model.
+- Azure remains supported through [`azure-pipelines.yml`](./azure-pipelines.yml) only as a secondary validation path; it must not publish, release, or mirror over either GitHub repository in this topology.
 - The mirror procedure is documented in [`docs/automation/repository-mirror.md`](./docs/automation/repository-mirror.md).
 - Protocol metadata can be validated locally with `pnpm protocol:manifest:check` before opening a change.
 - Protocol drift is gated with `pnpm protocol:drift:check`; upstream artifact sync is documented in [`docs/automation/upstream-codex-sync.md`](./docs/automation/upstream-codex-sync.md).

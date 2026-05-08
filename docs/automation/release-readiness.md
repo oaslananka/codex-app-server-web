@@ -5,6 +5,13 @@ PyPI, DockerHub, GHCR, a marketplace, or any other registry unless a repository
 owner explicitly adds that release surface and the CI release-state check detects
 it.
 
+Release, deployment, provenance, SBOM, Codecov, registry submission, and
+security-gate side effects must run only from the organization repository:
+
+```text
+https://github.com/oaslananka-lab/codex-app-server-web
+```
+
 Run the release-state check before any publish attempt:
 
 ```bash

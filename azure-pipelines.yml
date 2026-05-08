@@ -1,11 +1,3 @@
-resources:
-  repositories:
-    - repository: githubMirror
-      type: github
-      name: oaslananka/codex-app-server-web
-      endpoint: oaslananka
-      ref: refs/heads/main
-
 trigger:
   branches:
     include:
@@ -23,27 +15,17 @@ variables:
   NODE_VERSION: '24'
   PNPM_VERSION: '10.33.0'
   CODEX_PORT: '41000'
-  REPO_ROOT: $(Pipeline.Workspace)/self
-  GITHUB_MIRROR_PATH: github-mirror
 
 jobs:
   - job: ci
-    displayName: CI
+    displayName: Secondary validation
     workspace:
       clean: all
     steps:
       - checkout: self
         clean: 'true'
         fetchDepth: '0'
-        persistCredentials: 'true'
-        path: self
-
-      - checkout: githubMirror
-        clean: 'true'
-        fetchDepth: '0'
-        persistCredentials: 'true'
-        path: $(GITHUB_MIRROR_PATH)
-        condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+        persistCredentials: 'false'
 
       - task: NodeTool@0
         displayName: Use Node.js $(NODE_VERSION)
@@ -55,104 +37,59 @@ jobs:
           corepack enable
           corepack prepare pnpm@$(PNPM_VERSION) --activate
         displayName: Enable pnpm
-        workingDirectory: $(REPO_ROOT)
 
       - script: pnpm install --frozen-lockfile
         displayName: Install dependencies
-        workingDirectory: $(REPO_ROOT)
 
       - script: pnpm format:check
         displayName: Format check
-        workingDirectory: $(REPO_ROOT)
 
       - script: pnpm repo:hygiene:check
         displayName: Repository hygiene
-        workingDirectory: $(REPO_ROOT)
 
       - script: pnpm exec playwright install --with-deps chromium
         displayName: Install Playwright browsers
-        workingDirectory: $(REPO_ROOT)
 
       - script: pnpm protocol:manifest:check
         displayName: Validate official manifest
-        workingDirectory: $(REPO_ROOT)
 
       - script: |
           set -euo pipefail
           git fetch origin main --depth=1
           pnpm protocol:drift:check -- --base-ref origin/main
         displayName: Validate protocol drift
-        workingDirectory: $(REPO_ROOT)
 
       - script: pnpm typecheck
         displayName: Typecheck
-        workingDirectory: $(REPO_ROOT)
 
       - script: pnpm test
         displayName: Unit tests
-        workingDirectory: $(REPO_ROOT)
 
       - script: pnpm build
         displayName: Build
-        workingDirectory: $(REPO_ROOT)
 
       - script: |
           set -euo pipefail
+          cleanup() {
+            if [ -f ci-ui.pid ]; then kill "$(cat ci-ui.pid)" 2>/dev/null || true; fi
+            if [ -f ci-mock.pid ]; then kill "$(cat ci-mock.pid)" 2>/dev/null || true; fi
+          }
+          trap cleanup EXIT
+
           MOCK_CODEX_PORT=$(CODEX_PORT) MOCK_SEND_APPROVAL=1 node scripts/mock-codex-app-server.mjs > ci-mock.log 2>&1 &
           echo $! > ci-mock.pid
-          sleep 2
-        displayName: Start mock Codex backend
-        workingDirectory: $(REPO_ROOT)
-
-      - script: |
-          set -euo pipefail
           PORT=1989 PORT_FALLBACK=1990 CODEX_PORT=$(CODEX_PORT) pnpm start:ui > ci-ui.log 2>&1 &
           echo $! > ci-ui.pid
-          for i in {1..60}; do
+
+          for _ in $(seq 1 60); do
             if curl -fsS http://127.0.0.1:1989 >/dev/null; then
+              SMOKE_APPROVAL=1 pnpm smoke
               exit 0
             fi
             sleep 2
           done
+
           cat ci-ui.log
           cat ci-mock.log
           exit 1
-        displayName: Start UI server
-        workingDirectory: $(REPO_ROOT)
-
-      - script: SMOKE_APPROVAL=1 pnpm smoke
         displayName: Browser smoke
-        workingDirectory: $(REPO_ROOT)
-
-      - script: |
-          if [ -f ci-ui.pid ]; then kill $(cat ci-ui.pid) || true; fi
-          if [ -f ci-mock.pid ]; then kill $(cat ci-mock.pid) || true; fi
-        displayName: Stop background services
-        condition: always()
-        workingDirectory: $(REPO_ROOT)
-
-      - script: |
-          set -euo pipefail
-          MIRROR_REPO="$(Pipeline.Workspace)/$(GITHUB_MIRROR_PATH)"
-          SOURCE_REPO="$(REPO_ROOT)"
-          SOURCE_COMMIT="$(Build.SourceVersion)"
-
-          git -C "$MIRROR_REPO" config user.name "azure-pipelines[bot]"
-          git -C "$MIRROR_REPO" config user.email "azure-pipelines[bot]@users.noreply.github.com"
-
-          if git -C "$MIRROR_REPO" remote get-url azure >/dev/null 2>&1; then
-            git -C "$MIRROR_REPO" remote set-url azure "$SOURCE_REPO"
-          else
-            git -C "$MIRROR_REPO" remote add azure "$SOURCE_REPO"
-          fi
-
-          git -C "$MIRROR_REPO" fetch azure "$SOURCE_COMMIT"
-          git -C "$MIRROR_REPO" checkout -B main FETCH_HEAD
-
-          if git -C "$MIRROR_REPO" ls-remote --exit-code origin refs/heads/main >/dev/null 2>&1; then
-            git -C "$MIRROR_REPO" push origin refs/heads/main:refs/heads/main --force-with-lease
-          else
-            git -C "$MIRROR_REPO" push origin refs/heads/main:refs/heads/main --force
-          fi
-        displayName: Mirror main to GitHub
-        condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
