@@ -71,6 +71,50 @@ const ALLOWED_IMAGE_EXTENSIONS = new Set([
   '.ico',
   '.avif',
 ]);
+const IMAGE_MIME_BY_EXTENSION = new Map([
+  ['.png', 'image/png'],
+  ['.jpg', 'image/jpeg'],
+  ['.jpeg', 'image/jpeg'],
+  ['.gif', 'image/gif'],
+  ['.webp', 'image/webp'],
+  ['.svg', 'image/svg+xml'],
+  ['.bmp', 'image/bmp'],
+  ['.ico', 'image/x-icon'],
+  ['.avif', 'image/avif'],
+]);
+const isImagePayloadForExtension = (ext, mimeType, buffer) => {
+  const expectedMime = IMAGE_MIME_BY_EXTENSION.get(ext);
+  if (!expectedMime || mimeType.toLowerCase() !== expectedMime) {
+    return false;
+  }
+
+  if (ext === '.svg') {
+    const textPrefix = buffer.subarray(0, 256).toString('utf8').trimStart().toLowerCase();
+    return textPrefix.startsWith('<svg') || textPrefix.startsWith('<?xml');
+  }
+
+  if (ext === '.png') {
+    return buffer.subarray(0, 8).equals(Buffer.from('89504e470d0a1a0a', 'hex'));
+  }
+  if (ext === '.jpg' || ext === '.jpeg') {
+    return buffer[0] === 0xff && buffer[1] === 0xd8;
+  }
+  if (ext === '.gif') {
+    const signature = buffer.subarray(0, 6).toString('ascii');
+    return signature === 'GIF87a' || signature === 'GIF89a';
+  }
+  if (ext === '.webp') {
+    return (
+      buffer.subarray(0, 4).toString('ascii') === 'RIFF' &&
+      buffer.subarray(8, 12).toString('ascii') === 'WEBP'
+    );
+  }
+  if (ext === '.bmp') return buffer.subarray(0, 2).toString('ascii') === 'BM';
+  if (ext === '.ico') return buffer.subarray(0, 4).equals(Buffer.from([0x00, 0x00, 0x01, 0x00]));
+  if (ext === '.avif') return buffer.subarray(4, 12).toString('ascii') === 'ftypavif';
+  return false;
+};
+const RESOLVED_UPLOADS_DIR = path.resolve(UPLOADS_DIR);
 const prerenderManifestPath = path.join(__dirname, '.next', 'prerender-manifest.json');
 const appPagePath = path.join(__dirname, 'app', 'page.tsx');
 const hasBuildArtifacts = fs.existsSync(prerenderManifestPath);
@@ -167,6 +211,8 @@ app.register(fastifyHelmet, {
 });
 
 const registerApiRoutes = () => {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true, mode: 0o700 });
+
   app.register(
     async function apiRoutes(api) {
       await api.register(fastifyRateLimit, {
@@ -205,7 +251,15 @@ const registerApiRoutes = () => {
         '/uploads',
         {
           bodyLimit: UPLOAD_BODY_LIMIT_BYTES,
+          config: {
+            rateLimit: {
+              max: Math.max(1, Math.min(RATE_LIMIT_MAX, 30)),
+              timeWindow: RATE_LIMIT_TIME_WINDOW_MS,
+            },
+          },
         },
+        // The route is protected by @fastify/rate-limit via the route config above.
+        // lgtm[js/missing-rate-limiting]
         async (req, reply) => {
           const body = req.body && typeof req.body === 'object' ? req.body : null;
           const fileName = path.basename(String(body?.name || 'upload.bin'));
@@ -235,18 +289,28 @@ const registerApiRoutes = () => {
             return { error: 'Upload size is invalid or exceeds limit' };
           }
 
-          fs.mkdirSync(UPLOADS_DIR, { recursive: true, mode: 0o700 });
           const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
           const ext = path.extname(safeName).toLowerCase();
           if (!ALLOWED_IMAGE_EXTENSIONS.has(ext)) {
             reply.code(400);
             return { error: `Unsupported image extension: ${ext}` };
           }
-          const uploadPath = path.join(
+          if (!isImagePayloadForExtension(ext, mimeType, buffer)) {
+            reply.code(400);
+            return { error: 'Image payload does not match declared type' };
+          }
+          const uploadPath = path.resolve(
             UPLOADS_DIR,
-            `${Date.now()}-${crypto.randomUUID()}-${safeName}`,
+            `${Date.now()}-${crypto.randomUUID()}${ext}`,
           );
-          fs.writeFileSync(uploadPath, buffer, { mode: 0o600 });
+          if (!uploadPath.startsWith(`${RESOLVED_UPLOADS_DIR}${path.sep}`)) {
+            reply.code(400);
+            return { error: 'Invalid upload path' };
+          }
+          // This endpoint intentionally persists strictly validated image uploads
+          // into a private temporary directory with randomized filenames.
+          // lgtm[js/http-to-file-access]
+          fs.writeFileSync(uploadPath, buffer, { mode: 0o600, flag: 'wx' });
 
           return {
             ok: true,

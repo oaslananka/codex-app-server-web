@@ -64,6 +64,10 @@ function emitLogEntriesChanged() {
   logListeners.forEach((listener) => listener(snapshot));
 }
 
+function sanitizeConsoleText(value: string) {
+  return value.replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029]+/g, ' ').trim();
+}
+
 function formatLogDetail(arg: unknown) {
   if (arg instanceof Error) {
     return arg.stack || arg.message;
@@ -118,12 +122,14 @@ function getConsoleMethod(level: LogLevel) {
 
 function writeLog(level: LogLevel, scope: string, message: string, args: unknown[]) {
   const timestamp = formatLogTimestamp();
+  const safeScope = sanitizeConsoleText(scope);
+  const safeMessage = sanitizeConsoleText(message);
   const nextEntry: BrowserLogEntry = {
     id: `${timestamp}-${Math.random().toString(16).slice(2)}`,
     timestamp,
     level,
-    scope,
-    message,
+    scope: safeScope,
+    message: safeMessage,
     details: args.map(formatLogDetail),
   };
   logEntries = [...logEntries.slice(-(MAX_LOG_ENTRIES - 1)), nextEntry];
@@ -132,11 +138,11 @@ function writeLog(level: LogLevel, scope: string, message: string, args: unknown
   if (!shouldLog(level, currentSettings.level)) return;
 
   const prefixParts = currentSettings.timestamps
-    ? [timestamp, level.toUpperCase(), scope]
-    : [level.toUpperCase(), scope];
+    ? [timestamp, level.toUpperCase(), safeScope]
+    : [level.toUpperCase(), safeScope];
   const prefix = prefixParts.join(' · ');
   getConsoleMethod(level)(
-    `%c${prefix}%c ${message}`,
+    `%c${prefix}%c ${safeMessage}`,
     getLevelStyles(level),
     getScopeStyle(),
     ...args,

@@ -72,4 +72,15 @@ describe('logging helpers', () => {
     clearBrowserLogs();
     expect(getRecentBrowserLogs()).toHaveLength(0);
   });
+
+  it('sanitizes control characters before storing browser log text', () => {
+    const logger = createBrowserLogger('test:viewer\r\nspoofed');
+
+    logger.warn('First line\nsecond line');
+
+    expect(getRecentBrowserLogs()[0]).toMatchObject({
+      scope: 'test:viewer spoofed',
+      message: 'First line second line',
+    });
+  });
 });

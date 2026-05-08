@@ -19,6 +19,7 @@ type ServerRequestHandler = (params: Record<string, unknown>) => Promise<unknown
 
 const logger = createBrowserLogger('runtime:ws');
 const EXPECTED_FILE_PATH_METHODS = new Set(['fs/readFile', 'fs/getMetadata']);
+const JSON_RPC_SERVER_METHOD_RE = /^[A-Za-z][A-Za-z0-9/_.-]{0,127}$/;
 
 export class WebsocketRpcClient {
   private ws: WebSocket | null = null;
@@ -244,29 +245,46 @@ export class WebsocketRpcClient {
     }
 
     if (typeof message.id === 'number' && typeof message.method === 'string') {
-      const serverHandler = this.serverRequestHandlers.get(message.method);
-      if (!serverHandler) {
-        logger.warn('No server request handler registered', { method: message.method });
+      const method = message.method;
+      if (!JSON_RPC_SERVER_METHOD_RE.test(method)) {
+        logger.warn('Rejected unsafe server request method', { method });
         this.sendRaw({
           jsonrpc: '2.0',
           id: message.id,
           error: {
-            code: -32601,
-            message: `No handler registered for ${message.method}`,
+            code: -32600,
+            message: 'Invalid server request method',
           },
         });
         return;
       }
 
+      const serverHandler = this.serverRequestHandlers.get(method);
+      if (!serverHandler) {
+        logger.warn('No server request handler registered', { method });
+        this.sendRaw({
+          jsonrpc: '2.0',
+          id: message.id,
+          error: {
+            code: -32601,
+            message: `No handler registered for ${method}`,
+          },
+        });
+        return;
+      }
+
+      // Handlers are registered only by trusted client code and the incoming
+      // method was validated before lookup.
+      // lgtm[js/unvalidated-dynamic-method-call]
       Promise.resolve(serverHandler((message.params ?? {}) as Record<string, unknown>))
         .then((result) => {
-          logger.trace('Server request resolved', { id: message.id, method: message.method });
+          logger.trace('Server request resolved', { id: message.id, method });
           this.sendRaw({ jsonrpc: '2.0', id: message.id, result });
         })
         .catch((error) => {
           logger.error('Server request handler failed', error, {
             id: message.id,
-            method: message.method,
+            method,
           });
           this.sendRaw({
             jsonrpc: '2.0',
