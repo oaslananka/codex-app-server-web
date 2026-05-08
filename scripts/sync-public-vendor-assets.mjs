@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import nodeLoggerModule from '../src/lib/logging/node-logger.cjs';
@@ -45,12 +45,26 @@ const assets = [
 
 mkdirSync(vendorDir, { recursive: true });
 
+let copied = 0;
+let unchanged = 0;
+
 for (const asset of assets) {
   if (!existsSync(asset.source)) {
     throw new Error(`Vendor asset not found: ${asset.source}`);
   }
 
-  cpSync(asset.source, asset.target, { force: true });
+  if (existsSync(asset.target)) {
+    const sourceContents = readFileSync(asset.source);
+    const targetContents = readFileSync(asset.target);
+
+    if (sourceContents.equals(targetContents)) {
+      unchanged += 1;
+      continue;
+    }
+  }
+
+  copyFileSync(asset.source, asset.target);
+  copied += 1;
 }
 
-logger.info(`Synced ${assets.length} vendor assets`, { vendorDir });
+logger.info(`Synced ${assets.length} vendor assets`, { copied, unchanged, vendorDir });
