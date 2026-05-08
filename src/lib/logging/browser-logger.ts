@@ -124,13 +124,14 @@ function writeLog(level: LogLevel, scope: string, message: string, args: unknown
   const timestamp = formatLogTimestamp();
   const safeScope = sanitizeConsoleText(scope);
   const safeMessage = sanitizeConsoleText(message);
+  const safeDetails = args.map((arg) => sanitizeConsoleText(formatLogDetail(arg)));
   const nextEntry: BrowserLogEntry = {
     id: `${timestamp}-${Math.random().toString(16).slice(2)}`,
     timestamp,
     level,
     scope: safeScope,
     message: safeMessage,
-    details: args.map(formatLogDetail),
+    details: safeDetails,
   };
   logEntries = [...logEntries.slice(-(MAX_LOG_ENTRIES - 1)), nextEntry];
   emitLogEntriesChanged();
@@ -145,7 +146,7 @@ function writeLog(level: LogLevel, scope: string, message: string, args: unknown
     `%c${prefix}%c ${safeMessage}`,
     getLevelStyles(level),
     getScopeStyle(),
-    ...args,
+    ...safeDetails,
   );
 }
 

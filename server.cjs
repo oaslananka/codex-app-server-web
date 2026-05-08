@@ -307,9 +307,7 @@ const registerApiRoutes = () => {
             reply.code(400);
             return { error: 'Invalid upload path' };
           }
-          // This endpoint intentionally persists strictly validated image uploads
-          // into a private temporary directory with randomized filenames.
-          // lgtm[js/http-to-file-access]
+          // codeql[js/http-to-file-access]
           fs.writeFileSync(uploadPath, buffer, { mode: 0o600, flag: 'wx' });
 
           return {
