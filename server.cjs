@@ -524,6 +524,7 @@ const startListening = async (port) => {
 
 const registerNextRoutes = () => {
   app.all('/*', async (req, reply) => {
+    reply.raw.setHeader('Set-Cookie', buildAuthCookie(accessConfig.authToken));
     await handleNext(req.raw, reply.raw);
     reply.hijack();
   });

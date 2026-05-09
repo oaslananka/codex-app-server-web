@@ -33,6 +33,12 @@ describe('server security helpers', () => {
     expect(security.ALLOWED_IMAGE_EXTENSIONS.has('.svg')).toBe(false);
   });
 
+  it('builds a strict local auth cookie without writing a static secret', () => {
+    expect(security.buildAuthCookie(token)).toBe(
+      'codex_ui_token=test-token-123; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400',
+    );
+  });
+
   it('allows WebSocket upgrades with a valid host, origin, and token', () => {
     const config = security.createLocalAccessConfig({ PORT: '1989', CODEX_UI_TOKEN: token });
 
