@@ -19,8 +19,8 @@ on:
     - cron: '17 3 * * 1-5'
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
+  pull-requests: read
   actions: read
 
 concurrency:
@@ -44,6 +44,10 @@ jobs:
     if: ${{ github.repository == 'oaslananka-lab/codex-app-server-web' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: read
 
     steps:
       - name: Checkout
