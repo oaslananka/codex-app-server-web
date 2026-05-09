@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.1](https://github.com/oaslananka-lab/codex-app-server-web/compare/codex-app-server-web-v1.1.0...codex-app-server-web-v1.1.1) (2026-05-09)
+
+
+### Bug Fixes
+
+* **release:** verify prefixed release assets ([50add2b](https://github.com/oaslananka-lab/codex-app-server-web/commit/50add2b45a6f539fbb1f5cea9eeb71bf2019c583))
+* **release:** verify prefixed release assets ([45765f6](https://github.com/oaslananka-lab/codex-app-server-web/commit/45765f6208a6138d4c11e9f0a57f4b89c4b0fa21))
+
 ## [1.1.0](https://github.com/oaslananka-lab/codex-app-server-web/compare/codex-app-server-web-v1.0.0...codex-app-server-web-v1.1.0) (2026-05-09)
 
 
