@@ -11,3 +11,5 @@ codex-official-docs/generate-json-schema/
 src/lib/codex-runtime/official-manifest.generated.ts
 *.log
 *.pid
+.env.example
+.github/CODEOWNERS

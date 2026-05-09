@@ -6,11 +6,10 @@
  * - WebSocket proxy: browser <-> Codex app server
  *
  * Environment variables:
- *   CODEX_HOST  — Codex app server host (default: localhost)
- *   CODEX_PORT  — Codex app server port (default: 40000)
+ *   UI_HOST     — UI listen host (default: 127.0.0.1)
+ *   CODEX_BACKEND_URL — Codex app server WebSocket URL (default: ws://127.0.0.1:40000)
  *   PORT        — Preferred port to listen on (default: 1989)
  *   PORT_FALLBACK — Fallback port if preferred port is unavailable (default: 1990)
- *   CODEX_PATH  — Unix socket path   (overrides host/port if set)
  *   RATE_LIMIT_MAX — Max requests per window for each IP (default: 120)
  *   RATE_LIMIT_TIME_WINDOW_MS — Rate limit window in milliseconds (default: 60000)
  */
@@ -29,91 +28,43 @@ const { WebSocketServer, WebSocket } = require('ws');
 const { createRateLimiter } = require('./src/lib/rate-limit.cjs');
 const { resolveNextRuntimeMode } = require('./src/lib/next-runtime.cjs');
 const { createNodeLogger } = require('./src/lib/logging/node-logger.cjs');
+const {
+  ALLOWED_IMAGE_EXTENSIONS,
+  buildAuthCookie,
+  buildCspDirectives,
+  buildUpgradeRejection,
+  createLocalAccessConfig,
+  createUploadFileName,
+  decodeBase64Payload,
+  isAllowedHost,
+  isAllowedOrigin,
+  isAuthenticatedRequest,
+  isImagePayloadForExtension,
+  parsePort,
+  parsePositiveInt,
+  pathFromRequestUrl,
+  shouldReconnectBackend,
+  validateBrowserWsPayload,
+  validateUpgradeRequest,
+} = require('./src/lib/server/security.cjs');
 
 const logger = createNodeLogger('server');
 const connectionLogger = logger.child('connection');
 
 // ── Configuration ────────────────────────────────────────────────────────────
-const parsePort = (value, fallback) => {
-  const parsed = Number.parseInt(value ?? '', 10);
-  return Number.isInteger(parsed) && parsed > 0 && parsed < 65536 ? parsed : fallback;
-};
-
-const parsePositiveInt = (value, fallback) => {
-  const parsed = Number.parseInt(value ?? '', 10);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
-};
-
-const CODEX_HOST = process.env.CODEX_HOST || 'localhost';
-const CODEX_PORT = parsePort(process.env.CODEX_PORT, 40000);
-const SERVER_PORT = parsePort(process.env.PORT, 1989);
-const FALLBACK_PORT = parsePort(process.env.PORT_FALLBACK, 1990);
-const CODEX_SOCK = process.env.CODEX_PATH || null; // e.g. /tmp/codex.sock
+const accessConfig = createLocalAccessConfig(process.env);
+const UI_HOST = accessConfig.uiHost;
+const CODEX_BACKEND_URL = accessConfig.codexBackendUrl;
+const SERVER_PORT = accessConfig.serverPort;
+const FALLBACK_PORT = accessConfig.fallbackPort;
 const RATE_LIMIT_MAX = parsePositiveInt(process.env.RATE_LIMIT_MAX, 120);
 const RATE_LIMIT_TIME_WINDOW_MS = parsePositiveInt(process.env.RATE_LIMIT_TIME_WINDOW_MS, 60_000);
-const UPLOAD_BODY_LIMIT_BYTES = parsePositiveInt(
-  process.env.UPLOAD_BODY_LIMIT_BYTES,
-  20 * 1024 * 1024,
-);
+const UPLOAD_BODY_LIMIT_BYTES = accessConfig.maxUploadBytes;
 const NODE_ENV = process.env.NODE_ENV || 'production';
 const UPLOADS_DIR = path.join(os.tmpdir(), 'codex-app-server-web-uploads');
-const MAX_BROWSER_BUFFER_SIZE = 100;
+const MAX_BROWSER_BUFFER_BYTES = accessConfig.maxWsBufferedBytes;
 const UPLOAD_MAX_AGE_MS = 60 * 60 * 1000; // 1 hour
 const MAX_CODEX_RECONNECT_DELAY_MS = 30_000;
-const ALLOWED_IMAGE_EXTENSIONS = new Set([
-  '.png',
-  '.jpg',
-  '.jpeg',
-  '.gif',
-  '.webp',
-  '.svg',
-  '.bmp',
-  '.ico',
-  '.avif',
-]);
-const IMAGE_MIME_BY_EXTENSION = new Map([
-  ['.png', 'image/png'],
-  ['.jpg', 'image/jpeg'],
-  ['.jpeg', 'image/jpeg'],
-  ['.gif', 'image/gif'],
-  ['.webp', 'image/webp'],
-  ['.svg', 'image/svg+xml'],
-  ['.bmp', 'image/bmp'],
-  ['.ico', 'image/x-icon'],
-  ['.avif', 'image/avif'],
-]);
-const isImagePayloadForExtension = (ext, mimeType, buffer) => {
-  const expectedMime = IMAGE_MIME_BY_EXTENSION.get(ext);
-  if (!expectedMime || mimeType.toLowerCase() !== expectedMime) {
-    return false;
-  }
-
-  if (ext === '.svg') {
-    const textPrefix = buffer.subarray(0, 256).toString('utf8').trimStart().toLowerCase();
-    return textPrefix.startsWith('<svg') || textPrefix.startsWith('<?xml');
-  }
-
-  if (ext === '.png') {
-    return buffer.subarray(0, 8).equals(Buffer.from('89504e470d0a1a0a', 'hex'));
-  }
-  if (ext === '.jpg' || ext === '.jpeg') {
-    return buffer[0] === 0xff && buffer[1] === 0xd8;
-  }
-  if (ext === '.gif') {
-    const signature = buffer.subarray(0, 6).toString('ascii');
-    return signature === 'GIF87a' || signature === 'GIF89a';
-  }
-  if (ext === '.webp') {
-    return (
-      buffer.subarray(0, 4).toString('ascii') === 'RIFF' &&
-      buffer.subarray(8, 12).toString('ascii') === 'WEBP'
-    );
-  }
-  if (ext === '.bmp') return buffer.subarray(0, 2).toString('ascii') === 'BM';
-  if (ext === '.ico') return buffer.subarray(0, 4).equals(Buffer.from([0x00, 0x00, 0x01, 0x00]));
-  if (ext === '.avif') return buffer.subarray(4, 12).toString('ascii') === 'ftypavif';
-  return false;
-};
 const RESOLVED_UPLOADS_DIR = path.resolve(UPLOADS_DIR);
 const prerenderManifestPath = path.join(__dirname, '.next', 'prerender-manifest.json');
 const appPagePath = path.join(__dirname, 'app', 'page.tsx');
@@ -173,27 +124,18 @@ if (runtimeMode.reason === 'stale-build-artifacts') {
   );
 }
 
-const cspDirectives = {
-  defaultSrc: ["'self'"],
-  baseUri: ["'self'"],
-  objectSrc: ["'none'"],
-  frameAncestors: ["'self'"],
-  imgSrc: ["'self'", 'data:', 'blob:'],
-  fontSrc: ["'self'", 'data:'],
-  styleSrc: ["'self'", "'unsafe-inline'"],
-  scriptSrc: IS_DEV
-    ? ["'self'", "'unsafe-inline'", "'unsafe-eval'"]
-    : ["'self'", "'unsafe-inline'"],
-  connectSrc: ["'self'", 'ws:', 'wss:', 'http:', 'https:'],
-  upgradeInsecureRequests: null,
-};
+const cspDirectives = buildCspDirectives(accessConfig, IS_DEV);
 
 // ── Fastify app ──────────────────────────────────────────────────────────────
-const app = Fastify({ logger: false, disableRequestLogging: true });
+const app = Fastify({
+  logger: false,
+  disableRequestLogging: true,
+  bodyLimit: UPLOAD_BODY_LIMIT_BYTES,
+});
 const webApp = next({
   dev: IS_DEV,
   dir: __dirname,
-  hostname: '0.0.0.0',
+  hostname: UI_HOST,
   port: SERVER_PORT,
   httpServer: app.server,
 });
@@ -207,7 +149,31 @@ app.register(fastifyHelmet, {
   crossOriginOpenerPolicy: IS_DEV ? false : undefined,
   crossOriginEmbedderPolicy: false,
   originAgentCluster: IS_DEV ? false : undefined,
-  xFrameOptions: { action: 'sameorigin' },
+  xFrameOptions: { action: 'deny' },
+});
+
+app.addHook('onRequest', async (req, reply) => {
+  const pathname = pathFromRequestUrl(req.raw.url);
+  if (!isAllowedHost(req.headers.host, accessConfig.allowedHosts)) {
+    return reply.code(403).send({ error: 'Forbidden host' });
+  }
+
+  if (!pathname.startsWith('/api/')) {
+    reply.header('Set-Cookie', buildAuthCookie(accessConfig.authToken));
+    return;
+  }
+
+  if (pathname === '/api/health') {
+    return;
+  }
+
+  if (req.headers.origin && !isAllowedOrigin(req.headers.origin, accessConfig.allowedOrigins)) {
+    return reply.code(403).send({ error: 'Forbidden origin' });
+  }
+
+  if (!isAuthenticatedRequest(req.raw, accessConfig)) {
+    return reply.code(401).send({ error: 'Authentication required' });
+  }
 });
 
 const registerApiRoutes = () => {
@@ -222,28 +188,22 @@ const registerApiRoutes = () => {
       });
 
       api.get('/health', async () => {
-        const mem = process.memoryUsage();
         return {
           status: 'ok',
-          timestamp: new Date().toISOString(),
-          uptimeSec: Number(process.uptime().toFixed(2)),
-          pid: process.pid,
-          memory: {
-            rss: mem.rss,
-            heapTotal: mem.heapTotal,
-            heapUsed: mem.heapUsed,
-            external: mem.external,
-          },
-          serverPort: activeServerPort,
         };
       });
 
       api.get('/config', async () => {
         return {
-          codex: CODEX_SOCK
-            ? { type: 'unix', path: CODEX_SOCK }
-            : { type: 'tcp', host: CODEX_HOST, port: CODEX_PORT },
-          serverPort: activeServerPort,
+          auth: { type: 'same-site-cookie' },
+          server: {
+            host: UI_HOST,
+            port: activeServerPort,
+          },
+          limits: {
+            maxUploadBytes: UPLOAD_BODY_LIMIT_BYTES,
+            maxWebSocketPayloadBytes: accessConfig.maxWsPayloadBytes,
+          },
         };
       });
 
@@ -262,11 +222,11 @@ const registerApiRoutes = () => {
         // lgtm[js/missing-rate-limiting]
         async (req, reply) => {
           const body = req.body && typeof req.body === 'object' ? req.body : null;
-          const fileName = path.basename(String(body?.name || 'upload.bin'));
+          const { safeName, extension: ext } = createUploadFileName(body?.name || 'upload.bin');
           const mimeType = String(body?.mimeType || '');
           const dataBase64 = typeof body?.dataBase64 === 'string' ? body.dataBase64 : '';
 
-          if (!fileName || !dataBase64) {
+          if (!safeName || !dataBase64) {
             reply.code(400);
             return { error: 'name and dataBase64 are required' };
           }
@@ -276,21 +236,12 @@ const registerApiRoutes = () => {
             return { error: 'Only image uploads are supported' };
           }
 
-          let buffer;
-          try {
-            buffer = Buffer.from(dataBase64, 'base64');
-          } catch (_) {
+          const buffer = decodeBase64Payload(dataBase64, UPLOAD_BODY_LIMIT_BYTES);
+          if (!buffer) {
             reply.code(400);
-            return { error: 'Invalid base64 payload' };
+            return { error: 'Invalid base64 payload or upload size' };
           }
 
-          if (!buffer.byteLength || buffer.byteLength > UPLOAD_BODY_LIMIT_BYTES) {
-            reply.code(400);
-            return { error: 'Upload size is invalid or exceeds limit' };
-          }
-
-          const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
-          const ext = path.extname(safeName).toLowerCase();
           if (!ALLOWED_IMAGE_EXTENSIONS.has(ext)) {
             reply.code(400);
             return { error: `Unsupported image extension: ${ext}` };
@@ -325,7 +276,10 @@ const registerApiRoutes = () => {
 };
 
 // ── WebSocket proxy server ────────────────────────────────────────────────────
-const wss = new WebSocketServer({ noServer: true });
+const wss = new WebSocketServer({
+  noServer: true,
+  maxPayload: accessConfig.maxWsPayloadBytes,
+});
 
 wss.on('error', (err) => {
   if (isRecoverableListenError(err)) {
@@ -335,17 +289,9 @@ wss.on('error', (err) => {
 });
 
 app.server.on('upgrade', (req, socket, head) => {
-  const requestUrl = req.url || '';
-  const queryIndex = requestUrl.indexOf('?');
-  const pathname = queryIndex === -1 ? requestUrl : requestUrl.slice(0, queryIndex);
-
-  if (pathname !== '/ws') {
-    return;
-  }
-
-  const clientIp = req.socket.remoteAddress || req.headers['x-forwarded-for'] || 'unknown';
-  if (isWebSocketRateLimited(Array.isArray(clientIp) ? clientIp[0] : clientIp)) {
-    socket.write('HTTP/1.1 429 Too Many Requests\r\nConnection: close\r\n\r\n');
+  const validation = validateUpgradeRequest(req, accessConfig, isWebSocketRateLimited);
+  if (!validation.ok) {
+    socket.write(buildUpgradeRejection(validation.statusCode, validation.statusText));
     socket.destroy();
     return;
   }
@@ -362,6 +308,7 @@ wss.on('connection', (browserWs, req) => {
   let codexWs = null;
   let reconnectTimer = null;
   let browserBuffer = []; // messages queued before codex is ready
+  let browserBufferBytes = 0;
   let codexConnectionId = 0;
   let reconnectAttempt = 0;
   let browserClosing = false;
@@ -415,7 +362,7 @@ wss.on('connection', (browserWs, req) => {
 
     clearReconnectTimer();
 
-    const wsUrl = CODEX_SOCK ? `ws+unix://${CODEX_SOCK}:` : `ws://${CODEX_HOST}:${CODEX_PORT}`;
+    const wsUrl = CODEX_BACKEND_URL;
     const connectionId = ++codexConnectionId;
 
     connectionLogger.info('Connecting to Codex backend', { wsUrl });
@@ -444,6 +391,7 @@ wss.on('connection', (browserWs, req) => {
         currentCodexWs.send(msg);
       }
       browserBuffer = [];
+      browserBufferBytes = 0;
     });
 
     currentCodexWs.on('message', (data) => {
@@ -478,9 +426,8 @@ wss.on('connection', (browserWs, req) => {
       } else {
         connectionLogger.warn('Codex backend disconnected', closeDetails);
       }
-      const isManualReconnect = code === 4001;
       codexWs = null;
-      if (!isManualReconnect && !browserSessionEnded) {
+      if (shouldReconnectBackend(code, browserSessionEnded)) {
         ctrl('disconnected', { code, reason: reason.toString() });
         scheduleReconnect();
       }
@@ -490,38 +437,42 @@ wss.on('connection', (browserWs, req) => {
   connectCodex();
 
   // ── Browser → Codex ──────────────────────────────────────────────────────
-  browserWs.on('message', (rawData) => {
-    const data = rawData.toString();
+  browserWs.on('message', (rawData, isBinary) => {
+    const validation = validateBrowserWsPayload(rawData, isBinary, accessConfig);
+    if (!validation.ok) {
+      browserWs.close(validation.closeCode, validation.reason);
+      return;
+    }
+
+    const data = validation.text;
+    const parsed = validation.parsed;
 
     // Intercept internal control commands from the UI
-    try {
-      const msg = JSON.parse(data);
-      if (msg.__ctrl) {
-        if (msg.type === 'reconnect') {
-          clearReconnectTimer();
-          reconnectAttempt = 0;
-          const previousCodexWs = codexWs;
-          codexWs = null;
-          if (previousCodexWs && previousCodexWs.readyState !== WebSocket.CLOSED) {
-            previousCodexWs.close(4001, 'manual-reconnect');
-          }
-          connectCodex();
+    if (parsed.__ctrl) {
+      if (parsed.type === 'reconnect') {
+        clearReconnectTimer();
+        reconnectAttempt = 0;
+        const previousCodexWs = codexWs;
+        codexWs = null;
+        if (previousCodexWs && previousCodexWs.readyState !== WebSocket.CLOSED) {
+          previousCodexWs.close(4001, 'manual-reconnect');
         }
-        return;
+        connectCodex();
       }
-    } catch (_) {
-      /* not JSON or not a control message */
+      return;
     }
 
     if (codexWs && codexWs.readyState === WebSocket.OPEN) {
       codexWs.send(data);
     } else {
-      // Buffer while connecting, with a size cap to prevent memory leaks
-      if (browserBuffer.length < MAX_BROWSER_BUFFER_SIZE) {
-        browserBuffer.push(data);
-      } else {
-        connectionLogger.warn('Browser buffer full, dropping message');
+      const nextBufferedBytes = browserBufferBytes + validation.bytes;
+      if (nextBufferedBytes > MAX_BROWSER_BUFFER_BYTES) {
+        connectionLogger.warn('Browser buffer byte limit exceeded; closing connection');
+        browserWs.close(1009, 'Buffered payload too large');
+        return;
       }
+      browserBuffer.push(data);
+      browserBufferBytes = nextBufferedBytes;
     }
   });
 
@@ -540,20 +491,17 @@ wss.on('connection', (browserWs, req) => {
 
 const renderBanner = (port) => {
   const lanAddresses = process.env.SHOW_LAN_URLS === '1' ? getLanAddresses() : [];
-  logger.info('codex-app-server-web ready', { url: `http://localhost:${port}` });
+  const displayHost = UI_HOST === '0.0.0.0' || UI_HOST === '::' ? '127.0.0.1' : UI_HOST;
+  logger.info('codex-app-server-web ready', { url: `http://${displayHost}:${port}` });
   for (const lanAddress of lanAddresses) {
     logger.info('LAN address available', { url: `http://${lanAddress}:${port}` });
   }
-  if (CODEX_SOCK) {
-    logger.info('Codex backend target', { socket: CODEX_SOCK });
-  } else {
-    logger.info('Codex backend target', { wsUrl: `ws://${CODEX_HOST}:${CODEX_PORT}` });
-  }
+  logger.info('Codex backend target configured');
 };
 
 const startListening = async (port) => {
   try {
-    const address = await app.listen({ port, host: '0.0.0.0' });
+    const address = await app.listen({ port, host: UI_HOST });
     const maybePort = Number.parseInt(address.split(':').at(-1), 10);
     activeServerPort = Number.isFinite(maybePort) ? maybePort : port;
     renderBanner(activeServerPort);

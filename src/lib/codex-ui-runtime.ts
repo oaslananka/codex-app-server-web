@@ -57,6 +57,16 @@ import {
   trackedServerRequests,
 } from './codex-runtime/runtime-state';
 
+const ALLOWED_UPLOAD_MIME_TYPES = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/gif',
+  'image/webp',
+  'image/bmp',
+  'image/x-icon',
+  'image/avif',
+]);
+
 type ToastEntry = {
   id: string;
   message: string;
@@ -519,8 +529,8 @@ export function queueAttachmentFiles(fileList: FileList | File[]) {
 
   return Promise.all(
     files.map(async (file) => {
-      if (!(file instanceof File) || !file.type.startsWith('image/')) {
-        emitToast(`${file.name} is not an image`, 'error');
+      if (!(file instanceof File) || !ALLOWED_UPLOAD_MIME_TYPES.has(file.type)) {
+        emitToast(`${file.name} is not a supported image`, 'error');
         return;
       }
 

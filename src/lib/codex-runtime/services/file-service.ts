@@ -2,6 +2,7 @@ import { isMissingPathError, normalizeError } from '../errors';
 import { normalizeFileContent, normalizeFileEntries, normalizeFileMetadata } from '../normalizers';
 import type { RuntimeStore } from '../store';
 import type { RuntimeState } from '../types';
+import { decodeBase64Utf8, encodeBase64Utf8 } from '../utf8-base64';
 
 type ServiceDeps = {
   requestCompat: <T = unknown>(
@@ -96,18 +97,6 @@ function resolveRequestedPath(state: RuntimeState, path: string) {
     state.fileBrowserPath ||
     (state.currentFilePath ? parentPath(state.currentFilePath) : '/');
   return resolvePathAgainstBase(basePath, path);
-}
-
-function decodeBase64Utf8(value: string) {
-  try {
-    return decodeURIComponent(escape(atob(value)));
-  } catch {
-    return value;
-  }
-}
-
-function encodeBase64Utf8(text: string) {
-  return btoa(unescape(encodeURIComponent(text)));
 }
 
 export class FileService {
