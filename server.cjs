@@ -152,26 +152,30 @@ app.register(fastifyHelmet, {
   xFrameOptions: { action: 'deny' },
 });
 
-app.register(fastifyRateLimit, {
-  global: true,
+const rateLimitConfig = {
   max: RATE_LIMIT_MAX,
   timeWindow: RATE_LIMIT_TIME_WINDOW_MS,
+};
+
+app.register(fastifyRateLimit, {
+  global: true,
+  ...rateLimitConfig,
   keyGenerator: (req) => req.ip || 'unknown',
 });
 
-// Rate limiting is registered globally before this auth hook.
-// lgtm[js/missing-rate-limiting]
-app.addHook('onRequest', async (req, reply) => {
-  const pathname = pathFromRequestUrl(req.raw.url);
+const validateAllowedHttpHost = async (req, reply) => {
   if (!isAllowedHost(req.headers.host, accessConfig.allowedHosts)) {
     return reply.code(403).send({ error: 'Forbidden host' });
   }
+};
 
-  if (!pathname.startsWith('/api/')) {
-    reply.header('Set-Cookie', buildAuthCookie(accessConfig.authToken));
-    return;
+const requirePrivilegedApiAccess = async (req, reply) => {
+  const hostResult = await validateAllowedHttpHost(req, reply);
+  if (hostResult) {
+    return hostResult;
   }
 
+  const pathname = pathFromRequestUrl(req.raw.url);
   if (pathname === '/api/health') {
     return;
   }
@@ -183,32 +187,50 @@ app.addHook('onRequest', async (req, reply) => {
   if (!isAuthenticatedRequest(req.raw, accessConfig)) {
     return reply.code(401).send({ error: 'Authentication required' });
   }
-});
+};
 
 const registerApiRoutes = () => {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true, mode: 0o700 });
 
   app.register(
     async function apiRoutes(api) {
-      api.get('/health', async () => {
-        return {
-          status: 'ok',
-        };
-      });
+      api.get(
+        '/health',
+        {
+          config: {
+            rateLimit: rateLimitConfig,
+          },
+          preHandler: validateAllowedHttpHost,
+        },
+        async () => {
+          return {
+            status: 'ok',
+          };
+        },
+      );
 
-      api.get('/config', async () => {
-        return {
-          auth: { type: 'same-site-cookie' },
-          server: {
-            host: UI_HOST,
-            port: activeServerPort,
+      api.get(
+        '/config',
+        {
+          config: {
+            rateLimit: rateLimitConfig,
           },
-          limits: {
-            maxUploadBytes: UPLOAD_BODY_LIMIT_BYTES,
-            maxWebSocketPayloadBytes: accessConfig.maxWsPayloadBytes,
-          },
-        };
-      });
+          preHandler: requirePrivilegedApiAccess,
+        },
+        async () => {
+          return {
+            auth: { type: 'same-site-cookie' },
+            server: {
+              host: UI_HOST,
+              port: activeServerPort,
+            },
+            limits: {
+              maxUploadBytes: UPLOAD_BODY_LIMIT_BYTES,
+              maxWebSocketPayloadBytes: accessConfig.maxWsPayloadBytes,
+            },
+          };
+        },
+      );
 
       api.post(
         '/uploads',
@@ -220,6 +242,7 @@ const registerApiRoutes = () => {
               timeWindow: RATE_LIMIT_TIME_WINDOW_MS,
             },
           },
+          preHandler: requirePrivilegedApiAccess,
         },
         // The route is protected by @fastify/rate-limit via the route config above.
         // lgtm[js/missing-rate-limiting]
@@ -535,6 +558,7 @@ const registerNextRoutes = () => {
           timeWindow: RATE_LIMIT_TIME_WINDOW_MS,
         },
       },
+      preHandler: validateAllowedHttpHost,
     },
     // Rate limiting is enforced globally and repeated in this route config.
     // lgtm[js/missing-rate-limiting]
