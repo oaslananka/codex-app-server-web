@@ -3,9 +3,13 @@
   "title": "PluginShareUpdateTargetsResponse",
   "type": "object",
   "required": [
+    "discoverability",
     "principals"
   ],
   "properties": {
+    "discoverability": {
+      "$ref": "#/definitions/PluginShareDiscoverability"
+    },
     "principals": {
       "type": "array",
       "items": {
@@ -14,6 +18,14 @@
     }
   },
   "definitions": {
+    "PluginShareDiscoverability": {
+      "type": "string",
+      "enum": [
+        "LISTED",
+        "UNLISTED",
+        "PRIVATE"
+      ]
+    },
     "PluginSharePrincipal": {
       "type": "object",
       "required": [
