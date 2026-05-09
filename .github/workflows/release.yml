@@ -130,12 +130,44 @@ jobs:
           TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
         run: |
           set -euo pipefail
-          gh release upload "${TAG_NAME}" dist/release/*
+          gh release view "${TAG_NAME}" --json assets > existing-release-assets.json
+          node - <<'NODE' > assets-to-upload.txt
+          const crypto = require('node:crypto');
+          const fs = require('node:fs');
+          const path = require('node:path');
+
+          const release = JSON.parse(fs.readFileSync('existing-release-assets.json', 'utf8'));
+          const existing = new Map((release.assets || []).map((asset) => [asset.name, asset.digest]));
+          for (const name of fs.readdirSync('dist/release').sort()) {
+            const filePath = path.join('dist/release', name);
+            const stat = fs.statSync(filePath);
+            if (!stat.isFile()) {
+              continue;
+            }
+            const digest = `sha256:${crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex')}`;
+            const publishedDigest = existing.get(name);
+            if (existing.has(name)) {
+              if (publishedDigest !== digest) {
+                throw new Error(`Release asset already exists with a different digest: ${name}`);
+              }
+              continue;
+            }
+            console.log(filePath);
+          }
+          NODE
+          if [ -s assets-to-upload.txt ]; then
+            while IFS= read -r asset; do
+              gh release upload "${TAG_NAME}" "${asset}"
+            done < assets-to-upload.txt
+          else
+            echo "All release assets are already present with matching digests."
+          fi
 
       - name: Verify release assets
         env:
           GH_TOKEN: ${{ github.token }}
           TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
+          VERSION: ${{ needs.release-please.outputs.version }}
         run: |
           set -euo pipefail
           gh release view "${TAG_NAME}" --json tagName,isDraft,isPrerelease,assets > release.json
@@ -145,7 +177,7 @@ jobs:
           const assets = new Set((release.assets || []).map((asset) => asset.name));
           const required = [
             'SHA256SUMS.txt',
-            `codex-app-server-web-${process.env.TAG_NAME.replace(/^v/, '')}.sbom.cdx.json`,
+            `codex-app-server-web-${process.env.VERSION}.sbom.cdx.json`,
           ];
           for (const name of required) {
             if (!assets.has(name)) {
