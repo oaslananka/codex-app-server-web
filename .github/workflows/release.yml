@@ -116,7 +116,7 @@ jobs:
           trivy fs --format cyclonedx --output "dist/release/codex-app-server-web-${VERSION}.sbom.cdx.json" --skip-dirs node_modules --skip-dirs .git --skip-dirs .next .
           (
             cd dist/release
-            sha256sum * > SHA256SUMS.txt
+            sha256sum ./* > SHA256SUMS.txt
           )
 
       - name: Attest release assets
