@@ -12,7 +12,7 @@ const forbiddenExact = new Set([
   'scratch.md',
   'notes.local.md',
 ]);
-const forbiddenDirs = new Set(['.agent', '.cursor', '.claude']);
+const forbiddenDirs = new Set(['.agent', '.cursor', '.claude', '.codex']);
 const forbiddenPatterns = [/\.transcript\./i, /\.chat\./i, /\.prompt\./i, /\.scratch\./i];
 const skippedDirs = new Set(['.git', 'node_modules', '.next', 'coverage', 'dist', 'build']);
 const workflowUsesPattern = /^\s*uses:\s*([^#\s]+).*$/;
@@ -63,6 +63,16 @@ function checkWorkflow(filePath) {
   }
   if (/google-labs-code\/jules-invoke/i.test(text) || /JULES_API_KEY/.test(text)) {
     findings.push(`${rel} invokes an agent auto-fix workflow`);
+  }
+  if (
+    /^\s{6,}(release_?version|version|tag_name|tag):\s*$/im.test(text) ||
+    /github\.event\.inputs\.(release_?version|version|tag_name|tag)/i.test(text) ||
+    /\b(RELEASE_VERSION|INPUT_VERSION)\b/.test(text)
+  ) {
+    findings.push(`${rel} exposes a manual release version or tag input`);
+  }
+  if (/if:\s*\$\{\{\s*true\s*\}\}/.test(text) || /if:\s*true\b/.test(text)) {
+    findings.push(`${rel} uses an unconditional if: true workflow expression`);
   }
 
   for (const [lineIndex, line] of text.split(/\r?\n/).entries()) {

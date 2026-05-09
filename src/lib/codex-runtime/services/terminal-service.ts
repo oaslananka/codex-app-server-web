@@ -1,8 +1,10 @@
 import { normalizeError } from '../errors';
 import type { RuntimeStore } from '../store';
 import { sanitizeTerminalOutput } from '../terminal-output';
+import { decodeBase64Utf8, encodeBase64Utf8 } from '../utf8-base64';
 
 const MAX_TERMINAL_LINES = 800;
+type RuntimePlatform = 'win32' | 'darwin' | 'linux' | 'unknown';
 
 type ServiceDeps = {
   requestCompat: <T = unknown>(
@@ -19,16 +21,29 @@ function createLineId() {
   return `line-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-function encodeBase64Utf8(text: string) {
-  return btoa(unescape(encodeURIComponent(text)));
+export function detectRuntimePlatform(): RuntimePlatform {
+  const navigatorLike = globalThis.navigator as
+    | (Navigator & { userAgentData?: { platform?: string } })
+    | undefined;
+  const userAgentPlatform =
+    navigatorLike &&
+    typeof navigatorLike.userAgentData === 'object' &&
+    navigatorLike.userAgentData &&
+    typeof navigatorLike.userAgentData.platform === 'string'
+      ? navigatorLike.userAgentData.platform
+      : '';
+  const platform = (userAgentPlatform || navigatorLike?.platform || '').toLowerCase();
+  if (platform.includes('win')) return 'win32';
+  if (platform.includes('mac')) return 'darwin';
+  if (platform.includes('linux')) return 'linux';
+  return 'unknown';
 }
 
-function decodeBase64Utf8(value: string) {
-  try {
-    return decodeURIComponent(escape(atob(value)));
-  } catch {
-    return value;
+export function buildShellCommand(command: string, platform = detectRuntimePlatform()) {
+  if (platform === 'win32') {
+    return ['powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', command];
   }
+  return ['bash', '-lc', command];
 }
 
 export class TerminalService {
@@ -70,7 +85,7 @@ export class TerminalService {
 
     try {
       const response = (await this.deps.requestCompat('command/exec', {
-        command: ['bash', '-lc', command],
+        command: buildShellCommand(command),
         cwd: state.terminalCwd || undefined,
         processId,
         tty: true,

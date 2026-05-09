@@ -11,6 +11,11 @@ repos:
         entry: pnpm repo:hygiene:check
         language: system
         pass_filenames: false
+      - id: lint
+        name: lint
+        entry: pnpm lint
+        language: system
+        pass_filenames: false
       - id: protocol-manifest
         name: protocol manifest
         entry: pnpm protocol:manifest:check
