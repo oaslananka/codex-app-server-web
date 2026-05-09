@@ -5,12 +5,15 @@
 ## Validation
 
 - [ ] `pnpm format:check`
+- [ ] `pnpm lint`
 - [ ] `pnpm repo:hygiene:check`
 - [ ] `pnpm protocol:manifest:check`
 - [ ] `pnpm protocol:drift:check`
 - [ ] `pnpm typecheck`
 - [ ] `pnpm test`
 - [ ] `pnpm build`
+- [ ] `pnpm security:scan`
+- [ ] `pnpm release:state`
 - [ ] `pnpm smoke` when UI/runtime behavior changed
 
 ## Safety

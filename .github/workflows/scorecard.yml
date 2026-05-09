@@ -1,0 +1,60 @@
+name: OSSF Scorecard
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '43 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scorecard-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  scorecard:
+    name: Scorecard
+    if: ${{ github.repository == 'oaslananka-lab/codex-app-server-web' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Run Scorecard
+        uses: ossf/scorecard-action@99c09fe975337306107572b4fdf4db224cf8e2f2
+        with:
+          results_file: scorecard-results.json
+          results_format: json
+          publish_results: false
+
+      - name: Enforce minimum score
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const result = JSON.parse(fs.readFileSync('scorecard-results.json', 'utf8'));
+          const score = Number(result.score ?? result.aggregate_score ?? result.scorecard?.score);
+          if (!Number.isFinite(score)) {
+            throw new Error('Scorecard result did not include a numeric aggregate score');
+          }
+          if (score < 7.0) {
+            throw new Error(`OSSF Scorecard score ${score} is below required threshold 7.0`);
+          }
+          console.log(`OSSF Scorecard score ${score} satisfies threshold 7.0`);
+          NODE

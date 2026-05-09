@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - main
-      - automation/upstream-sync-and-release-readiness
       - upstream/sync-openai-codex-app-server
   workflow_dispatch:
 
@@ -15,12 +14,16 @@ permissions:
   contents: read
 
 concurrency:
-  group: org-ci-validation-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: org-ci-validation-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    shell: bash
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
-  PNPM_VERSION: '10.33.0'
+  PNPM_VERSION: '11.0.9'
 
 jobs:
   cheap-gates:
@@ -49,7 +52,9 @@ jobs:
           corepack prepare "pnpm@${PNPM_VERSION}" --activate
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          set -euo pipefail
+          pnpm install --frozen-lockfile
 
       - name: Install workflow security tools
         run: |
@@ -61,28 +66,54 @@ jobs:
           echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
 
       - name: Format check
-        run: pnpm format:check
+        run: |
+          set -euo pipefail
+          pnpm format:check
+
+      - name: Lint
+        run: |
+          set -euo pipefail
+          pnpm lint
 
       - name: Repository hygiene
-        run: pnpm repo:hygiene:check
+        run: |
+          set -euo pipefail
+          pnpm repo:hygiene:check
 
       - name: Protocol manifest
-        run: pnpm protocol:manifest:check
+        run: |
+          set -euo pipefail
+          pnpm protocol:manifest:check
 
       - name: Protocol drift
-        run: pnpm protocol:drift:check -- --base-ref origin/main
+        run: |
+          set -euo pipefail
+          pnpm protocol:drift:check -- --base-ref origin/main
 
       - name: Workflow lint
-        run: actionlint
+        run: |
+          set -euo pipefail
+          actionlint
 
       - name: Workflow security scan
-        run: zizmor --offline .
+        run: |
+          set -euo pipefail
+          zizmor --offline .
 
       - name: Secret scan
-        run: pnpm security:secrets
+        run: |
+          set -euo pipefail
+          pnpm security:secrets
 
       - name: Fast unit subset
-        run: pnpm test -- tests/unit/protocol.test.ts tests/unit/rate-limit.test.ts tests/unit/terminal-output.test.ts
+        run: |
+          set -euo pipefail
+          pnpm test -- tests/unit/protocol.test.ts tests/unit/rate-limit.test.ts tests/unit/terminal-output.test.ts tests/unit/server-security.test.ts
+
+      - name: Release state
+        run: |
+          set -euo pipefail
+          pnpm release:state
 
   full-validation:
     name: Full Validation
@@ -111,19 +142,29 @@ jobs:
           corepack prepare "pnpm@${PNPM_VERSION}" --activate
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          set -euo pipefail
+          pnpm install --frozen-lockfile
 
       - name: Install Playwright browser
-        run: pnpm exec playwright install --with-deps chromium
+        run: |
+          set -euo pipefail
+          pnpm exec playwright install --with-deps chromium
 
       - name: Typecheck
-        run: pnpm typecheck
+        run: |
+          set -euo pipefail
+          pnpm typecheck
 
       - name: Unit tests
-        run: pnpm test
+        run: |
+          set -euo pipefail
+          pnpm test
 
       - name: Build
-        run: pnpm build
+        run: |
+          set -euo pipefail
+          pnpm build
 
       - name: Browser smoke
         run: |
@@ -136,7 +177,7 @@ jobs:
 
           MOCK_CODEX_PORT=41000 MOCK_SEND_APPROVAL=1 node scripts/mock-codex-app-server.mjs > ci-mock.log 2>&1 &
           mock_pid=$!
-          PORT=1989 PORT_FALLBACK=1990 CODEX_PORT=41000 pnpm start:ui > ci-ui.log 2>&1 &
+          PORT=1989 PORT_FALLBACK=1990 CODEX_BACKEND_URL=ws://127.0.0.1:41000 pnpm start:ui > ci-ui.log 2>&1 &
           ui_pid=$!
 
           ready=false
@@ -212,4 +253,6 @@ jobs:
           echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
 
       - name: Trivy filesystem scan
-        run: trivy fs --scanners vuln,secret,misconfig --skip-dirs node_modules --skip-dirs .git --exit-code 1 .
+        run: |
+          set -euo pipefail
+          trivy fs --scanners vuln,secret,misconfig --skip-dirs node_modules --skip-dirs .git --skip-dirs .next --exit-code 1 .
