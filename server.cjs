@@ -152,6 +152,15 @@ app.register(fastifyHelmet, {
   xFrameOptions: { action: 'deny' },
 });
 
+app.register(fastifyRateLimit, {
+  global: true,
+  max: RATE_LIMIT_MAX,
+  timeWindow: RATE_LIMIT_TIME_WINDOW_MS,
+  keyGenerator: (req) => req.ip || 'unknown',
+});
+
+// Rate limiting is registered globally before this auth hook.
+// lgtm[js/missing-rate-limiting]
 app.addHook('onRequest', async (req, reply) => {
   const pathname = pathFromRequestUrl(req.raw.url);
   if (!isAllowedHost(req.headers.host, accessConfig.allowedHosts)) {
@@ -181,12 +190,6 @@ const registerApiRoutes = () => {
 
   app.register(
     async function apiRoutes(api) {
-      await api.register(fastifyRateLimit, {
-        max: RATE_LIMIT_MAX,
-        timeWindow: RATE_LIMIT_TIME_WINDOW_MS,
-        keyGenerator: (req) => req.ip || 'unknown',
-      });
-
       api.get('/health', async () => {
         return {
           status: 'ok',
@@ -523,11 +526,24 @@ const startListening = async (port) => {
 };
 
 const registerNextRoutes = () => {
-  app.all('/*', async (req, reply) => {
-    reply.raw.setHeader('Set-Cookie', buildAuthCookie(accessConfig.authToken));
-    await handleNext(req.raw, reply.raw);
-    reply.hijack();
-  });
+  app.all(
+    '/*',
+    {
+      config: {
+        rateLimit: {
+          max: RATE_LIMIT_MAX,
+          timeWindow: RATE_LIMIT_TIME_WINDOW_MS,
+        },
+      },
+    },
+    // Rate limiting is enforced globally and repeated in this route config.
+    // lgtm[js/missing-rate-limiting]
+    async (req, reply) => {
+      reply.raw.setHeader('Set-Cookie', buildAuthCookie(accessConfig.authToken));
+      await handleNext(req.raw, reply.raw);
+      reply.hijack();
+    },
+  );
 };
 
 const bootstrap = async () => {
