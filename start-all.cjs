@@ -5,7 +5,7 @@ const net = require('node:net');
 const { spawn } = require('child_process');
 const { createNodeLogger } = require('./src/lib/logging/node-logger.cjs');
 
-const CODEX_LISTEN = process.env.CODEX_LISTEN || 'ws://0.0.0.0:40000';
+const CODEX_LISTEN = process.env.CODEX_LISTEN || 'ws://127.0.0.1:40000';
 const CODEX_REUSE_EXISTING = process.env.CODEX_REUSE_EXISTING === '1';
 const UI_REUSE_EXISTING = process.env.UI_REUSE_EXISTING === '1';
 const UI_COMMAND = process.env.UI_COMMAND || 'node server.cjs';
@@ -29,7 +29,7 @@ const parseListenUrl = (value) => {
   try {
     return new URL(value);
   } catch {
-    return new URL('ws://0.0.0.0:40000');
+    return new URL('ws://127.0.0.1:40000');
   }
 };
 
@@ -95,10 +95,11 @@ const getCodexEndpoint = () => {
 
 const getUiEndpoint = () => {
   const port = parsePort(process.env.PORT, 1989);
+  const host = normalizeProbeHost(process.env.UI_HOST || '127.0.0.1');
   return {
-    host: '127.0.0.1',
+    host,
     port,
-    displayUrl: `http://127.0.0.1:${port}`,
+    displayUrl: `http://${host}:${port}`,
   };
 };
 
@@ -157,8 +158,7 @@ const resolveCodexLaunchPlan = async () => {
       reusedExisting: true,
       reusedPort: endpoint.port,
       uiEnv: {
-        CODEX_HOST: endpoint.host,
-        CODEX_PORT: String(endpoint.port),
+        CODEX_BACKEND_URL: endpoint.displayUrl,
       },
     };
   }
@@ -170,8 +170,7 @@ const resolveCodexLaunchPlan = async () => {
       spawnCodex: true,
       reusedExisting: false,
       uiEnv: {
-        CODEX_HOST: endpoint.host,
-        CODEX_PORT: String(endpoint.port),
+        CODEX_BACKEND_URL: endpoint.displayUrl,
       },
     };
   }
@@ -195,8 +194,7 @@ const resolveCodexLaunchPlan = async () => {
     reusedExisting: false,
     reusedPort: endpoint.port,
     uiEnv: {
-      CODEX_HOST: endpoint.host,
-      CODEX_PORT: String(alternatePort),
+      CODEX_BACKEND_URL: `ws://${endpoint.host}:${alternatePort}`,
     },
   };
 };

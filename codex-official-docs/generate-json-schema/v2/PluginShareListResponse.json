@@ -200,6 +200,21 @@
         },
         "remotePluginId": {
           "type": "string"
+        },
+        "shareTargets": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/PluginSharePrincipal"
+          }
+        },
+        "shareUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       }
     },
@@ -227,6 +242,33 @@
           "type": "string"
         }
       }
+    },
+    "PluginSharePrincipal": {
+      "type": "object",
+      "required": [
+        "name",
+        "principalId",
+        "principalType"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "principalId": {
+          "type": "string"
+        },
+        "principalType": {
+          "$ref": "#/definitions/PluginSharePrincipalType"
+        }
+      }
+    },
+    "PluginSharePrincipalType": {
+      "type": "string",
+      "enum": [
+        "user",
+        "group",
+        "workspace"
+      ]
     },
     "PluginSource": {
       "oneOf": [

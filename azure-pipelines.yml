@@ -13,7 +13,7 @@ pool:
 
 variables:
   NODE_VERSION: '24'
-  PNPM_VERSION: '10.33.0'
+  PNPM_VERSION: '11.0.9'
   CODEX_PORT: '41000'
 
 jobs:
@@ -38,19 +38,34 @@ jobs:
           corepack prepare pnpm@$(PNPM_VERSION) --activate
         displayName: Enable pnpm
 
-      - script: pnpm install --frozen-lockfile
+      - script: |
+          set -euo pipefail
+          pnpm install --frozen-lockfile
         displayName: Install dependencies
 
-      - script: pnpm format:check
+      - script: |
+          set -euo pipefail
+          pnpm format:check
         displayName: Format check
 
-      - script: pnpm repo:hygiene:check
+      - script: |
+          set -euo pipefail
+          pnpm lint
+        displayName: Lint
+
+      - script: |
+          set -euo pipefail
+          pnpm repo:hygiene:check
         displayName: Repository hygiene
 
-      - script: pnpm exec playwright install --with-deps chromium
+      - script: |
+          set -euo pipefail
+          pnpm exec playwright install --with-deps chromium
         displayName: Install Playwright browsers
 
-      - script: pnpm protocol:manifest:check
+      - script: |
+          set -euo pipefail
+          pnpm protocol:manifest:check
         displayName: Validate official manifest
 
       - script: |
@@ -59,13 +74,19 @@ jobs:
           pnpm protocol:drift:check -- --base-ref origin/main
         displayName: Validate protocol drift
 
-      - script: pnpm typecheck
+      - script: |
+          set -euo pipefail
+          pnpm typecheck
         displayName: Typecheck
 
-      - script: pnpm test
+      - script: |
+          set -euo pipefail
+          pnpm test
         displayName: Unit tests
 
-      - script: pnpm build
+      - script: |
+          set -euo pipefail
+          pnpm build
         displayName: Build
 
       - script: |
@@ -78,7 +99,7 @@ jobs:
 
           MOCK_CODEX_PORT=$(CODEX_PORT) MOCK_SEND_APPROVAL=1 node scripts/mock-codex-app-server.mjs > ci-mock.log 2>&1 &
           echo $! > ci-mock.pid
-          PORT=1989 PORT_FALLBACK=1990 CODEX_PORT=$(CODEX_PORT) pnpm start:ui > ci-ui.log 2>&1 &
+          PORT=1989 PORT_FALLBACK=1990 CODEX_BACKEND_URL=ws://127.0.0.1:$(CODEX_PORT) pnpm start:ui > ci-ui.log 2>&1 &
           echo $! > ci-ui.pid
 
           for _ in $(seq 1 60); do

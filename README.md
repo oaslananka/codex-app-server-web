@@ -33,7 +33,7 @@ from the organization mirror.
 - WebSocket transport with `ws`
 - TypeScript
 - pnpm
-- Node.js 24 LTS for CI, with a minimum runtime of Node.js 20.9 for Next.js 16
+- Node.js 24 LTS for local development, CI, and release automation
 
 **Project Structure**
 
@@ -52,6 +52,8 @@ from the organization mirror.
 Install dependencies and start the app with a local Codex backend:
 
 ```bash
+corepack enable
+corepack prepare pnpm@11.0.9 --activate
 pnpm install
 pnpm dev
 ```
@@ -68,6 +70,16 @@ The UI server can also be started directly without the helper wrapper:
 pnpm start:ui
 ```
 
+By default the UI binds to `127.0.0.1`, the Codex backend target is
+`ws://127.0.0.1:40000`, and browser WebSocket/API access requires the local
+HttpOnly SameSite cookie created by the UI server. Non-browser local clients can
+set `CODEX_UI_TOKEN` and send `Authorization: Bearer <token>`.
+
+LAN exposure is opt-in. To expose the UI beyond loopback, set `UI_HOST`,
+`ALLOWED_HOSTS`, `ALLOWED_ORIGINS`, and `CODEX_UI_TOKEN` explicitly for the LAN
+address. `SHOW_LAN_URLS=1` only controls display of LAN URLs; it does not grant
+access.
+
 **Useful Commands**
 
 ```bash
@@ -79,9 +91,12 @@ pnpm typecheck
 pnpm test
 pnpm build
 pnpm format:check
+pnpm lint
 pnpm protocol:manifest:check
 pnpm protocol:drift:check
 pnpm repo:hygiene:check
+pnpm security:scan
+pnpm release:state
 pnpm smoke
 ```
 
@@ -95,7 +110,23 @@ pnpm smoke
 - Protocol metadata can be validated locally with `pnpm protocol:manifest:check` before opening a change.
 - Protocol drift is gated with `pnpm protocol:drift:check`; upstream artifact sync is documented in [`docs/automation/upstream-codex-sync.md`](./docs/automation/upstream-codex-sync.md).
 - Dependency updates are grouped by Dependabot for npm and GitHub Actions through [`.github/dependabot.yml`](./.github/dependabot.yml).
-- Release readiness is blocked by `pnpm release:state` until an explicit guarded publish target exists, as documented in [`docs/automation/release-readiness.md`](./docs/automation/release-readiness.md).
+- GitHub Release is the first guarded release target and is managed by
+  release-please from the organization repository. Release assets include the
+  package tarball, CycloneDX SBOM, SHA256 checksums, and GitHub artifact
+  attestations. The release flow is documented in [`docs/RELEASE.md`](./docs/RELEASE.md).
+
+**Local Security Model**
+
+- UI and backend defaults are loopback-only.
+- `/api/health` is unauthenticated and intentionally returns only a basic status.
+- `/api/config`, `/api/uploads`, and `/ws` require local auth.
+- WebSocket upgrades enforce exact `/ws` path matching, Host allowlisting, Origin
+  allowlisting, local token authentication, JSON-RPC shape validation, message
+  size limits, and buffered byte limits.
+- Uploads are limited to common raster image formats. SVG uploads are disabled
+  by default.
+- Production CSP keeps `object-src`, `base-uri`, and `frame-ancestors` locked
+  down and limits `connect-src` to the local UI origins.
 
 **Contribution Guidance**
 

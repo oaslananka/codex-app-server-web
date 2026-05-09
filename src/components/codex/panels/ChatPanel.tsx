@@ -890,7 +890,7 @@ export function ChatPanel() {
         <input
           id="chat-image-input"
           type="file"
-          accept="image/*"
+          accept="image/png,image/jpeg,image/gif,image/webp,image/bmp,image/x-icon,image/avif"
           multiple
           hidden
           onChange={(event) => {

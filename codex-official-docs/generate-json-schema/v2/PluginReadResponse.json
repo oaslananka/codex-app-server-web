@@ -47,6 +47,19 @@
         }
       }
     },
+    "HookEventName": {
+      "type": "string",
+      "enum": [
+        "preToolUse",
+        "permissionRequest",
+        "postToolUse",
+        "preCompact",
+        "postCompact",
+        "sessionStart",
+        "userPromptSubmit",
+        "stop"
+      ]
+    },
     "PluginAuthPolicy": {
       "type": "string",
       "enum": [
@@ -75,6 +88,7 @@
       "type": "object",
       "required": [
         "apps",
+        "hooks",
         "marketplaceName",
         "mcpServers",
         "skills",
@@ -91,6 +105,12 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/AppSummary"
+          }
+        },
+        "hooks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PluginHookSummary"
           }
         },
         "marketplaceName": {
@@ -120,6 +140,21 @@
         },
         "summary": {
           "$ref": "#/definitions/PluginSummary"
+        }
+      }
+    },
+    "PluginHookSummary": {
+      "type": "object",
+      "required": [
+        "eventName",
+        "key"
+      ],
+      "properties": {
+        "eventName": {
+          "$ref": "#/definitions/HookEventName"
+        },
+        "key": {
+          "type": "string"
         }
       }
     },
@@ -281,8 +316,50 @@
         },
         "remotePluginId": {
           "type": "string"
+        },
+        "shareTargets": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/PluginSharePrincipal"
+          }
+        },
+        "shareUrl": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       }
+    },
+    "PluginSharePrincipal": {
+      "type": "object",
+      "required": [
+        "name",
+        "principalId",
+        "principalType"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "principalId": {
+          "type": "string"
+        },
+        "principalType": {
+          "$ref": "#/definitions/PluginSharePrincipalType"
+        }
+      }
+    },
+    "PluginSharePrincipalType": {
+      "type": "string",
+      "enum": [
+        "user",
+        "group",
+        "workspace"
+      ]
     },
     "PluginSource": {
       "oneOf": [

@@ -1,9 +1,10 @@
 # Release Readiness
 
-This repository is an app/control-plane project. It must not publish to npm,
-PyPI, DockerHub, GHCR, a marketplace, or any other registry unless a repository
-owner explicitly adds that release surface and the CI release-state check detects
-it.
+This repository is an app/control-plane project. Its first configured production
+release target is GitHub Release from the organization repository. It must not
+publish to npm, PyPI, DockerHub, GHCR, a marketplace, or any other registry
+unless a repository owner explicitly adds that release surface and the CI
+release-state check detects it.
 
 Release, deployment, provenance, SBOM, Codecov, registry submission, and
 security-gate side effects must run only from the organization repository:
@@ -18,19 +19,13 @@ Run the release-state check before any publish attempt:
 pnpm release:state
 ```
 
-The check is intentionally blocking when no configured production publish target
-exists. A safe production path should be added as an explicit guarded release
-job in the organization GitHub Actions mirror, or as another documented guarded
-release stage, before publishing, with:
+The safe production path is the guarded release job in the organization GitHub
+Actions repository. It must publish only after release-please creates a release
+and must include:
 
 - validation gates that already passed from clean source,
 - least-privilege credentials stored in the CI provider,
 - release artifact checksums and SBOM output where artifacts are produced,
-- provenance or artifact attestations where the platform supports them,
-- a post-publish smoke target that can be verified without exposing secrets.
+- provenance or artifact attestations where the platform supports them.
 
-Until that release surface exists, the correct publish result is:
-
-```text
-no configured publish target
-```
+The release flow is documented in [`../RELEASE.md`](../RELEASE.md).

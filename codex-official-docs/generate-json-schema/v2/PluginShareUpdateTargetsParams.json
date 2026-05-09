@@ -3,10 +3,14 @@
   "title": "PluginShareUpdateTargetsParams",
   "type": "object",
   "required": [
+    "discoverability",
     "remotePluginId",
     "shareTargets"
   ],
   "properties": {
+    "discoverability": {
+      "$ref": "#/definitions/PluginShareUpdateDiscoverability"
+    },
     "remotePluginId": {
       "type": "string"
     },
@@ -40,6 +44,13 @@
           "$ref": "#/definitions/PluginSharePrincipalType"
         }
       }
+    },
+    "PluginShareUpdateDiscoverability": {
+      "type": "string",
+      "enum": [
+        "UNLISTED",
+        "PRIVATE"
+      ]
     }
   }
 }
