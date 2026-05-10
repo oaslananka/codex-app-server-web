@@ -193,7 +193,7 @@ app.register(fastifyRateLimit, {
 });
 
 const validateAllowedHttpHost = async (req, reply) => {
-  if (!isAllowedHost(req.headers.host, accessConfig.allowedHosts)) {
+  if (!isAllowedHost(req.headers.host, accessConfig)) {
     return reply.code(403).send({ error: 'Forbidden host' });
   }
 };
@@ -209,7 +209,7 @@ const requirePrivilegedApiAccess = async (req, reply) => {
     return;
   }
 
-  if (req.headers.origin && !isAllowedOrigin(req.headers.origin, accessConfig.allowedOrigins)) {
+  if (req.headers.origin && !isAllowedOrigin(req.headers.origin, accessConfig)) {
     return reply.code(403).send({ error: 'Forbidden origin' });
   }
 
@@ -345,6 +345,10 @@ wss.on('error', (err) => {
 });
 
 app.server.on('upgrade', (req, socket, head) => {
+  if (IS_DEV && pathFromRequestUrl(req.url) === '/_next/webpack-hmr') {
+    return;
+  }
+
   const validation = validateUpgradeRequest(req, accessConfig, isWebSocketRateLimited);
   if (!validation.ok) {
     socket.write(buildUpgradeRejection(validation.statusCode, validation.statusText));

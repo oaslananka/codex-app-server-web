@@ -31,9 +31,12 @@ The server generates a high-entropy local UI token at startup when
 browser cookie. The token is not committed or written to disk. Non-browser local
 clients should set `CODEX_UI_TOKEN` and authenticate with a Bearer token.
 
-LAN mode requires all of the following to be set intentionally: `UI_HOST`,
-`ALLOWED_HOSTS`, `ALLOWED_ORIGINS`, and `CODEX_UI_TOKEN`. `SHOW_LAN_URLS=1`
-only prints reachable-looking LAN URLs; it is not an access-control setting.
+Production LAN mode requires all of the following to be set intentionally:
+`UI_HOST`, `ALLOWED_HOSTS`, `ALLOWED_ORIGINS`, and `CODEX_UI_TOKEN`.
+`SHOW_LAN_URLS=1` only prints reachable-looking LAN URLs; it is not an
+access-control setting. The `pnpm dev:lan` helper additionally sets
+`DEV_LAN_ACCESS=1`, which accepts private IPv4 LAN Host/Origin values in
+development mode only and is ignored when `NODE_ENV=production`.
 
 ## Protected Surfaces
 

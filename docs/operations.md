@@ -28,8 +28,17 @@ want the helper wrapper to orchestrate both the UI and backend command.
 
 ## Private Network Exposure
 
+For local development on a trusted private network:
+
+```bash
+pnpm dev:lan
+```
+
+That helper binds the development UI to `0.0.0.0`, logs private LAN URLs, and
+accepts private IPv4 LAN Host/Origin values only while `NODE_ENV=development`.
+
 Loopback is the default. For private LAN use, set all of the following
-explicitly:
+explicitly in production:
 
 ```text
 UI_HOST=0.0.0.0

@@ -80,6 +80,17 @@ LAN exposure is opt-in. To expose the UI beyond loopback, set `UI_HOST`,
 address. `SHOW_LAN_URLS=1` only controls display of LAN URLs; it does not grant
 access.
 
+For local development on a private Windows or LAN workstation, use:
+
+```bash
+pnpm dev:lan
+```
+
+That command binds the development server to `0.0.0.0` and enables
+`DEV_LAN_ACCESS=1`, which accepts private IPv4 LAN Host/Origin values only
+while `NODE_ENV=development`. Production LAN deployments still require explicit
+`ALLOWED_HOSTS`, `ALLOWED_ORIGINS`, and `CODEX_UI_TOKEN` values.
+
 **Useful Commands**
 
 ```bash

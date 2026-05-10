@@ -1,4 +1,5 @@
 import { createRequire } from 'node:module';
+import os from 'node:os';
 import { describe, expect, it } from 'vitest';
 
 const require = createRequire(import.meta.url);
@@ -77,6 +78,126 @@ describe('server security helpers', () => {
         () => false,
       ),
     ).toMatchObject({ ok: false, statusCode: 401 });
+  });
+
+  it('does not treat LAN URL display as Host or Origin authorization', () => {
+    const config = security.createLocalAccessConfig({
+      PORT: '1989',
+      UI_HOST: '0.0.0.0',
+      SHOW_LAN_URLS: '1',
+      CODEX_UI_TOKEN: token,
+      NODE_ENV: 'development',
+    });
+
+    expect(
+      security.validateUpgradeRequest(
+        wsRequest({
+          headers: {
+            host: '192.168.1.9:1989',
+            origin: 'http://192.168.1.9:1989',
+            cookie: `codex_ui_token=${token}`,
+          },
+        }),
+        config,
+        () => false,
+      ),
+    ).toMatchObject({ ok: false, statusCode: 403 });
+  });
+
+  it('allows private LAN Host and Origin values only in explicit development LAN mode', () => {
+    const config = security.createLocalAccessConfig({
+      PORT: '1989',
+      UI_HOST: '0.0.0.0',
+      DEV_LAN_ACCESS: '1',
+      CODEX_UI_TOKEN: token,
+      NODE_ENV: 'development',
+    });
+
+    expect(
+      security.validateUpgradeRequest(
+        wsRequest({
+          headers: {
+            host: '192.168.1.9:1989',
+            origin: 'http://192.168.1.9:1989',
+            cookie: `codex_ui_token=${token}`,
+          },
+        }),
+        config,
+        () => false,
+      ),
+    ).toEqual({ ok: true });
+
+    expect(
+      security.validateUpgradeRequest(
+        wsRequest({
+          headers: {
+            host: '8.8.8.8:1989',
+            origin: 'http://8.8.8.8:1989',
+            cookie: `codex_ui_token=${token}`,
+          },
+        }),
+        config,
+        () => false,
+      ),
+    ).toMatchObject({ ok: false, statusCode: 403 });
+
+    const hostname = os.hostname().toLowerCase();
+    expect(
+      security.validateUpgradeRequest(
+        wsRequest({
+          headers: {
+            host: `${hostname}.attacker.test:1989`,
+            origin: `http://${hostname}.attacker.test:1989`,
+            cookie: `codex_ui_token=${token}`,
+          },
+        }),
+        config,
+        () => false,
+      ),
+    ).toMatchObject({ ok: false, statusCode: 403 });
+
+    expect(
+      security.validateUpgradeRequest(
+        wsRequest({
+          headers: {
+            host: '[fe80::1]:1989',
+            origin: 'http://[fe80::1]:1989',
+            cookie: `codex_ui_token=${token}`,
+          },
+        }),
+        config,
+        () => false,
+      ),
+    ).toMatchObject({ ok: false, statusCode: 403 });
+
+    const directives = security.buildCspDirectives(config, true);
+    expect(directives.connectSrc).not.toContain('http://*:1989');
+    expect(directives.connectSrc).not.toContain('ws://*:1989');
+    expect(directives.connectSrc.some((source: string) => source.includes('://['))).toBe(false);
+  });
+
+  it('ignores development LAN access in production mode', () => {
+    const config = security.createLocalAccessConfig({
+      PORT: '1989',
+      UI_HOST: '0.0.0.0',
+      DEV_LAN_ACCESS: '1',
+      CODEX_UI_TOKEN: token,
+      NODE_ENV: 'production',
+    });
+
+    expect(
+      security.validateUpgradeRequest(
+        wsRequest({
+          headers: {
+            host: '192.168.1.9:1989',
+            origin: 'http://192.168.1.9:1989',
+            cookie: `codex_ui_token=${token}`,
+          },
+        }),
+        config,
+        () => false,
+      ),
+    ).toMatchObject({ ok: false, statusCode: 403 });
   });
 
   it('rejects missing WebSocket origin headers for browser traffic', () => {
