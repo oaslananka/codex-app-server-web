@@ -11,6 +11,7 @@ type PendingRequest = {
   method: string;
   resolve: (value: unknown) => void;
   reject: (error: unknown) => void;
+  timer: ReturnType<typeof setTimeout>;
 };
 
 type ControlHandler = (type: string, payload: Record<string, unknown>) => void;
@@ -42,12 +43,18 @@ export class WebsocketRpcClient {
 
   private static readonly MAX_RECONNECT_DELAY_MS = 30_000;
 
+  private static readonly DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
+
   private readonly wsUrl: string;
 
-  constructor(wsUrl?: string) {
+  private readonly requestTimeoutMs: number;
+
+  constructor(wsUrl?: string, options: { requestTimeoutMs?: number } = {}) {
     const wsScheme =
       typeof location !== 'undefined' && location.protocol === 'https:' ? 'wss' : 'ws';
     this.wsUrl = wsUrl ?? `${wsScheme}://${location.host}/ws`;
+    this.requestTimeoutMs =
+      options.requestTimeoutMs ?? WebsocketRpcClient.DEFAULT_REQUEST_TIMEOUT_MS;
   }
 
   connect() {
@@ -155,12 +162,18 @@ export class WebsocketRpcClient {
     const payload = { jsonrpc: '2.0', id, method, params };
     logger.trace('Sending rpc request', { id, method, params });
     return await new Promise<unknown>((resolve, reject) => {
-      this.pending.set(id, { method, resolve, reject });
+      const timer = globalThis.setTimeout(() => {
+        const pending = this.pending.get(id);
+        if (!pending) return;
+        this.pending.delete(id);
+        pending.reject(new Error(`RPC request timed out after ${this.requestTimeoutMs}ms`));
+      }, this.requestTimeoutMs);
+      this.pending.set(id, { method, resolve, reject, timer });
       if (this.sendRaw(payload)) {
         return;
       }
 
-      this.pending.delete(id);
+      this.clearPendingRequest(id);
       reject(new TransportDisconnectedError('WebSocket transport is not connected'));
     });
   }
@@ -211,7 +224,7 @@ export class WebsocketRpcClient {
 
       const pending = this.pending.get(message.id);
       if (!pending) return;
-      this.pending.delete(message.id);
+      this.clearPendingRequest(message.id);
       if (message.error) {
         const errorPayload = message.error as Record<string, unknown>;
         const messageText = normalizeError(errorPayload, 'RPC request failed');
@@ -316,7 +329,18 @@ export class WebsocketRpcClient {
     if (!this.pending.size) return;
     const pending = [...this.pending.values()];
     this.pending.clear();
-    pending.forEach((request) => request.reject(error));
+    pending.forEach((request) => {
+      globalThis.clearTimeout(request.timer);
+      request.reject(error);
+    });
+  }
+
+  private clearPendingRequest(id: number) {
+    const pending = this.pending.get(id);
+    if (!pending) return null;
+    globalThis.clearTimeout(pending.timer);
+    this.pending.delete(id);
+    return pending;
   }
 
   private clearReconnectTimer() {

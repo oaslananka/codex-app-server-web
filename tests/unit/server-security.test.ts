@@ -131,6 +131,37 @@ describe('server security helpers', () => {
     ).toMatchObject({ ok: false, closeCode: 1008 });
   });
 
+  it('validates backend WebSocket payloads before forwarding to browsers', () => {
+    const config = security.createLocalAccessConfig({
+      PORT: '1989',
+      CODEX_UI_TOKEN: token,
+      MAX_WS_PAYLOAD_BYTES: '80',
+    });
+
+    expect(
+      security.validateBackendWsPayload(
+        Buffer.from(JSON.stringify({ jsonrpc: '2.0', id: 1, result: { ok: true } })),
+        false,
+        config,
+      ),
+    ).toMatchObject({ ok: true });
+
+    expect(security.validateBackendWsPayload(Buffer.alloc(81, 'x'), false, config)).toMatchObject({
+      ok: false,
+      closeCode: 1009,
+    });
+
+    expect(security.validateBackendWsPayload(Buffer.from([0, 1, 2]), true, config)).toMatchObject({
+      ok: false,
+      closeCode: 1003,
+    });
+
+    expect(security.validateBackendWsPayload(Buffer.from('{'), false, config)).toMatchObject({
+      ok: false,
+      closeCode: 1007,
+    });
+  });
+
   it('validates upload extension, declared mime, magic bytes, and size', () => {
     const validPng = security.decodeBase64Payload(
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=',
@@ -152,5 +183,22 @@ describe('server security helpers', () => {
     expect(security.shouldReconnectBackend(1006, false)).toBe(true);
     expect(security.shouldReconnectBackend(4001, false)).toBe(false);
     expect(security.shouldReconnectBackend(1006, true)).toBe(false);
+  });
+
+  it('adds Secure to auth cookies only for directly secure or trusted proxy HTTPS requests', () => {
+    expect(security.isSecureRequest({ socket: { encrypted: true }, headers: {} }, {})).toBe(true);
+    expect(
+      security.isSecureRequest(
+        { socket: {}, headers: { 'x-forwarded-proto': 'https' } },
+        { trustProxyHeaders: false },
+      ),
+    ).toBe(false);
+    expect(
+      security.isSecureRequest(
+        { socket: {}, headers: { 'x-forwarded-proto': 'https, http' } },
+        { trustProxyHeaders: true },
+      ),
+    ).toBe(true);
+    expect(security.buildAuthCookie(token, { secure: true })).toContain('; Secure');
   });
 });

@@ -52,3 +52,15 @@ Never commit `.env` files, private keys, registry tokens, PATs, OpenAI keys,
 ChatGPT tokens, refresh tokens, Azure service connection credentials, or GitHub
 App credentials. If a credential is exposed, remove it from the repository,
 rotate it, and verify that history and release artifacts no longer contain it.
+
+## Reverse Proxy Deployments
+
+The application ignores `X-Forwarded-*` headers by default. If the UI is served
+behind a trusted TLS reverse proxy, configure the proxy to overwrite
+`X-Forwarded-Proto` and set `TRUST_PROXY_HEADERS=1`. In that mode the local auth
+cookie is marked `Secure` when the trusted proxy reports HTTPS. Do not enable
+proxy trust on a directly exposed or untrusted network listener.
+
+Production starts require existing Next.js build artifacts. Run `pnpm build`
+before `pnpm start`; missing or stale artifacts stop startup with a non-zero
+exit so the app does not silently run development mode in production.

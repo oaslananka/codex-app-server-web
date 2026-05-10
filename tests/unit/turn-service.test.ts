@@ -112,4 +112,61 @@ describe('TurnService', () => {
     expect(store.getState().messageDraft).toBe('this send should fail');
     expect(toast).toHaveBeenCalledWith('Send failed: backend unavailable', 'error');
   });
+
+  it('includes the selected sandbox policy in turn/start payloads', async () => {
+    const store = new RuntimeStore(buildInitialState());
+    store.patch({
+      messageDraft: 'use the configured sandbox',
+      selectedSandboxMode: 'workspace-write',
+      configData: {
+        sandbox_workspace_write: {
+          writable_roots: ['/workspace'],
+          network_access: true,
+          exclude_tmpdir_env_var: true,
+          exclude_slash_tmp: false,
+        },
+      },
+    });
+
+    const requestCompat = vi.fn(async (method: string) => {
+      if (method === 'turn/start') {
+        return { ok: true };
+      }
+      throw new Error(`Unexpected method: ${method}`);
+    }) as <T = unknown>(
+      canonicalMethod: string,
+      params?: unknown,
+      fallbacks?: readonly string[],
+    ) => Promise<T>;
+
+    const service = new TurnService(
+      store,
+      {
+        requestCompat,
+        markRequestSupported: vi.fn(),
+        markRequestUnsupported: vi.fn(),
+        toast: vi.fn(),
+      },
+      {
+        appendUserDraftEntry: vi.fn(),
+        ensureWritableThread: vi.fn(async () => 'thread-123'),
+        upsertThreadEntry: vi.fn(),
+      },
+    );
+
+    await service.sendMessage();
+
+    expect(requestCompat).toHaveBeenCalledWith(
+      'turn/start',
+      expect.objectContaining({
+        sandboxPolicy: {
+          type: 'workspaceWrite',
+          writableRoots: ['/workspace'],
+          networkAccess: true,
+          excludeTmpdirEnvVar: true,
+          excludeSlashTmp: false,
+        },
+      }),
+    );
+  });
 });

@@ -113,6 +113,34 @@ describe('WebsocketRpcClient', () => {
     await expect(client.request('thread/list', {})).rejects.toThrow(/not connected|disconnected/i);
   });
 
+  it('rejects and clears pending requests when an RPC timeout expires', async () => {
+    const client = new WebsocketRpcClient('ws://localhost:4000/ws', { requestTimeoutMs: 1000 });
+    client.connect();
+
+    const socket = MockWebSocket.instances[0];
+    expect(socket).toBeDefined();
+    if (!socket) {
+      throw new Error('Expected websocket instance');
+    }
+
+    socket.onopen?.();
+    socket.onmessage?.({
+      data: JSON.stringify({ jsonrpc: '2.0', id: 1, result: { ok: true } }),
+    });
+
+    const pending = client.request('thread/list', {});
+    const pendingExpectation = expect(pending).rejects.toThrow(
+      'RPC request timed out after 1000ms',
+    );
+    await vi.advanceTimersByTimeAsync(1000);
+    await pendingExpectation;
+
+    socket.onmessage?.({
+      data: JSON.stringify({ jsonrpc: '2.0', id: 2, result: { late: true } }),
+    });
+    expect(socket.sent.some((payload) => payload.includes('"method":"thread/list"'))).toBe(true);
+  });
+
   it('summarizes upstream HTML challenge errors instead of logging raw pages', async () => {
     const client = new WebsocketRpcClient('ws://localhost:4000/ws');
     client.connect();

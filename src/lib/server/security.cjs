@@ -44,6 +44,11 @@ function parsePositiveInt(value, fallback) {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function parseNonNegativeInt(value, fallback) {
+  const parsed = Number.parseInt(value ?? '', 10);
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
 function parseCsv(value) {
   return String(value || '')
     .split(',')
@@ -113,6 +118,7 @@ function createLocalAccessConfig(env = process.env) {
       DEFAULT_MAX_UPLOAD_BYTES,
     ),
     maxWsBufferedBytes: parsePositiveInt(env.MAX_WS_BUFFERED_BYTES, DEFAULT_MAX_WS_BUFFERED_BYTES),
+    trustProxyHeaders: env.TRUST_PROXY_HEADERS === '1' || env.TRUST_PROXY === '1',
   };
 }
 
@@ -302,6 +308,31 @@ function validateBrowserWsPayload(rawData, isBinary, config) {
   return { ok: true, text, parsed, bytes };
 }
 
+function validateBackendWsPayload(rawData, isBinary, config) {
+  if (isBinary) {
+    return { ok: false, closeCode: 1003, reason: 'Backend binary payloads are not supported' };
+  }
+
+  const bytes = webSocketPayloadByteLength(rawData);
+  if (bytes > config.maxWsPayloadBytes) {
+    return { ok: false, closeCode: 1009, reason: 'Backend payload too large', bytes };
+  }
+
+  const text = webSocketPayloadToText(rawData);
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return { ok: false, closeCode: 1007, reason: 'Malformed backend JSON', bytes };
+  }
+
+  if (!isValidJsonRpcMessage(parsed)) {
+    return { ok: false, closeCode: 1008, reason: 'Invalid backend JSON-RPC payload', bytes };
+  }
+
+  return { ok: true, text, parsed, bytes };
+}
+
 function shouldReconnectBackend(code, browserSessionEnded) {
   return code !== 4001 && !browserSessionEnded;
 }
@@ -387,6 +418,25 @@ function buildCspDirectives(config, isDev) {
   };
 }
 
+function firstHeaderValue(value) {
+  if (Array.isArray(value)) return String(value[0] || '');
+  return String(value || '');
+}
+
+function isSecureRequest(req, config) {
+  if (req?.socket?.encrypted) {
+    return true;
+  }
+  if (!config.trustProxyHeaders) {
+    return false;
+  }
+  const forwardedProto = firstHeaderValue(req?.headers?.['x-forwarded-proto'])
+    .split(',')[0]
+    .trim()
+    .toLowerCase();
+  return forwardedProto === 'https';
+}
+
 module.exports = {
   ALLOWED_IMAGE_EXTENSIONS,
   AUTH_COOKIE_NAME,
@@ -401,11 +451,14 @@ module.exports = {
   isAllowedOrigin,
   isAuthenticatedRequest,
   isImagePayloadForExtension,
+  isSecureRequest,
   normalizeOrigin,
+  parseNonNegativeInt,
   parsePort,
   parsePositiveInt,
   pathFromRequestUrl,
   shouldReconnectBackend,
+  validateBackendWsPayload,
   validateBrowserWsPayload,
   validateUpgradeRequest,
   webSocketPayloadByteLength,

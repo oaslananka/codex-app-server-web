@@ -6,7 +6,7 @@ This file tracks meaningful remaining technical debt after the March 2026 protoc
 
 - Goal: keep the project at `no known material debt` for official Codex app-server contracts.
 - Current status: materially improved, with a small set of accepted follow-up items.
-- Last updated: 2026-03-28
+- Last updated: 2026-05-10
 
 ## Accepted Debt
 
@@ -46,6 +46,22 @@ This file tracks meaningful remaining technical debt after the March 2026 protoc
   - The current smoke suite is stable and cheap to run, which is more valuable than a flaky full-stack browser suite.
 - Desired end state:
   - Add a deterministic mock app-server harness to exercise approval rendering and thread/turn happy paths in browser smoke.
+
+### 4. CSP still permits inline framework runtime assets
+
+- Files:
+  - [src/lib/server/security.cjs](./src/lib/server/security.cjs)
+- Why it matters:
+  - Production CSP keeps `object-src`, `base-uri`, `frame-ancestors`, and
+    `connect-src` narrow, but still permits inline scripts/styles required by
+    the current Next.js runtime and hydration path.
+- Accepted reason:
+  - Removing inline allowances should be paired with nonce/hash coverage and
+    browser hydration tests so the local control-plane UI does not break under
+    release pressure.
+- Desired end state:
+  - Move to nonce or hash-based CSP after hydration, static asset, and local
+    WebSocket smoke coverage prove the stricter policy works.
 
 ## Closed In This Pass
 
