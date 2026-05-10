@@ -1,12 +1,5 @@
 # Changelog
 
-## [1.1.5](https://github.com/oaslananka-lab/codex-app-server-web/compare/codex-app-server-web-v1.1.4...codex-app-server-web-v1.1.5) (2026-05-10)
-
-
-### Bug Fixes
-
-* **dev:** harden Codex backend startup limits ([4da1c38](https://github.com/oaslananka-lab/codex-app-server-web/commit/4da1c3853fc2c44a3d1bfadfa80617adf7e21544))
-
 ## [1.1.4](https://github.com/oaslananka-lab/codex-app-server-web/compare/codex-app-server-web-v1.1.3...codex-app-server-web-v1.1.4) (2026-05-10)
 
 
