@@ -26,7 +26,10 @@ const fastifyRateLimit = require('@fastify/rate-limit');
 const next = require('next');
 const { WebSocketServer, WebSocket } = require('ws');
 const { createRateLimiter } = require('./src/lib/rate-limit.cjs');
-const { resolveNextRuntimeMode } = require('./src/lib/next-runtime.cjs');
+const {
+  hasStaleNextBuildArtifacts,
+  resolveNextRuntimeMode,
+} = require('./src/lib/next-runtime.cjs');
 const { createNodeLogger } = require('./src/lib/logging/node-logger.cjs');
 const {
   ALLOWED_IMAGE_EXTENSIONS,
@@ -40,13 +43,23 @@ const {
   isAllowedOrigin,
   isAuthenticatedRequest,
   isImagePayloadForExtension,
+  isSecureRequest,
+  parseNonNegativeInt,
   parsePort,
   parsePositiveInt,
   pathFromRequestUrl,
   shouldReconnectBackend,
+  validateBackendWsPayload,
   validateBrowserWsPayload,
   validateUpgradeRequest,
 } = require('./src/lib/server/security.cjs');
+const {
+  cleanupStaleUploadChildren,
+  cleanupStaleUploadDirs,
+  createUploadRuntime,
+  ensureUploadDir,
+  removePathInsideRoot,
+} = require('./src/lib/server/uploads.cjs');
 
 const logger = createNodeLogger('server');
 const connectionLogger = logger.child('connection');
@@ -61,22 +74,33 @@ const RATE_LIMIT_MAX = parsePositiveInt(process.env.RATE_LIMIT_MAX, 120);
 const RATE_LIMIT_TIME_WINDOW_MS = parsePositiveInt(process.env.RATE_LIMIT_TIME_WINDOW_MS, 60_000);
 const UPLOAD_BODY_LIMIT_BYTES = accessConfig.maxUploadBytes;
 const NODE_ENV = process.env.NODE_ENV || 'production';
-const UPLOADS_DIR = path.join(os.tmpdir(), 'codex-app-server-web-uploads');
 const MAX_BROWSER_BUFFER_BYTES = accessConfig.maxWsBufferedBytes;
 const UPLOAD_MAX_AGE_MS = 60 * 60 * 1000; // 1 hour
 const MAX_CODEX_RECONNECT_DELAY_MS = 30_000;
-const RESOLVED_UPLOADS_DIR = path.resolve(UPLOADS_DIR);
-const prerenderManifestPath = path.join(__dirname, '.next', 'prerender-manifest.json');
-const appPagePath = path.join(__dirname, 'app', 'page.tsx');
-const hasBuildArtifacts = fs.existsSync(prerenderManifestPath);
+const WS_HEARTBEAT_INTERVAL_MS = parseNonNegativeInt(process.env.WS_HEARTBEAT_INTERVAL_MS, 30_000);
+const uploadRuntime = createUploadRuntime();
+const UPLOADS_DIR = uploadRuntime.uploadDir;
+const UPLOADS_ROOT = uploadRuntime.rootDir;
+const RESOLVED_UPLOADS_DIR = uploadRuntime.resolvedUploadDir;
+const requiredNextBuildArtifacts = [
+  path.join(__dirname, '.next', 'BUILD_ID'),
+  path.join(__dirname, '.next', 'prerender-manifest.json'),
+];
+const buildMarkerPath = requiredNextBuildArtifacts[0];
+const hasBuildArtifacts = requiredNextBuildArtifacts.every((artifactPath) =>
+  fs.existsSync(artifactPath),
+);
 const hasStaleBuildArtifacts =
   hasBuildArtifacts &&
-  fs.existsSync(appPagePath) &&
-  fs.statSync(appPagePath).mtimeMs > fs.statSync(prerenderManifestPath).mtimeMs;
+  hasStaleNextBuildArtifacts({
+    rootDir: __dirname,
+    buildMarkerPath,
+  });
 const runtimeMode = resolveNextRuntimeMode({
   nodeEnv: NODE_ENV,
   hasBuildArtifacts,
   hasStaleBuildArtifacts,
+  allowDevFallback: process.env.ALLOW_NEXT_DEV_FALLBACK === '1',
 });
 const IS_DEV = runtimeMode.dev;
 let activeServerPort = SERVER_PORT;
@@ -112,15 +136,20 @@ const getLanAddresses = () => {
   return [...addresses];
 };
 
-if (runtimeMode.reason === 'missing-build-artifacts') {
+if (runtimeMode.fatal) {
+  logger.error(runtimeMode.message);
+  process.exit(1);
+}
+
+if (runtimeMode.reason === 'missing-build-artifacts-dev-fallback') {
   logger.warn(
-    '[!] Next build artifacts not found (.next/prerender-manifest.json). Falling back to dev mode.',
+    '[!] Next build artifacts not found. ALLOW_NEXT_DEV_FALLBACK=1 enabled development mode.',
   );
 }
 
-if (runtimeMode.reason === 'stale-build-artifacts') {
+if (runtimeMode.reason === 'stale-build-artifacts-dev-fallback') {
   logger.warn(
-    '[!] Next build artifacts are stale compared to source files. Falling back to dev mode.',
+    '[!] Next build artifacts are stale compared to source files. ALLOW_NEXT_DEV_FALLBACK=1 enabled development mode.',
   );
 }
 
@@ -164,7 +193,7 @@ app.register(fastifyRateLimit, {
 });
 
 const validateAllowedHttpHost = async (req, reply) => {
-  if (!isAllowedHost(req.headers.host, accessConfig.allowedHosts)) {
+  if (!isAllowedHost(req.headers.host, accessConfig)) {
     return reply.code(403).send({ error: 'Forbidden host' });
   }
 };
@@ -180,7 +209,7 @@ const requirePrivilegedApiAccess = async (req, reply) => {
     return;
   }
 
-  if (req.headers.origin && !isAllowedOrigin(req.headers.origin, accessConfig.allowedOrigins)) {
+  if (req.headers.origin && !isAllowedOrigin(req.headers.origin, accessConfig)) {
     return reply.code(403).send({ error: 'Forbidden origin' });
   }
 
@@ -189,8 +218,9 @@ const requirePrivilegedApiAccess = async (req, reply) => {
   }
 };
 
-const registerApiRoutes = () => {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true, mode: 0o700 });
+const registerApiRoutes = async () => {
+  await cleanupStaleUploadDirs(UPLOADS_ROOT, UPLOAD_MAX_AGE_MS);
+  ensureUploadDir(UPLOADS_DIR, uploadRuntime);
 
   app.register(
     async function apiRoutes(api) {
@@ -315,6 +345,10 @@ wss.on('error', (err) => {
 });
 
 app.server.on('upgrade', (req, socket, head) => {
+  if (IS_DEV && pathFromRequestUrl(req.url) === '/_next/webpack-hmr') {
+    return;
+  }
+
   const validation = validateUpgradeRequest(req, accessConfig, isWebSocketRateLimited);
   if (!validation.ok) {
     socket.write(buildUpgradeRejection(validation.statusCode, validation.statusText));
@@ -338,6 +372,10 @@ wss.on('connection', (browserWs, req) => {
   let codexConnectionId = 0;
   let reconnectAttempt = 0;
   let browserClosing = false;
+  let browserAlive = true;
+  let backendAlive = true;
+  let backendPingPending = false;
+  let heartbeatTimer = null;
 
   // Helper: send JSON to browser
   const sendBrowser = (obj) => {
@@ -354,6 +392,59 @@ wss.on('connection', (browserWs, req) => {
       clearTimeout(reconnectTimer);
       reconnectTimer = null;
     }
+  };
+
+  const closeBothSockets = (code, reason) => {
+    if (codexWs && codexWs.readyState !== WebSocket.CLOSED) {
+      codexWs.close(code, reason);
+    }
+    if (browserWs.readyState === WebSocket.OPEN || browserWs.readyState === WebSocket.CONNECTING) {
+      browserWs.close(code, reason);
+    }
+  };
+
+  const stopHeartbeat = () => {
+    if (heartbeatTimer) {
+      globalThis.clearInterval(heartbeatTimer);
+      heartbeatTimer = null;
+    }
+  };
+
+  browserWs.on('pong', () => {
+    browserAlive = true;
+  });
+
+  const startHeartbeat = () => {
+    if (heartbeatTimer || WS_HEARTBEAT_INTERVAL_MS <= 0) {
+      return;
+    }
+    heartbeatTimer = setInterval(() => {
+      if (!browserAlive) {
+        connectionLogger.warn('Browser websocket heartbeat failed; terminating session');
+        stopHeartbeat();
+        if (codexWs) codexWs.terminate();
+        browserWs.terminate();
+        return;
+      }
+
+      if (codexWs && codexWs.readyState === WebSocket.OPEN && backendPingPending && !backendAlive) {
+        connectionLogger.warn('Codex backend heartbeat failed; closing session');
+        stopHeartbeat();
+        closeBothSockets(1011, 'Backend heartbeat failed');
+        return;
+      }
+
+      browserAlive = false;
+      if (browserWs.readyState === WebSocket.OPEN) {
+        browserWs.ping();
+      }
+
+      if (codexWs && codexWs.readyState === WebSocket.OPEN) {
+        backendAlive = false;
+        backendPingPending = true;
+        codexWs.ping();
+      }
+    }, WS_HEARTBEAT_INTERVAL_MS);
   };
 
   const scheduleReconnect = () => {
@@ -395,7 +486,11 @@ wss.on('connection', (browserWs, req) => {
     ctrl('connecting', { url: wsUrl });
 
     try {
-      codexWs = new WebSocket(wsUrl, { handshakeTimeout: 5000 });
+      codexWs = new WebSocket(wsUrl, {
+        handshakeTimeout: 5000,
+        maxPayload: accessConfig.maxWsPayloadBytes,
+        perMessageDeflate: false,
+      });
     } catch (err) {
       ctrl('error', { message: `Failed to create connection: ${err.message}` });
       return;
@@ -408,6 +503,8 @@ wss.on('connection', (browserWs, req) => {
         return;
       }
       connectionLogger.info('Codex backend connected');
+      backendAlive = true;
+      backendPingPending = false;
       reconnectAttempt = 0;
       clearReconnectTimer();
       ctrl('connected', { url: wsUrl });
@@ -420,11 +517,29 @@ wss.on('connection', (browserWs, req) => {
       browserBufferBytes = 0;
     });
 
-    currentCodexWs.on('message', (data) => {
+    currentCodexWs.on('pong', () => {
+      if (codexWs === currentCodexWs && connectionId === codexConnectionId) {
+        backendAlive = true;
+        backendPingPending = false;
+      }
+    });
+
+    currentCodexWs.on('message', (data, isBinary) => {
       if (codexWs !== currentCodexWs || connectionId !== codexConnectionId) {
         return;
       }
-      sendBrowser(data.toString());
+      const validation = validateBackendWsPayload(data, isBinary, accessConfig);
+      if (!validation.ok) {
+        connectionLogger.warn('Rejected backend websocket payload', {
+          closeCode: validation.closeCode,
+          reason: validation.reason,
+          bytes: validation.bytes,
+        });
+        currentCodexWs.close(validation.closeCode, validation.reason);
+        browserWs.close(validation.closeCode, validation.reason);
+        return;
+      }
+      sendBrowser(validation.text);
     });
 
     currentCodexWs.on('error', (err) => {
@@ -453,6 +568,8 @@ wss.on('connection', (browserWs, req) => {
         connectionLogger.warn('Codex backend disconnected', closeDetails);
       }
       codexWs = null;
+      backendAlive = true;
+      backendPingPending = false;
       if (shouldReconnectBackend(code, browserSessionEnded)) {
         ctrl('disconnected', { code, reason: reason.toString() });
         scheduleReconnect();
@@ -461,6 +578,7 @@ wss.on('connection', (browserWs, req) => {
   };
 
   connectCodex();
+  startHeartbeat();
 
   // ── Browser → Codex ──────────────────────────────────────────────────────
   browserWs.on('message', (rawData, isBinary) => {
@@ -506,6 +624,7 @@ wss.on('connection', (browserWs, req) => {
     connectionLogger.info('Browser disconnected');
     browserClosing = true;
     clearReconnectTimer();
+    stopHeartbeat();
     reconnectAttempt = 0;
     if (codexWs) codexWs.close();
   });
@@ -563,7 +682,12 @@ const registerNextRoutes = () => {
     // Rate limiting is enforced globally and repeated in this route config.
     // lgtm[js/missing-rate-limiting]
     async (req, reply) => {
-      reply.raw.setHeader('Set-Cookie', buildAuthCookie(accessConfig.authToken));
+      reply.raw.setHeader(
+        'Set-Cookie',
+        buildAuthCookie(accessConfig.authToken, {
+          secure: isSecureRequest(req.raw, accessConfig),
+        }),
+      );
       await handleNext(req.raw, reply.raw);
       reply.hijack();
     },
@@ -572,7 +696,7 @@ const registerNextRoutes = () => {
 
 const bootstrap = async () => {
   await webApp.prepare();
-  registerApiRoutes();
+  await registerApiRoutes();
   registerNextRoutes();
   await startListening(SERVER_PORT);
 };
@@ -582,26 +706,61 @@ bootstrap().catch((err) => {
   process.exit(1);
 });
 
-// Periodic cleanup of uploaded temp files older than 1 hour
-setInterval(
+let cleanupUploadsInFlight = false;
+const cleanupUploads = async () => {
+  if (cleanupUploadsInFlight) {
+    return;
+  }
+  cleanupUploadsInFlight = true;
+  try {
+    await cleanupStaleUploadDirs(
+      UPLOADS_ROOT,
+      UPLOAD_MAX_AGE_MS,
+      Date.now(),
+      new Set([UPLOADS_DIR]),
+    );
+    await cleanupStaleUploadChildren(UPLOADS_DIR, UPLOAD_MAX_AGE_MS);
+  } catch (err) {
+    logger.warn('Upload temp cleanup failed', {
+      message: err instanceof Error ? err.message : String(err),
+    });
+  } finally {
+    cleanupUploadsInFlight = false;
+  }
+};
+
+const cleanupUploadTimer = setInterval(
   () => {
-    try {
-      if (!fs.existsSync(UPLOADS_DIR)) return;
-      const now = Date.now();
-      for (const file of fs.readdirSync(UPLOADS_DIR)) {
-        const filePath = path.join(UPLOADS_DIR, file);
-        try {
-          const stat = fs.statSync(filePath);
-          if (now - stat.mtimeMs > UPLOAD_MAX_AGE_MS) {
-            fs.unlinkSync(filePath);
-          }
-        } catch {
-          /* ignore per-file cleanup errors */
-        }
-      }
-    } catch {
-      /* ignore cleanup errors */
-    }
+    void cleanupUploads();
   },
   15 * 60 * 1000,
-); // Run every 15 minutes
+);
+
+const shutdown = async (signal) => {
+  globalThis.clearInterval(cleanupUploadTimer);
+  try {
+    await app.close();
+  } catch (err) {
+    logger.warn('Server close failed during shutdown', {
+      signal,
+      message: err instanceof Error ? err.message : String(err),
+    });
+  }
+  try {
+    removePathInsideRoot(UPLOADS_DIR, UPLOADS_ROOT);
+  } catch (err) {
+    logger.warn('Upload directory cleanup failed during shutdown', {
+      signal,
+      message: err instanceof Error ? err.message : String(err),
+    });
+  }
+  process.exit(0);
+};
+
+process.once('SIGINT', () => {
+  void shutdown('SIGINT');
+});
+
+process.once('SIGTERM', () => {
+  void shutdown('SIGTERM');
+});

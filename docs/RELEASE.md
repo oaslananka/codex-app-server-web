@@ -32,6 +32,11 @@ tags locally.
 6. GitHub artifact attestations are generated for the release assets.
 7. The workflow verifies the GitHub Release asset set after upload.
 
+The organization repository must allow GitHub Actions to create pull requests
+under **Settings > Actions > General > Workflow permissions** so release-please
+can open or update the release PR. The release workflow does not approve pull
+requests, auto-merge, or publish registry packages.
+
 ## Required Assets
 
 - `codex-app-server-web-<version>.tgz`

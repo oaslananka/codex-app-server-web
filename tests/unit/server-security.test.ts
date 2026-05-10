@@ -1,4 +1,5 @@
 import { createRequire } from 'node:module';
+import os from 'node:os';
 import { describe, expect, it } from 'vitest';
 
 const require = createRequire(import.meta.url);
@@ -79,6 +80,126 @@ describe('server security helpers', () => {
     ).toMatchObject({ ok: false, statusCode: 401 });
   });
 
+  it('does not treat LAN URL display as Host or Origin authorization', () => {
+    const config = security.createLocalAccessConfig({
+      PORT: '1989',
+      UI_HOST: '0.0.0.0',
+      SHOW_LAN_URLS: '1',
+      CODEX_UI_TOKEN: token,
+      NODE_ENV: 'development',
+    });
+
+    expect(
+      security.validateUpgradeRequest(
+        wsRequest({
+          headers: {
+            host: '192.168.1.9:1989',
+            origin: 'http://192.168.1.9:1989',
+            cookie: `codex_ui_token=${token}`,
+          },
+        }),
+        config,
+        () => false,
+      ),
+    ).toMatchObject({ ok: false, statusCode: 403 });
+  });
+
+  it('allows private LAN Host and Origin values only in explicit development LAN mode', () => {
+    const config = security.createLocalAccessConfig({
+      PORT: '1989',
+      UI_HOST: '0.0.0.0',
+      DEV_LAN_ACCESS: '1',
+      CODEX_UI_TOKEN: token,
+      NODE_ENV: 'development',
+    });
+
+    expect(
+      security.validateUpgradeRequest(
+        wsRequest({
+          headers: {
+            host: '192.168.1.9:1989',
+            origin: 'http://192.168.1.9:1989',
+            cookie: `codex_ui_token=${token}`,
+          },
+        }),
+        config,
+        () => false,
+      ),
+    ).toEqual({ ok: true });
+
+    expect(
+      security.validateUpgradeRequest(
+        wsRequest({
+          headers: {
+            host: '8.8.8.8:1989',
+            origin: 'http://8.8.8.8:1989',
+            cookie: `codex_ui_token=${token}`,
+          },
+        }),
+        config,
+        () => false,
+      ),
+    ).toMatchObject({ ok: false, statusCode: 403 });
+
+    const hostname = os.hostname().toLowerCase();
+    expect(
+      security.validateUpgradeRequest(
+        wsRequest({
+          headers: {
+            host: `${hostname}.attacker.test:1989`,
+            origin: `http://${hostname}.attacker.test:1989`,
+            cookie: `codex_ui_token=${token}`,
+          },
+        }),
+        config,
+        () => false,
+      ),
+    ).toMatchObject({ ok: false, statusCode: 403 });
+
+    expect(
+      security.validateUpgradeRequest(
+        wsRequest({
+          headers: {
+            host: '[fe80::1]:1989',
+            origin: 'http://[fe80::1]:1989',
+            cookie: `codex_ui_token=${token}`,
+          },
+        }),
+        config,
+        () => false,
+      ),
+    ).toMatchObject({ ok: false, statusCode: 403 });
+
+    const directives = security.buildCspDirectives(config, true);
+    expect(directives.connectSrc).not.toContain('http://*:1989');
+    expect(directives.connectSrc).not.toContain('ws://*:1989');
+    expect(directives.connectSrc.some((source: string) => source.includes('://['))).toBe(false);
+  });
+
+  it('ignores development LAN access in production mode', () => {
+    const config = security.createLocalAccessConfig({
+      PORT: '1989',
+      UI_HOST: '0.0.0.0',
+      DEV_LAN_ACCESS: '1',
+      CODEX_UI_TOKEN: token,
+      NODE_ENV: 'production',
+    });
+
+    expect(
+      security.validateUpgradeRequest(
+        wsRequest({
+          headers: {
+            host: '192.168.1.9:1989',
+            origin: 'http://192.168.1.9:1989',
+            cookie: `codex_ui_token=${token}`,
+          },
+        }),
+        config,
+        () => false,
+      ),
+    ).toMatchObject({ ok: false, statusCode: 403 });
+  });
+
   it('rejects missing WebSocket origin headers for browser traffic', () => {
     const config = security.createLocalAccessConfig({ PORT: '1989', CODEX_UI_TOKEN: token });
 
@@ -97,7 +218,7 @@ describe('server security helpers', () => {
     );
   });
 
-  it('validates browser WebSocket payload size and JSON-RPC shape before forwarding', () => {
+  it('validates browser WebSocket payload size and Codex RPC shape before forwarding', () => {
     const config = security.createLocalAccessConfig({
       PORT: '1989',
       CODEX_UI_TOKEN: token,
@@ -107,6 +228,22 @@ describe('server security helpers', () => {
     expect(
       security.validateBrowserWsPayload(
         Buffer.from(JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'thread/list' })),
+        false,
+        config,
+      ),
+    ).toMatchObject({ ok: true });
+
+    expect(
+      security.validateBrowserWsPayload(
+        Buffer.from(JSON.stringify({ id: 1, method: 'thread/list', params: null })),
+        false,
+        config,
+      ),
+    ).toMatchObject({ ok: true });
+
+    expect(
+      security.validateBrowserWsPayload(
+        Buffer.from(JSON.stringify({ id: 1, method: 'thread/list' })),
         false,
         config,
       ),
@@ -124,11 +261,89 @@ describe('server security helpers', () => {
 
     expect(
       security.validateBrowserWsPayload(
-        Buffer.from(JSON.stringify({ method: 'missing-version' })),
+        Buffer.from(JSON.stringify({ jsonrpc: '1.0', method: 'invalid-version' })),
         false,
         config,
       ),
     ).toMatchObject({ ok: false, closeCode: 1008 });
+
+    expect(
+      security.validateBrowserWsPayload(
+        Buffer.from(JSON.stringify({ id: 1, method: 'thread/list', params: 'invalid' })),
+        false,
+        config,
+      ),
+    ).toMatchObject({ ok: false, closeCode: 1008 });
+  });
+
+  it('validates backend WebSocket payloads before forwarding to browsers', () => {
+    const config = security.createLocalAccessConfig({
+      PORT: '1989',
+      CODEX_UI_TOKEN: token,
+      MAX_WS_PAYLOAD_BYTES: '256',
+    });
+
+    expect(
+      security.validateBackendWsPayload(
+        Buffer.from(JSON.stringify({ jsonrpc: '2.0', id: 1, result: { ok: true } })),
+        false,
+        config,
+      ),
+    ).toMatchObject({ ok: true });
+
+    expect(
+      security.validateBackendWsPayload(
+        Buffer.from(
+          JSON.stringify({
+            id: 1,
+            result: {
+              userAgent: 'Codex Desktop/0.130.0',
+              codexHome: 'C:\\Users\\Admin\\.codex',
+              platformFamily: 'windows',
+              platformOs: 'windows',
+            },
+          }),
+        ),
+        false,
+        config,
+      ),
+    ).toMatchObject({ ok: true });
+
+    expect(
+      security.validateBackendWsPayload(
+        Buffer.from(
+          JSON.stringify({
+            method: 'remoteControl/status/changed',
+            params: { status: 'disabled', environmentId: null },
+          }),
+        ),
+        false,
+        config,
+      ),
+    ).toMatchObject({ ok: true });
+
+    expect(
+      security.validateBackendWsPayload(
+        Buffer.from(JSON.stringify({ jsonrpc: '1.0', id: 1, result: { ok: true } })),
+        false,
+        config,
+      ),
+    ).toMatchObject({ ok: false, closeCode: 1008 });
+
+    expect(security.validateBackendWsPayload(Buffer.alloc(257, 'x'), false, config)).toMatchObject({
+      ok: false,
+      closeCode: 1009,
+    });
+
+    expect(security.validateBackendWsPayload(Buffer.from([0, 1, 2]), true, config)).toMatchObject({
+      ok: false,
+      closeCode: 1003,
+    });
+
+    expect(security.validateBackendWsPayload(Buffer.from('{'), false, config)).toMatchObject({
+      ok: false,
+      closeCode: 1007,
+    });
   });
 
   it('validates upload extension, declared mime, magic bytes, and size', () => {
@@ -152,5 +367,22 @@ describe('server security helpers', () => {
     expect(security.shouldReconnectBackend(1006, false)).toBe(true);
     expect(security.shouldReconnectBackend(4001, false)).toBe(false);
     expect(security.shouldReconnectBackend(1006, true)).toBe(false);
+  });
+
+  it('adds Secure to auth cookies only for directly secure or trusted proxy HTTPS requests', () => {
+    expect(security.isSecureRequest({ socket: { encrypted: true }, headers: {} }, {})).toBe(true);
+    expect(
+      security.isSecureRequest(
+        { socket: {}, headers: { 'x-forwarded-proto': 'https' } },
+        { trustProxyHeaders: false },
+      ),
+    ).toBe(false);
+    expect(
+      security.isSecureRequest(
+        { socket: {}, headers: { 'x-forwarded-proto': 'https, http' } },
+        { trustProxyHeaders: true },
+      ),
+    ).toBe(true);
+    expect(security.buildAuthCookie(token, { secure: true })).toContain('; Secure');
   });
 });

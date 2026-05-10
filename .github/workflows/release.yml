@@ -52,6 +52,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     permissions:
+      artifact-metadata: write
       attestations: write
       contents: write
       id-token: write
@@ -114,15 +115,38 @@ jobs:
           mkdir -p dist/release
           pnpm pack --pack-destination dist/release
           trivy fs --format cyclonedx --output "dist/release/codex-app-server-web-${VERSION}.sbom.cdx.json" --skip-dirs node_modules --skip-dirs .git --skip-dirs .next .
+
+      - name: Attest release assets
+        id: attest
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26
+        with:
+          subject-path: dist/release/codex-app-server-web-${{ needs.release-please.outputs.version }}.tgz
+
+      - name: Stage provenance asset
+        env:
+          VERSION: ${{ needs.release-please.outputs.version }}
+          BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BUNDLE_PATH}" ] || [ ! -f "${BUNDLE_PATH}" ]; then
+            echo "Attestation bundle was not created at the expected path: ${BUNDLE_PATH}" >&2
+            exit 1
+          fi
+          cp "${BUNDLE_PATH}" "dist/release/codex-app-server-web-${VERSION}.tgz.intoto.jsonl"
           (
             cd dist/release
             sha256sum ./* > SHA256SUMS.txt
           )
 
-      - name: Attest release assets
-        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32
-        with:
-          subject-path: dist/release/*
+      - name: Verify provenance
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.release-please.outputs.version }}
+        run: |
+          set -euo pipefail
+          gh attestation verify "dist/release/codex-app-server-web-${VERSION}.tgz" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --bundle "dist/release/codex-app-server-web-${VERSION}.tgz.intoto.jsonl"
 
       - name: Upload release assets
         env:
@@ -178,6 +202,7 @@ jobs:
           const required = [
             'SHA256SUMS.txt',
             `codex-app-server-web-${process.env.VERSION}.sbom.cdx.json`,
+            `codex-app-server-web-${process.env.VERSION}.tgz.intoto.jsonl`,
           ];
           for (const name of required) {
             if (!assets.has(name)) {

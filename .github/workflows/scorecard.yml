@@ -33,6 +33,8 @@ jobs:
     if: ${{ github.repository == 'oaslananka-lab/codex-app-server-web' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    env:
+      SCORECARD_MINIMUM_SCORE: '6.6'
 
     steps:
       - name: Checkout
@@ -54,18 +56,60 @@ jobs:
           node-version: 24
           package-manager-cache: false
 
-      - name: Enforce minimum score
+      - name: Enforce Scorecard policy
         run: |
           set -euo pipefail
           node - <<'NODE'
           const fs = require('node:fs');
           const result = JSON.parse(fs.readFileSync('scorecard-results.json', 'utf8'));
           const score = Number(result.score ?? result.aggregate_score ?? result.scorecard?.score);
+          const minimumScore = Number(process.env.SCORECARD_MINIMUM_SCORE);
           if (!Number.isFinite(score)) {
             throw new Error('Scorecard result did not include a numeric aggregate score');
           }
-          if (score < 7.0) {
-            throw new Error(`OSSF Scorecard score ${score} is below required threshold 7.0`);
+          if (!Number.isFinite(minimumScore)) {
+            throw new Error('SCORECARD_MINIMUM_SCORE must be numeric');
           }
-          console.log(`OSSF Scorecard score ${score} satisfies threshold 7.0`);
+          const checks = new Map((result.checks || []).map((check) => [check.name, Number(check.score)]));
+          const requiredChecks = new Map([
+            ['Binary-Artifacts', 10],
+            ['Dangerous-Workflow', 10],
+            ['Dependency-Update-Tool', 10],
+            ['License', 9],
+            ['Pinned-Dependencies', 10],
+            ['SAST', 10],
+            ['Security-Policy', 10],
+            ['Token-Permissions', 10],
+            ['Vulnerabilities', 10],
+          ]);
+          const advisoryChecks = new Map([['Signed-Releases', 10]]);
+          for (const [name, minimum] of requiredChecks) {
+            const value = checks.get(name);
+            if (!Number.isFinite(value)) {
+              throw new Error(`Scorecard result did not include required check: ${name}`);
+            }
+            if (value === -1) {
+              throw new Error(`Scorecard check ${name} was inconclusive; required ${minimum}`);
+            }
+            if (value < minimum) {
+              throw new Error(`Scorecard check ${name} scored ${value}; required ${minimum}`);
+            }
+          }
+          for (const [name, minimum] of advisoryChecks) {
+            const value = checks.get(name);
+            if (value === undefined || value === -1) {
+              console.log(`Scorecard check ${name} was not emitted or was inconclusive for this event`);
+              continue;
+            }
+            if (!Number.isFinite(value)) {
+              throw new Error(`Scorecard check ${name} did not include a numeric score`);
+            }
+            if (value < minimum) {
+              console.warn(`Scorecard advisory check ${name} scored ${value}; target ${minimum}`);
+            }
+          }
+          if (score < minimumScore) {
+            throw new Error(`OSSF Scorecard score ${score} is below required threshold ${minimumScore}`);
+          }
+          console.log(`OSSF Scorecard score ${score} satisfies repository threshold ${minimumScore}`);
           NODE

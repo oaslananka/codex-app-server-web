@@ -56,7 +56,9 @@ file, upload, config, approval, auth, MCP, and workspace behavior.
 
 ## LAN Mode
 
-LAN mode is not enabled by `SHOW_LAN_URLS`. To expose the UI beyond loopback,
-operators must explicitly set `UI_HOST`, `ALLOWED_HOSTS`, `ALLOWED_ORIGINS`, and
-`CODEX_UI_TOKEN` for the LAN address. Keep the Codex backend loopback-only unless
-there is a separate, reviewed network boundary.
+LAN mode is not enabled by `SHOW_LAN_URLS`. The `pnpm dev:lan` helper sets
+`DEV_LAN_ACCESS=1`, which accepts private IPv4 LAN Host/Origin values only for
+development sessions bound to `0.0.0.0`. In production, operators must
+explicitly set `UI_HOST`, `ALLOWED_HOSTS`, `ALLOWED_ORIGINS`, and
+`CODEX_UI_TOKEN` for the LAN address. Keep the Codex backend loopback-only
+unless there is a separate, reviewed network boundary.

@@ -8,12 +8,12 @@ This project is independent and community-maintained. It is not affiliated with,
 
 The goal of this repository is to make Codex app-server workflows easier to inspect and operate from the browser without changing the backend protocol. It is designed for developer-facing use cases where you want a practical UI for session management, approvals, diagnostics, and workspace interaction, while keeping protocol compatibility and schema-driven behavior intact.
 
-The personal GitHub repository is the source repository:
-`https://github.com/oaslananka/codex-app-server-web`.
-The organization repository is the CI/CD and release authority:
+The organization GitHub repository is the canonical source, CI/CD, and release
+authority:
 `https://github.com/oaslananka-lab/codex-app-server-web`.
-Both repositories should carry the same content refs, while GitHub Actions run
-from the organization mirror.
+The personal repository at `https://github.com/oaslananka/codex-app-server-web`
+is an optional showcase mirror. It should carry the same `main` and release tag
+refs, but it must not publish or run release authority workflows.
 
 **Core Capabilities**
 
@@ -80,6 +80,17 @@ LAN exposure is opt-in. To expose the UI beyond loopback, set `UI_HOST`,
 address. `SHOW_LAN_URLS=1` only controls display of LAN URLs; it does not grant
 access.
 
+For local development on a private Windows or LAN workstation, use:
+
+```bash
+pnpm dev:lan
+```
+
+That command binds the development server to `0.0.0.0` and enables
+`DEV_LAN_ACCESS=1`, which accepts private IPv4 LAN Host/Origin values only
+while `NODE_ENV=development`. Production LAN deployments still require explicit
+`ALLOWED_HOSTS`, `ALLOWED_ORIGINS`, and `CODEX_UI_TOKEN` values.
+
 **Useful Commands**
 
 ```bash
@@ -102,9 +113,9 @@ pnpm smoke
 
 **CI/CD and Repository Mirror**
 
-- The personal repository at `oaslananka/codex-app-server-web` is the source/original content repository.
-- The organization repository at `oaslananka-lab/codex-app-server-web` is kept in sync and is the GitHub Actions CI/CD, release, and security-gate authority.
-- Branches, tags, releases, and active PR state should be mirrored between the personal and organization repositories when repository automation changes are made.
+- The organization repository at `oaslananka-lab/codex-app-server-web` is the canonical source, GitHub Actions CI/CD, release, and security-gate authority.
+- The personal repository at `oaslananka/codex-app-server-web` is an optional showcase mirror with no publish authority.
+- `main` and release tags should stay aligned between the organization repository and any configured personal mirror.
 - Azure remains supported through [`azure-pipelines.yml`](./azure-pipelines.yml) only as a secondary validation path; it must not publish, release, or mirror over either GitHub repository in this topology.
 - The mirror procedure is documented in [`docs/automation/repository-mirror.md`](./docs/automation/repository-mirror.md).
 - Protocol metadata can be validated locally with `pnpm protocol:manifest:check` before opening a change.
@@ -118,15 +129,28 @@ pnpm smoke
 **Local Security Model**
 
 - UI and backend defaults are loopback-only.
+- `pnpm build` creates the required production `.next` artifacts. `pnpm start`
+  starts the production server from existing artifacts and fails closed if they
+  are missing or stale. `pnpm start:prod` is a local convenience command that
+  builds first and then starts production.
+- Production `pnpm start` starts the web control plane only. Run Codex
+  app-server separately and point `CODEX_BACKEND_URL` at that loopback WebSocket
+  endpoint. Use `pnpm dev` for the local development helper that orchestrates
+  the UI together with a backend command.
 - `/api/health` is unauthenticated and intentionally returns only a basic status.
 - `/api/config`, `/api/uploads`, and `/ws` require local auth.
 - WebSocket upgrades enforce exact `/ws` path matching, Host allowlisting, Origin
   allowlisting, local token authentication, JSON-RPC shape validation, message
-  size limits, and buffered byte limits.
+  size limits, backend frame validation, backend compression opt-out, heartbeat
+  checks, and buffered byte limits.
 - Uploads are limited to common raster image formats. SVG uploads are disabled
-  by default.
+  by default. Upload files are written to a per-process temp directory and stale
+  temp content is cleaned on startup, periodically, and during shutdown.
 - Production CSP keeps `object-src`, `base-uri`, and `frame-ancestors` locked
   down and limits `connect-src` to the local UI origins.
+- Reverse proxy HTTPS cookie handling is opt-in. Set `TRUST_PROXY_HEADERS=1`
+  only when a trusted TLS proxy overwrites `X-Forwarded-Proto`; otherwise
+  forwarded headers are ignored for cookie security decisions.
 
 **Contribution Guidance**
 

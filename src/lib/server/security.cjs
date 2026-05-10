@@ -1,6 +1,8 @@
 'use strict';
 
 const crypto = require('node:crypto');
+const net = require('node:net');
+const os = require('node:os');
 const path = require('node:path');
 
 const AUTH_COOKIE_NAME = 'codex_ui_token';
@@ -11,6 +13,15 @@ const DEFAULT_CODEX_BACKEND_URL = 'ws://127.0.0.1:40000';
 const DEFAULT_MAX_WS_PAYLOAD_BYTES = 1_048_576;
 const DEFAULT_MAX_UPLOAD_BYTES = 10_485_760;
 const DEFAULT_MAX_WS_BUFFERED_BYTES = 1_048_576;
+const EXCLUDED_LAN_INTERFACE_PREFIXES = [
+  'br-',
+  'docker',
+  'veth',
+  'tailscale',
+  'virbr',
+  'cni',
+  'flannel',
+];
 
 const ALLOWED_IMAGE_EXTENSIONS = new Set([
   '.png',
@@ -42,6 +53,11 @@ function parsePort(value, fallback = DEFAULT_PORT) {
 function parsePositiveInt(value, fallback) {
   const parsed = Number.parseInt(value ?? '', 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function parseNonNegativeInt(value, fallback) {
+  const parsed = Number.parseInt(value ?? '', 10);
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
 function parseCsv(value) {
@@ -77,6 +93,101 @@ function loopbackOriginsForPort(port) {
   return [`http://127.0.0.1:${port}`, `http://localhost:${port}`];
 }
 
+let cachedLocalHostname;
+
+function getLocalHostname() {
+  if (cachedLocalHostname === undefined) {
+    cachedLocalHostname = normalizeHost(os.hostname());
+  }
+  return cachedLocalHostname;
+}
+
+function isAllInterfacesHost(value) {
+  const normalized = normalizeHost(value);
+  return normalized === '0.0.0.0' || normalized === '::' || normalized === '[::]';
+}
+
+function hostnameFromHostHeader(value) {
+  const normalized = normalizeHost(value);
+  if (!normalized) return '';
+  if (normalized.startsWith('[')) {
+    const end = normalized.indexOf(']');
+    return end > 0 ? normalized.slice(1, end) : '';
+  }
+  const colon = normalized.indexOf(':');
+  return colon === -1 ? normalized : normalized.slice(0, colon);
+}
+
+function isPrivateLanIpv4(address) {
+  return (
+    /^10\./.test(address) ||
+    /^192\.168\./.test(address) ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(address)
+  );
+}
+
+function isPrivateLanHostname(hostname) {
+  const normalized = normalizeHost(hostname).replace(/^\[|\]$/g, '');
+  if (!normalized) return false;
+
+  if (net.isIPv4(normalized)) return isPrivateLanIpv4(normalized);
+  if (net.isIPv6(normalized)) return false;
+
+  const localHostname = getLocalHostname();
+  return Boolean(
+    localHostname &&
+    (normalized === localHostname ||
+      normalized === `${localHostname}.local` ||
+      normalized === `${localHostname}.lan` ||
+      normalized === `${localHostname}.home`),
+  );
+}
+
+function detectDevLanCspHosts() {
+  const hosts = new Set();
+  for (const [name, entries] of Object.entries(os.networkInterfaces())) {
+    if (EXCLUDED_LAN_INTERFACE_PREFIXES.some((prefix) => name.startsWith(prefix))) {
+      continue;
+    }
+
+    for (const entry of entries ?? []) {
+      if (entry.internal) continue;
+      if (entry.family === 'IPv4' && isPrivateLanIpv4(entry.address)) {
+        hosts.add(entry.address);
+      }
+    }
+  }
+
+  const localHostname = getLocalHostname();
+  if (localHostname) {
+    hosts.add(localHostname);
+    hosts.add(`${localHostname}.local`);
+    hosts.add(`${localHostname}.lan`);
+    hosts.add(`${localHostname}.home`);
+  }
+
+  return [...hosts].sort();
+}
+
+function shouldAllowDevLanAddress(config) {
+  return Boolean(config.devLanAccess && isAllInterfacesHost(config.uiHost));
+}
+
+function isDevLanHost(host, config) {
+  return shouldAllowDevLanAddress(config) && isPrivateLanHostname(hostnameFromHostHeader(host));
+}
+
+function isDevLanOrigin(origin, config) {
+  if (!shouldAllowDevLanAddress(config)) return false;
+  try {
+    const url = new URL(String(origin));
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
+    return isPrivateLanHostname(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
 function deriveCodexBackendUrl(env) {
   if (env.CODEX_BACKEND_URL) return env.CODEX_BACKEND_URL;
   if (env.CODEX_PATH) return `ws+unix://${env.CODEX_PATH}:`;
@@ -95,6 +206,7 @@ function createLocalAccessConfig(env = process.env) {
   ];
   const authToken =
     env.CODEX_UI_TOKEN || env.LOCAL_UI_TOKEN || crypto.randomBytes(32).toString('base64url');
+  const devLanAccess = env.NODE_ENV !== 'production' && env.DEV_LAN_ACCESS === '1';
 
   return {
     uiHost: env.UI_HOST || DEFAULT_UI_HOST,
@@ -113,6 +225,9 @@ function createLocalAccessConfig(env = process.env) {
       DEFAULT_MAX_UPLOAD_BYTES,
     ),
     maxWsBufferedBytes: parsePositiveInt(env.MAX_WS_BUFFERED_BYTES, DEFAULT_MAX_WS_BUFFERED_BYTES),
+    trustProxyHeaders: env.TRUST_PROXY_HEADERS === '1' || env.TRUST_PROXY === '1',
+    devLanAccess,
+    devLanCspHosts: devLanAccess ? detectDevLanCspHosts() : [],
   };
 }
 
@@ -165,12 +280,26 @@ function isAuthenticatedRequest(req, config) {
   return safeTokenEquals(getRequestToken(req), config.authToken);
 }
 
-function isAllowedHost(host, allowedHosts) {
-  return allowedHosts.has(normalizeHost(host));
+function isAllowedHost(host, configOrAllowedHosts) {
+  const normalized = normalizeHost(host);
+  if (configOrAllowedHosts instanceof Set) {
+    return configOrAllowedHosts.has(normalized);
+  }
+  return (
+    configOrAllowedHosts.allowedHosts.has(normalized) ||
+    isDevLanHost(normalized, configOrAllowedHosts)
+  );
 }
 
-function isAllowedOrigin(origin, allowedOrigins) {
-  return allowedOrigins.has(normalizeOrigin(origin));
+function isAllowedOrigin(origin, configOrAllowedOrigins) {
+  const normalized = normalizeOrigin(origin);
+  if (configOrAllowedOrigins instanceof Set) {
+    return configOrAllowedOrigins.has(normalized);
+  }
+  return (
+    configOrAllowedOrigins.allowedOrigins.has(normalized) ||
+    isDevLanOrigin(origin, configOrAllowedOrigins)
+  );
 }
 
 function pathFromRequestUrl(value) {
@@ -193,10 +322,10 @@ function validateUpgradeRequest(req, config, isRateLimited) {
   if (req.method && req.method !== 'GET') {
     return { ok: false, statusCode: 405, statusText: 'Method Not Allowed' };
   }
-  if (!isAllowedHost(req.headers.host, config.allowedHosts)) {
+  if (!isAllowedHost(req.headers.host, config)) {
     return { ok: false, statusCode: 403, statusText: 'Forbidden Host' };
   }
-  if (!req.headers.origin || !isAllowedOrigin(req.headers.origin, config.allowedOrigins)) {
+  if (!req.headers.origin || !isAllowedOrigin(req.headers.origin, config)) {
     return { ok: false, statusCode: 403, statusText: 'Forbidden Origin' };
   }
   if (!isAuthenticatedRequest(req, config)) {
@@ -234,14 +363,18 @@ function isValidJsonRpcError(value) {
 }
 
 function isValidJsonRpcMessage(value) {
-  if (!isPlainObject(value) || value.jsonrpc !== '2.0') return false;
+  if (!isPlainObject(value)) return false;
+  if (value.jsonrpc !== undefined && value.jsonrpc !== '2.0') return false;
   if ('method' in value) {
     return (
       typeof value.method === 'string' &&
       value.method.length > 0 &&
       value.method.length <= 160 &&
       isValidJsonRpcId(value.id) &&
-      (value.params === undefined || isPlainObject(value.params) || Array.isArray(value.params))
+      (value.params === undefined ||
+        value.params === null ||
+        isPlainObject(value.params) ||
+        Array.isArray(value.params))
     );
   }
   const hasResult = Object.prototype.hasOwnProperty.call(value, 'result');
@@ -297,6 +430,31 @@ function validateBrowserWsPayload(rawData, isBinary, config) {
 
   if (!isValidControlMessage(parsed) && !isValidJsonRpcMessage(parsed)) {
     return { ok: false, closeCode: 1008, reason: 'Invalid JSON-RPC payload', bytes };
+  }
+
+  return { ok: true, text, parsed, bytes };
+}
+
+function validateBackendWsPayload(rawData, isBinary, config) {
+  if (isBinary) {
+    return { ok: false, closeCode: 1003, reason: 'Backend binary payloads are not supported' };
+  }
+
+  const bytes = webSocketPayloadByteLength(rawData);
+  if (bytes > config.maxWsPayloadBytes) {
+    return { ok: false, closeCode: 1009, reason: 'Backend payload too large', bytes };
+  }
+
+  const text = webSocketPayloadToText(rawData);
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return { ok: false, closeCode: 1007, reason: 'Malformed backend JSON', bytes };
+  }
+
+  if (!isValidJsonRpcMessage(parsed)) {
+    return { ok: false, closeCode: 1008, reason: 'Invalid backend JSON-RPC payload', bytes };
   }
 
   return { ok: true, text, parsed, bytes };
@@ -367,6 +525,14 @@ function cspConnectSources(config) {
     if (origin.startsWith('http://')) sources.add(`ws://${origin.slice('http://'.length)}`);
     if (origin.startsWith('https://')) sources.add(`wss://${origin.slice('https://'.length)}`);
   }
+  if (shouldAllowDevLanAddress(config)) {
+    for (const host of config.devLanCspHosts ?? []) {
+      sources.add(`http://${host}:${config.serverPort}`);
+      sources.add(`ws://${host}:${config.serverPort}`);
+      sources.add(`http://${host}:${config.fallbackPort}`);
+      sources.add(`ws://${host}:${config.fallbackPort}`);
+    }
+  }
   return [...sources];
 }
 
@@ -387,6 +553,25 @@ function buildCspDirectives(config, isDev) {
   };
 }
 
+function firstHeaderValue(value) {
+  if (Array.isArray(value)) return String(value[0] || '');
+  return String(value || '');
+}
+
+function isSecureRequest(req, config) {
+  if (req?.socket?.encrypted) {
+    return true;
+  }
+  if (!config.trustProxyHeaders) {
+    return false;
+  }
+  const forwardedProto = firstHeaderValue(req?.headers?.['x-forwarded-proto'])
+    .split(',')[0]
+    .trim()
+    .toLowerCase();
+  return forwardedProto === 'https';
+}
+
 module.exports = {
   ALLOWED_IMAGE_EXTENSIONS,
   AUTH_COOKIE_NAME,
@@ -401,11 +586,14 @@ module.exports = {
   isAllowedOrigin,
   isAuthenticatedRequest,
   isImagePayloadForExtension,
+  isSecureRequest,
   normalizeOrigin,
+  parseNonNegativeInt,
   parsePort,
   parsePositiveInt,
   pathFromRequestUrl,
   shouldReconnectBackend,
+  validateBackendWsPayload,
   validateBrowserWsPayload,
   validateUpgradeRequest,
   webSocketPayloadByteLength,

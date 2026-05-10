@@ -2,6 +2,7 @@ import { normalizeError } from '../errors';
 import { buildCollaborationMode } from '../collaboration';
 import { getOutputText, getTextContent, normalizeChatEntry } from '../normalizers';
 import { sanitizeBackendThreadId } from '../thread-ids';
+import { buildTurnSandboxPolicy } from '../sandbox-policy';
 import type { RuntimeStore } from '../store';
 import type { ChatEntry } from '../types';
 
@@ -77,10 +78,7 @@ export class TurnService {
         model: state.selectedModel || undefined,
         serviceTier: state.selectedServiceTier || undefined,
         effort: state.selectedEffort || undefined,
-        sandboxPolicy:
-          state.selectedSandboxMode === 'danger-full-access'
-            ? { type: 'dangerFullAccess' }
-            : undefined,
+        sandboxPolicy: buildTurnSandboxPolicy(state),
       });
       this.store.patch({
         turnActive: true,
