@@ -82,7 +82,7 @@ jobs:
             ['Token-Permissions', 10],
             ['Vulnerabilities', 10],
           ]);
-          const optionalChecks = new Map([['Signed-Releases', 10]]);
+          const advisoryChecks = new Map([['Signed-Releases', 10]]);
           for (const [name, minimum] of requiredChecks) {
             const value = checks.get(name);
             if (!Number.isFinite(value)) {
@@ -95,7 +95,7 @@ jobs:
               throw new Error(`Scorecard check ${name} scored ${value}; required ${minimum}`);
             }
           }
-          for (const [name, minimum] of optionalChecks) {
+          for (const [name, minimum] of advisoryChecks) {
             const value = checks.get(name);
             if (value === undefined || value === -1) {
               console.log(`Scorecard check ${name} was not emitted or was inconclusive for this event`);
@@ -105,7 +105,7 @@ jobs:
               throw new Error(`Scorecard check ${name} did not include a numeric score`);
             }
             if (value < minimum) {
-              throw new Error(`Scorecard check ${name} scored ${value}; required ${minimum}`);
+              console.warn(`Scorecard advisory check ${name} scored ${value}; target ${minimum}`);
             }
           }
           if (score < minimumScore) {

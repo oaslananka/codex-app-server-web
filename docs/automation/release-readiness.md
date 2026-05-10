@@ -36,10 +36,12 @@ The OSSF Scorecard workflow enforces a repository aggregate threshold and
 requires the security-critical checks for pinned dependencies, workflow safety,
 token permissions, SAST, vulnerability status, license, security policy,
 dependency updates, and binary artifact hygiene to satisfy explicit minimum
-scores. `Signed-Releases` is enforced when Scorecard emits it; release asset
-presence, checksums, and attestations are always verified by the release
-workflow. An omitted or inconclusive `Signed-Releases` result is acceptable on
-pull request events because the publish path is not active there.
+scores. `Signed-Releases` is monitored as an advisory Scorecard signal because
+GitHub Release asset presence, checksums, and Sigstore-backed artifact
+attestations are enforced by the release workflow. An omitted, inconclusive, or
+below-target `Signed-Releases` result must be reviewed, but the release
+workflow's checksum and attestation gates remain the primary enforcement
+mechanisms.
 
 The aggregate threshold is currently set to `6.8` because several upstream
 Scorecard checks are intentionally or temporally not maximized for this
