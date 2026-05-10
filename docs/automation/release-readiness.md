@@ -29,3 +29,28 @@ and must include:
 - provenance or artifact attestations where the platform supports them.
 
 The release flow is documented in [`../RELEASE.md`](../RELEASE.md).
+
+## Scorecard Policy
+
+The OSSF Scorecard workflow enforces a repository aggregate threshold and
+requires the security-critical checks for pinned dependencies, workflow safety,
+token permissions, SAST, vulnerability status, license, security policy,
+dependency updates, and binary artifact hygiene to satisfy explicit minimum
+scores. `Signed-Releases` is enforced when Scorecard emits it; release asset
+presence, checksums, and attestations are always verified by the release
+workflow. An omitted or inconclusive `Signed-Releases` result is acceptable on
+pull request events because the publish path is not active there.
+
+The aggregate threshold is currently set to `6.8` because several upstream
+Scorecard checks are intentionally or temporally not maximized for this
+repository:
+
+- `Maintained` is reduced while the public repository is younger than 90 days.
+- `Code-Review` reflects the current zero-required-review policy.
+- `CI-Tests` is history-based and improves as more checked pull requests are
+  merged.
+- `Contributors`, `Fuzzing`, and `CII-Best-Practices` are maturity signals, not
+  release blockers for the local control-plane artifact.
+
+Do not lower the threshold when a security-critical check regresses. Raise it as
+the historical and maturity checks improve.
