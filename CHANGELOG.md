@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.3](https://github.com/oaslananka-lab/codex-app-server-web/compare/codex-app-server-web-v1.1.2...codex-app-server-web-v1.1.3) (2026-05-10)
+
+
+### Bug Fixes
+
+* **server:** restore explicit development LAN access ([f08e291](https://github.com/oaslananka-lab/codex-app-server-web/commit/f08e2916b98015359e1558bb7ef1ba8be4aa7769))
+
 ## [1.1.2](https://github.com/oaslananka-lab/codex-app-server-web/compare/codex-app-server-web-v1.1.1...codex-app-server-web-v1.1.2) (2026-05-10)
 
 
