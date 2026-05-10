@@ -1,6 +1,6 @@
 {
   "name": "codex-app-server-web",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Independent, open-source web control center compatible with Codex app-server workflows",
   "type": "module",
   "packageManager": "pnpm@11.0.9",

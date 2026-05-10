@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/oaslananka-lab/codex-app-server-web/compare/codex-app-server-web-v1.1.1...codex-app-server-web-v1.1.2) (2026-05-10)
+
+
+### Bug Fixes
+
+* harden production startup and runtime boundaries ([#11](https://github.com/oaslananka-lab/codex-app-server-web/issues/11)) ([7a0e5c7](https://github.com/oaslananka-lab/codex-app-server-web/commit/7a0e5c7490df2675b505b2d230d0dc9401079843))
+
 ## [1.1.1](https://github.com/oaslananka-lab/codex-app-server-web/compare/codex-app-server-web-v1.1.0...codex-app-server-web-v1.1.1) (2026-05-09)
 
 
