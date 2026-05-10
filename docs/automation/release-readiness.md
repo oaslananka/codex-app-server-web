@@ -43,7 +43,7 @@ below-target `Signed-Releases` result must be reviewed, but the release
 workflow's checksum and attestation gates remain the primary enforcement
 mechanisms.
 
-The aggregate threshold is currently set to `6.8` because several upstream
+The aggregate threshold is currently set to `6.6` because several upstream
 Scorecard checks are intentionally or temporally not maximized for this
 repository:
 
@@ -53,6 +53,8 @@ repository:
   merged.
 - `Contributors`, `Fuzzing`, and `CII-Best-Practices` are maturity signals, not
   release blockers for the local control-plane artifact.
+- `Signed-Releases` is advisory while release integrity is enforced by the
+  release workflow's asset presence, checksum, and artifact attestation gates.
 
 Do not lower the threshold when a security-critical check regresses. Raise it as
 the historical and maturity checks improve.

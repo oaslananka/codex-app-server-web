@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
-      SCORECARD_MINIMUM_SCORE: '6.8'
+      SCORECARD_MINIMUM_SCORE: '6.6'
 
     steps:
       - name: Checkout
