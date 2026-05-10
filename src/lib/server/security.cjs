@@ -363,14 +363,18 @@ function isValidJsonRpcError(value) {
 }
 
 function isValidJsonRpcMessage(value) {
-  if (!isPlainObject(value) || value.jsonrpc !== '2.0') return false;
+  if (!isPlainObject(value)) return false;
+  if (value.jsonrpc !== undefined && value.jsonrpc !== '2.0') return false;
   if ('method' in value) {
     return (
       typeof value.method === 'string' &&
       value.method.length > 0 &&
       value.method.length <= 160 &&
       isValidJsonRpcId(value.id) &&
-      (value.params === undefined || isPlainObject(value.params) || Array.isArray(value.params))
+      (value.params === undefined ||
+        value.params === null ||
+        isPlainObject(value.params) ||
+        Array.isArray(value.params))
     );
   }
   const hasResult = Object.prototype.hasOwnProperty.call(value, 'result');

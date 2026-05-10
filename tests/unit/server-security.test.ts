@@ -218,7 +218,7 @@ describe('server security helpers', () => {
     );
   });
 
-  it('validates browser WebSocket payload size and JSON-RPC shape before forwarding', () => {
+  it('validates browser WebSocket payload size and Codex RPC shape before forwarding', () => {
     const config = security.createLocalAccessConfig({
       PORT: '1989',
       CODEX_UI_TOKEN: token,
@@ -228,6 +228,22 @@ describe('server security helpers', () => {
     expect(
       security.validateBrowserWsPayload(
         Buffer.from(JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'thread/list' })),
+        false,
+        config,
+      ),
+    ).toMatchObject({ ok: true });
+
+    expect(
+      security.validateBrowserWsPayload(
+        Buffer.from(JSON.stringify({ id: 1, method: 'thread/list', params: null })),
+        false,
+        config,
+      ),
+    ).toMatchObject({ ok: true });
+
+    expect(
+      security.validateBrowserWsPayload(
+        Buffer.from(JSON.stringify({ id: 1, method: 'thread/list' })),
         false,
         config,
       ),
@@ -245,7 +261,15 @@ describe('server security helpers', () => {
 
     expect(
       security.validateBrowserWsPayload(
-        Buffer.from(JSON.stringify({ method: 'missing-version' })),
+        Buffer.from(JSON.stringify({ jsonrpc: '1.0', method: 'invalid-version' })),
+        false,
+        config,
+      ),
+    ).toMatchObject({ ok: false, closeCode: 1008 });
+
+    expect(
+      security.validateBrowserWsPayload(
+        Buffer.from(JSON.stringify({ id: 1, method: 'thread/list', params: 'invalid' })),
         false,
         config,
       ),
@@ -256,7 +280,7 @@ describe('server security helpers', () => {
     const config = security.createLocalAccessConfig({
       PORT: '1989',
       CODEX_UI_TOKEN: token,
-      MAX_WS_PAYLOAD_BYTES: '80',
+      MAX_WS_PAYLOAD_BYTES: '256',
     });
 
     expect(
@@ -267,7 +291,46 @@ describe('server security helpers', () => {
       ),
     ).toMatchObject({ ok: true });
 
-    expect(security.validateBackendWsPayload(Buffer.alloc(81, 'x'), false, config)).toMatchObject({
+    expect(
+      security.validateBackendWsPayload(
+        Buffer.from(
+          JSON.stringify({
+            id: 1,
+            result: {
+              userAgent: 'Codex Desktop/0.130.0',
+              codexHome: 'C:\\Users\\Admin\\.codex',
+              platformFamily: 'windows',
+              platformOs: 'windows',
+            },
+          }),
+        ),
+        false,
+        config,
+      ),
+    ).toMatchObject({ ok: true });
+
+    expect(
+      security.validateBackendWsPayload(
+        Buffer.from(
+          JSON.stringify({
+            method: 'remoteControl/status/changed',
+            params: { status: 'disabled', environmentId: null },
+          }),
+        ),
+        false,
+        config,
+      ),
+    ).toMatchObject({ ok: true });
+
+    expect(
+      security.validateBackendWsPayload(
+        Buffer.from(JSON.stringify({ jsonrpc: '1.0', id: 1, result: { ok: true } })),
+        false,
+        config,
+      ),
+    ).toMatchObject({ ok: false, closeCode: 1008 });
+
+    expect(security.validateBackendWsPayload(Buffer.alloc(257, 'x'), false, config)).toMatchObject({
       ok: false,
       closeCode: 1009,
     });
