@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.4](https://github.com/oaslananka-lab/codex-app-server-web/compare/codex-app-server-web-v1.1.3...codex-app-server-web-v1.1.4) (2026-05-10)
+
+
+### Bug Fixes
+
+* **server:** accept official codex rpc frames ([1f83f1c](https://github.com/oaslananka-lab/codex-app-server-web/commit/1f83f1c4fc8375570c5cba759f13c75b4f9179e8))
+
 ## [1.1.3](https://github.com/oaslananka-lab/codex-app-server-web/compare/codex-app-server-web-v1.1.2...codex-app-server-web-v1.1.3) (2026-05-10)
 
 
