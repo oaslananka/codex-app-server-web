@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.1.5](https://github.com/oaslananka-lab/codex-app-server-web/compare/codex-app-server-web-v1.1.4...codex-app-server-web-v1.1.5) (2026-05-10)
+
+
+### Bug Fixes
+
+* **dev:** harden Codex backend startup limits ([4da1c38](https://github.com/oaslananka-lab/codex-app-server-web/commit/4da1c3853fc2c44a3d1bfadfa80617adf7e21544))
+
+## [1.1.4](https://github.com/oaslananka-lab/codex-app-server-web/compare/codex-app-server-web-v1.1.3...codex-app-server-web-v1.1.4) (2026-05-10)
+
+
+### Bug Fixes
+
+* **server:** accept official codex rpc frames ([1f83f1c](https://github.com/oaslananka-lab/codex-app-server-web/commit/1f83f1c4fc8375570c5cba759f13c75b4f9179e8))
+
+## [1.1.3](https://github.com/oaslananka-lab/codex-app-server-web/compare/codex-app-server-web-v1.1.2...codex-app-server-web-v1.1.3) (2026-05-10)
+
+
+### Bug Fixes
+
+* **server:** restore explicit development LAN access ([f08e291](https://github.com/oaslananka-lab/codex-app-server-web/commit/f08e2916b98015359e1558bb7ef1ba8be4aa7769))
+
+## [1.1.2](https://github.com/oaslananka-lab/codex-app-server-web/compare/codex-app-server-web-v1.1.1...codex-app-server-web-v1.1.2) (2026-05-10)
+
+
+### Bug Fixes
+
+* harden production startup and runtime boundaries ([#11](https://github.com/oaslananka-lab/codex-app-server-web/issues/11)) ([7a0e5c7](https://github.com/oaslananka-lab/codex-app-server-web/commit/7a0e5c7490df2675b505b2d230d0dc9401079843))
+
 ## [1.1.1](https://github.com/oaslananka-lab/codex-app-server-web/compare/codex-app-server-web-v1.1.0...codex-app-server-web-v1.1.1) (2026-05-09)
 
 

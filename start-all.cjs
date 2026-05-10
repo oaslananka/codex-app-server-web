@@ -34,9 +34,10 @@ const parseListenUrl = (value) => {
 };
 
 const formatListenUrl = (parsed, port) => {
-  const url = new URL(parsed.toString());
-  url.port = String(port);
-  return url.toString();
+  const protocol = parsed.protocol === 'wss:' ? 'wss:' : 'ws:';
+  const normalizedHostname = parsed.hostname.replace(/^\[|\]$/g, '');
+  const hostname = net.isIPv6(normalizedHostname) ? `[${normalizedHostname}]` : normalizedHostname;
+  return `${protocol}//${hostname}:${port}`;
 };
 
 const isPortOpen = (host, port, timeoutMs = 350) =>
@@ -251,20 +252,35 @@ async function main() {
   }
 }
 
-process.on('SIGINT', () => {
-  stopAll('SIGINT');
-  process.exit(0);
-});
+if (require.main === module) {
+  process.on('SIGINT', () => {
+    stopAll('SIGINT');
+    process.exit(0);
+  });
 
-process.on('SIGTERM', () => {
-  stopAll('SIGTERM');
-  process.exit(0);
-});
+  process.on('SIGTERM', () => {
+    stopAll('SIGTERM');
+    process.exit(0);
+  });
 
-void main().catch((error) => {
-  logger.error(
-    `Failed to start services: ${error instanceof Error ? error.message : String(error)}`,
-  );
-  stopAll();
-  process.exit(1);
-});
+  void main().catch((error) => {
+    logger.error(
+      `Failed to start services: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    stopAll();
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  findAvailablePort,
+  formatListenUrl,
+  getCodexEndpoint,
+  getUiEndpoint,
+  isPortOpen,
+  normalizeProbeHost,
+  parseListenUrl,
+  parsePort,
+  resolveCodexLaunchPlan,
+  waitForPort,
+};

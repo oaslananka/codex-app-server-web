@@ -31,9 +31,12 @@ The server generates a high-entropy local UI token at startup when
 browser cookie. The token is not committed or written to disk. Non-browser local
 clients should set `CODEX_UI_TOKEN` and authenticate with a Bearer token.
 
-LAN mode requires all of the following to be set intentionally: `UI_HOST`,
-`ALLOWED_HOSTS`, `ALLOWED_ORIGINS`, and `CODEX_UI_TOKEN`. `SHOW_LAN_URLS=1`
-only prints reachable-looking LAN URLs; it is not an access-control setting.
+Production LAN mode requires all of the following to be set intentionally:
+`UI_HOST`, `ALLOWED_HOSTS`, `ALLOWED_ORIGINS`, and `CODEX_UI_TOKEN`.
+`SHOW_LAN_URLS=1` only prints reachable-looking LAN URLs; it is not an
+access-control setting. The `pnpm dev:lan` helper additionally sets
+`DEV_LAN_ACCESS=1`, which accepts private IPv4 LAN Host/Origin values in
+development mode only and is ignored when `NODE_ENV=production`.
 
 ## Protected Surfaces
 
@@ -41,7 +44,9 @@ only prints reachable-looking LAN URLs; it is not an access-control setting.
 - `/api/config` and `/api/uploads` require local auth.
 - `/ws` requires exact path matching, allowed Host, allowed Origin, local token
   auth, max payload enforcement, JSON-RPC validation, and byte-based buffering
-  limits.
+  limits. Browser-to-UI frames and loopback Codex-backend frames have separate
+  byte caps so browser ingress remains tight while backend protocol snapshots
+  are still bounded.
 - Uploads accept raster image formats only. SVG upload is disabled by default.
 - Production CSP restricts object embedding, framing, base URI, and network
   targets to the local UI origins.
@@ -52,3 +57,15 @@ Never commit `.env` files, private keys, registry tokens, PATs, OpenAI keys,
 ChatGPT tokens, refresh tokens, Azure service connection credentials, or GitHub
 App credentials. If a credential is exposed, remove it from the repository,
 rotate it, and verify that history and release artifacts no longer contain it.
+
+## Reverse Proxy Deployments
+
+The application ignores `X-Forwarded-*` headers by default. If the UI is served
+behind a trusted TLS reverse proxy, configure the proxy to overwrite
+`X-Forwarded-Proto` and set `TRUST_PROXY_HEADERS=1`. In that mode the local auth
+cookie is marked `Secure` when the trusted proxy reports HTTPS. Do not enable
+proxy trust on a directly exposed or untrusted network listener.
+
+Production starts require existing Next.js build artifacts. Run `pnpm build`
+before `pnpm start`; missing or stale artifacts stop startup with a non-zero
+exit so the app does not silently run development mode in production.
