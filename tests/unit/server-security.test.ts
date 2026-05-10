@@ -30,6 +30,7 @@ describe('server security helpers', () => {
     expect(config.allowedHosts.has('127.0.0.1:1989')).toBe(true);
     expect(config.allowedOrigins.has('http://127.0.0.1:1989')).toBe(true);
     expect(config.maxWsPayloadBytes).toBe(1_048_576);
+    expect(config.maxBackendWsPayloadBytes).toBe(16_777_216);
     expect(config.maxUploadBytes).toBe(10_485_760);
     expect(security.ALLOWED_IMAGE_EXTENSIONS.has('.svg')).toBe(false);
   });
@@ -280,7 +281,7 @@ describe('server security helpers', () => {
     const config = security.createLocalAccessConfig({
       PORT: '1989',
       CODEX_UI_TOKEN: token,
-      MAX_WS_PAYLOAD_BYTES: '256',
+      MAX_BACKEND_WS_PAYLOAD_BYTES: '256',
     });
 
     expect(
@@ -343,6 +344,41 @@ describe('server security helpers', () => {
     expect(security.validateBackendWsPayload(Buffer.from('{'), false, config)).toMatchObject({
       ok: false,
       closeCode: 1007,
+    });
+  });
+
+  it('keeps the backend frame limit separate from the browser ingress limit', () => {
+    const config = security.createLocalAccessConfig({
+      PORT: '1989',
+      CODEX_UI_TOKEN: token,
+      MAX_WS_PAYLOAD_BYTES: '64',
+      MAX_BACKEND_WS_PAYLOAD_BYTES: '512',
+    });
+    const backendPayload = Buffer.from(
+      JSON.stringify({ id: 1, result: { payload: 'x'.repeat(240) } }),
+    );
+
+    expect(backendPayload.byteLength).toBeGreaterThan(config.maxWsPayloadBytes);
+    expect(backendPayload.byteLength).toBeLessThan(config.maxBackendWsPayloadBytes);
+    expect(security.validateBrowserWsPayload(Buffer.alloc(65, 'x'), false, config)).toMatchObject({
+      ok: false,
+      closeCode: 1009,
+    });
+    expect(security.validateBackendWsPayload(backendPayload, false, config)).toMatchObject({
+      ok: true,
+    });
+  });
+
+  it('accepts bounded Codex backend frames that exceed the browser ingress default', () => {
+    const config = security.createLocalAccessConfig({ PORT: '1989', CODEX_UI_TOKEN: token });
+    const backendPayload = Buffer.from(
+      JSON.stringify({ id: 1, result: { payload: 'x'.repeat(1_100_000) } }),
+    );
+
+    expect(backendPayload.byteLength).toBeGreaterThan(config.maxWsPayloadBytes);
+    expect(backendPayload.byteLength).toBeLessThan(config.maxBackendWsPayloadBytes);
+    expect(security.validateBackendWsPayload(backendPayload, false, config)).toMatchObject({
+      ok: true,
     });
   });
 

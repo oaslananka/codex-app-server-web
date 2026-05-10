@@ -142,7 +142,10 @@ pnpm smoke
 - WebSocket upgrades enforce exact `/ws` path matching, Host allowlisting, Origin
   allowlisting, local token authentication, JSON-RPC shape validation, message
   size limits, backend frame validation, backend compression opt-out, heartbeat
-  checks, and buffered byte limits.
+  checks, and buffered byte limits. Browser-originated WebSocket frames default
+  to 1 MiB (`MAX_WS_PAYLOAD_BYTES`); trusted loopback Codex backend frames use a
+  separate 16 MiB cap (`MAX_BACKEND_WS_PAYLOAD_BYTES`) so large protocol
+  snapshots remain bounded without weakening browser ingress limits.
 - Uploads are limited to common raster image formats. SVG uploads are disabled
   by default. Upload files are written to a per-process temp directory and stale
   temp content is cleaned on startup, periodically, and during shutdown.

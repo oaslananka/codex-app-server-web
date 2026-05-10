@@ -44,7 +44,9 @@ development mode only and is ignored when `NODE_ENV=production`.
 - `/api/config` and `/api/uploads` require local auth.
 - `/ws` requires exact path matching, allowed Host, allowed Origin, local token
   auth, max payload enforcement, JSON-RPC validation, and byte-based buffering
-  limits.
+  limits. Browser-to-UI frames and loopback Codex-backend frames have separate
+  byte caps so browser ingress remains tight while backend protocol snapshots
+  are still bounded.
 - Uploads accept raster image formats only. SVG upload is disabled by default.
 - Production CSP restricts object embedding, framing, base URI, and network
   targets to the local UI origins.
