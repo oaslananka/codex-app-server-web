@@ -11,6 +11,7 @@ const DEFAULT_PORT = 1989;
 const DEFAULT_PORT_FALLBACK = 1990;
 const DEFAULT_CODEX_BACKEND_URL = 'ws://127.0.0.1:40000';
 const DEFAULT_MAX_WS_PAYLOAD_BYTES = 1_048_576;
+const DEFAULT_MAX_BACKEND_WS_PAYLOAD_BYTES = 16_777_216;
 const DEFAULT_MAX_UPLOAD_BYTES = 10_485_760;
 const DEFAULT_MAX_WS_BUFFERED_BYTES = 1_048_576;
 const EXCLUDED_LAN_INTERFACE_PREFIXES = [
@@ -220,6 +221,10 @@ function createLocalAccessConfig(env = process.env) {
       parseCsv(env.ALLOWED_ORIGINS).map(normalizeOrigin).filter(Boolean).concat(defaultOrigins),
     ),
     maxWsPayloadBytes: parsePositiveInt(env.MAX_WS_PAYLOAD_BYTES, DEFAULT_MAX_WS_PAYLOAD_BYTES),
+    maxBackendWsPayloadBytes: parsePositiveInt(
+      env.MAX_BACKEND_WS_PAYLOAD_BYTES ?? env.MAX_CODEX_WS_PAYLOAD_BYTES,
+      DEFAULT_MAX_BACKEND_WS_PAYLOAD_BYTES,
+    ),
     maxUploadBytes: parsePositiveInt(
       env.MAX_UPLOAD_BYTES ?? env.UPLOAD_BODY_LIMIT_BYTES,
       DEFAULT_MAX_UPLOAD_BYTES,
@@ -441,7 +446,8 @@ function validateBackendWsPayload(rawData, isBinary, config) {
   }
 
   const bytes = webSocketPayloadByteLength(rawData);
-  if (bytes > config.maxWsPayloadBytes) {
+  const maxBackendBytes = config.maxBackendWsPayloadBytes ?? config.maxWsPayloadBytes;
+  if (bytes > maxBackendBytes) {
     return { ok: false, closeCode: 1009, reason: 'Backend payload too large', bytes };
   }
 

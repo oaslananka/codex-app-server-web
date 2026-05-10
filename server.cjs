@@ -488,7 +488,7 @@ wss.on('connection', (browserWs, req) => {
     try {
       codexWs = new WebSocket(wsUrl, {
         handshakeTimeout: 5000,
-        maxPayload: accessConfig.maxWsPayloadBytes,
+        maxPayload: accessConfig.maxBackendWsPayloadBytes,
         perMessageDeflate: false,
       });
     } catch (err) {
