@@ -60,8 +60,11 @@ if (releaseSurfaces.githubRelease) {
   if (!/release-please-action@[0-9a-f]{40}/i.test(workflowText)) {
     findings.push('release workflow must use a SHA-pinned release-please action');
   }
-  if (!/attest-build-provenance@[0-9a-f]{40}/i.test(workflowText)) {
+  if (!/(?:actions\/attest|attest-build-provenance)@[0-9a-f]{40}/i.test(workflowText)) {
     findings.push('release workflow must generate artifact attestations');
+  }
+  if (!/\.intoto\.jsonl/.test(workflowText)) {
+    findings.push('release workflow must attach provenance as a release asset');
   }
   if (!/pnpm\s+pack/.test(workflowText)) {
     findings.push('release workflow must build a package artifact');
