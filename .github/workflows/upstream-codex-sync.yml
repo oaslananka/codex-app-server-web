@@ -76,6 +76,8 @@ jobs:
 
       - name: Prepare sync branch
         if: ${{ inputs.mode == 'pr' || github.event_name == 'schedule' }}
+        env:
+          GH_TOKEN: ${{ secrets.UPSTREAM_SYNC_TOKEN || github.token }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
