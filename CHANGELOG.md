@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.6](https://github.com/oaslananka-lab/codex-app-server-web/compare/codex-app-server-web-v1.1.5...codex-app-server-web-v1.1.6) (2026-05-11)
+
+
+### Bug Fixes
+
+* **ci:** enforce real coverage gate ([163fa59](https://github.com/oaslananka-lab/codex-app-server-web/commit/163fa59477653cabc0f999d16b8317580598564d))
+
 ## [1.1.5](https://github.com/oaslananka-lab/codex-app-server-web/compare/codex-app-server-web-v1.1.4...codex-app-server-web-v1.1.5) (2026-05-10)
 
 
