@@ -20,7 +20,7 @@
     "security:scan": "pnpm repo:hygiene:check && pnpm security:actions && pnpm security:secrets && pnpm security:trivy",
     "release:state": "node scripts/check-release-state.mjs",
     "release:dry-run": "node scripts/check-release-state.mjs",
-    "ci": "pnpm format:check && pnpm lint && pnpm repo:hygiene:check && pnpm protocol:manifest:check && pnpm protocol:drift:check && pnpm typecheck && pnpm test -- --coverage && pnpm build && pnpm security:scan && pnpm release:dry-run",
+    "ci": "pnpm format:check && pnpm lint && pnpm repo:hygiene:check && pnpm protocol:manifest:check && pnpm protocol:drift:check && pnpm typecheck && pnpm test:coverage && pnpm build && pnpm security:scan && pnpm release:dry-run",
     "sync:vendor": "node scripts/sync-public-vendor-assets.mjs",
     "postinstall": "node scripts/sync-public-vendor-assets.mjs",
     "start": "node scripts/sync-public-vendor-assets.mjs && cross-env NODE_ENV=production PORT=1989 PORT_FALLBACK=1990 node server.cjs",
@@ -35,6 +35,7 @@
     "dev:ui": "node scripts/sync-public-vendor-assets.mjs && cross-env NODE_ENV=development PORT=1989 PORT_FALLBACK=1990 node server.cjs",
     "build": "node scripts/sync-public-vendor-assets.mjs && next build",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "smoke": "node scripts/sync-public-vendor-assets.mjs && cross-env BASE_URL=http://127.0.0.1:1989 node scripts/smoke-control-center.mjs"
   },
